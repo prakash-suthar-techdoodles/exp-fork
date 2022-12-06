@@ -335,6 +335,7 @@ const SettingsModalStackNavigator = createModalStackNavigator([
             return AddDebitCardPage;
         },
         name: 'Settings_Add_Debit_Card',
+        initialParams: {isComingFromSettingsPage: true},
     },
     {
         getComponent: () => {
