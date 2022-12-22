@@ -1071,4 +1071,12 @@ export default {
             message: 'Expensify does not have access to save attachments. To enable access, go to Settings and allow access',
         },
     },
+    testTool: {
+        useStaging: 'Use staging server',
+        simulateFailingNetwork: 'Simulate failing network requests',
+        authenticationStatus: 'Authentication status',
+        deviceCredentials: 'Device credentials',
+        invalidate: 'Invalidate',
+        destroy: 'Destroy',
+    },
 };
