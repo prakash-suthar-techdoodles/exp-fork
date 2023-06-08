@@ -52,6 +52,7 @@ import ReportPreview from '../../../components/ReportActionItem/ReportPreview';
 import ReportActionItemDraft from './ReportActionItemDraft';
 import TaskPreview from '../../../components/ReportActionItem/TaskPreview';
 import TaskAction from '../../../components/ReportActionItem/TaskAction';
+import * as SignInModalActions from '../../../libs/actions/SignInModalActions';
 import * as Session from '../../../libs/actions/Session';
 import {hideContextMenu} from './ContextMenu/ReportActionContextMenu';
 
@@ -337,7 +338,7 @@ function ReportActionItem(props) {
                                     hideContextMenu(false);
 
                                     InteractionManager.runAfterInteractions(() => {
-                                        Session.signOutAndRedirectToSignIn();
+                                        SignInModalActions.showSignInModal();
                                     });
                                 } else {
                                     toggleReaction(emoji);

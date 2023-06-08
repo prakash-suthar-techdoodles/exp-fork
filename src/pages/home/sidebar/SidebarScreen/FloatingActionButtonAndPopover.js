@@ -21,6 +21,7 @@ import withNavigation from '../../../../components/withNavigation';
 import * as Welcome from '../../../../libs/actions/Welcome';
 import withNavigationFocus from '../../../../components/withNavigationFocus';
 import * as TaskUtils from '../../../../libs/actions/Task';
+import * as SignInModalActions from '../../../../libs/actions/SignInModalActions';
 import * as Session from '../../../../libs/actions/Session';
 
 /**
@@ -146,7 +147,7 @@ class FloatingActionButtonAndPopover extends React.Component {
      */
     interceptAnonymousUser(callback) {
         if (this.state.isAnonymousUser) {
-            Session.signOutAndRedirectToSignIn();
+            SignInModalActions.showSignInModal();
         } else {
             callback();
         }

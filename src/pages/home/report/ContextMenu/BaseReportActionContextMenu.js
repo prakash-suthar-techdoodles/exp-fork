@@ -10,10 +10,15 @@ import ContextMenuActions, {CONTEXT_MENU_TYPES} from './ContextMenuActions';
 import compose from '../../../../libs/compose';
 import withWindowDimensions, {windowDimensionsPropTypes} from '../../../../components/withWindowDimensions';
 import {withBetas} from '../../../../components/OnyxProvider';
+import * as SignInModalActions from '../../../../libs/actions/SignInModalActions';
 import * as Session from '../../../../libs/actions/Session';
 import {hideContextMenu} from './ReportActionContextMenu';
 
 const propTypes = {
+    ...genericReportActionContextMenuPropTypes,
+    ...withLocalizePropTypes,
+    ...windowDimensionsPropTypes,
+
     /** String representing the context menu type [LINK, REPORT_ACTION] which controls context menu choices  */
     type: PropTypes.string,
 
@@ -27,19 +32,15 @@ const propTypes = {
     isArchivedRoom: PropTypes.bool,
 
     contentRef: PropTypes.oneOfType([PropTypes.node, PropTypes.object, PropTypes.func]),
-
-    ...genericReportActionContextMenuPropTypes,
-    ...withLocalizePropTypes,
-    ...windowDimensionsPropTypes,
 };
 
 const defaultProps = {
+    ...GenericReportActionContextMenuDefaultProps,
     type: CONTEXT_MENU_TYPES.REPORT_ACTION,
     anchor: null,
     contentRef: null,
     isChronosReport: false,
     isArchivedRoom: false,
-    ...GenericReportActionContextMenuDefaultProps,
 };
 class BaseReportActionContextMenu extends React.Component {
     constructor(props) {
@@ -75,7 +76,7 @@ class BaseReportActionContextMenu extends React.Component {
                 hideContextMenu(false);
 
                 InteractionManager.runAfterInteractions(() => {
-                    Session.signOutAndRedirectToSignIn();
+                    SignInModalActions.showSignInModal();
                 });
             } else {
                 callback();

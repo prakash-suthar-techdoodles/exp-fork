@@ -37,6 +37,7 @@ import variables from '../../../styles/variables';
 import LogoComponent from '../../../../assets/images/expensify-wordmark.svg';
 import PressableWithoutFeedback from '../../../components/Pressable/PressableWithoutFeedback';
 import * as Session from '../../../libs/actions/Session';
+import * as SignInModalActions from '../../../libs/actions/SignInModalActions';
 import Button from '../../../components/Button';
 import * as UserUtils from '../../../libs/UserUtils';
 
@@ -194,7 +195,7 @@ class SidebarLinks extends React.Component {
                                     medium
                                     success
                                     text={this.props.translate('common.signIn')}
-                                    onPress={() => Session.signOutAndRedirectToSignIn()}
+                                    onPress={SignInModalActions.showSignInModal}
                                 />
                             </View>
                         ) : (

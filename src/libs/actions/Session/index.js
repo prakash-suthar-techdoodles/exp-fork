@@ -1,7 +1,7 @@
 import Onyx from 'react-native-onyx';
 import _ from 'underscore';
 import lodashGet from 'lodash/get';
-import {Linking} from 'react-native';
+import {InteractionManager, Linking} from 'react-native';
 import ONYXKEYS from '../../../ONYXKEYS';
 import redirectToSignIn from '../SignInRedirect';
 import CONFIG from '../../../CONFIG';
@@ -23,6 +23,8 @@ import ROUTES from '../../../ROUTES';
 import * as ErrorUtils from '../../ErrorUtils';
 import * as ReportUtils from '../../ReportUtils';
 import * as Report from '../Report';
+import * as SignInModalActions from '../SignInModalActions';
+import {hideContextMenu} from '../../../pages/home/report/ContextMenu/ReportActionContextMenu';
 
 let authTokenType = '';
 Onyx.connect({
@@ -101,11 +103,17 @@ function signOutAndRedirectToSignIn() {
 
 /**
  * @param {Function} callback The callback to execute if the action is allowed
- * @returns {Function} same callback if the action is allowed, otherwise a function that signs out and redirects to sign in
+ * @returns {Function} same callback if the action is allowed, otherwise a function that opens the Sign In modal
  */
 function checkIfActionIsAllowed(callback) {
     if (isAnonymousUser()) {
-        return () => signOutAndRedirectToSignIn();
+        return () => {
+            hideContextMenu(false);
+
+            InteractionManager.runAfterInteractions(() => {
+                SignInModalActions.showSignInModal();
+            });
+        };
     }
     return callback;
 }
@@ -912,6 +920,93 @@ function validateTwoFactorAuth(twoFactorAuthCode) {
     API.write('TwoFactorAuth_Validate', {twoFactorAuthCode}, {optimisticData, successData, failureData});
 }
 
+function claimAnonymousAccount(validateCode, preferredLocale = CONST.LOCALES.DEFAULT) {
+    const optimisticData = [
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: ONYXKEYS.ACCOUNT,
+            value: {
+                ...CONST.DEFAULT_ACCOUNT_DATA,
+                isLoading: true,
+                loadingForm: CONST.FORMS.VALIDATE_CODE_FORM,
+            },
+        },
+        {
+            // We need to clean the authToken so the app is refreshed
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: ONYXKEYS.SESSION,
+            value: {
+                authToken: '',
+            },
+        },
+    ];
+
+    const successData = [
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: ONYXKEYS.ACCOUNT,
+            value: {
+                isLoading: false,
+                loadingForm: null,
+            },
+        },
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: ONYXKEYS.CREDENTIALS,
+            value: {
+                validateCode,
+            },
+        },
+
+        {
+            // We need to manually set the authTokenType to NOT be anonymous
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: ONYXKEYS.SESSION,
+            value: {
+                authTokenType: '',
+            },
+        },
+        {
+            onyxMethod: Onyx.METHOD.SET,
+            key: ONYXKEYS.IS_SIGN_IN_MODAL_OPEN,
+            value: false,
+        },
+    ];
+
+    const failureData = [
+        {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: ONYXKEYS.ACCOUNT,
+            value: {
+                isLoading: false,
+                loadingForm: null,
+            },
+        },
+    ];
+
+    const params = {
+        email: credentials.login,
+        preferredLocale,
+        validateCode: validateCode || credentials.validateCode,
+    };
+
+    // TODO: Switch to ClaimAnonymousAccount command, when backend is ready
+    Device.getDeviceInfoWithID().then((deviceInfo) => {
+        API.write(
+            'SigninUser',
+            {
+                ...params,
+                deviceInfo,
+            },
+            {
+                optimisticData,
+                successData,
+                failureData,
+            },
+        );
+    });
+}
+
 export {
     beginSignIn,
     checkIfActionIsAllowed,
@@ -940,4 +1035,5 @@ export {
     isAnonymousUser,
     toggleTwoFactorAuth,
     validateTwoFactorAuth,
+    claimAnonymousAccount,
 };

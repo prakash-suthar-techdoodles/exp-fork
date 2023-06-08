@@ -23,6 +23,12 @@ import * as Localize from '../../libs/Localize';
 import * as StyleUtils from '../../styles/StyleUtils';
 
 const propTypes = {
+    ...withLocalizePropTypes,
+    ...windowDimensionsPropTypes,
+
+    /** Whether the user is anonymous. True when opening the Sign-In Page from the modal */
+    isAnonymous: PropTypes.bool,
+
     /* Onyx Props */
 
     /** The details about the account that the user is signing in with */
@@ -46,13 +52,10 @@ const propTypes = {
         password: PropTypes.string,
         twoFactorAuthCode: PropTypes.string,
     }),
-
-    ...withLocalizePropTypes,
-
-    ...windowDimensionsPropTypes,
 };
 
 const defaultProps = {
+    isAnonymous: false,
     account: {},
     betas: [],
     credentials: {},
@@ -163,7 +166,14 @@ class SignInPage extends Component {
                         isVisible={showLoginForm}
                         blurOnSubmit={this.props.account.validated === false}
                     />
-                    {showValidateCodeForm ? <ValidateCodeForm isVisible={showValidateCodeForm} /> : <PasswordForm isVisible={showPasswordForm} />}
+                    {showValidateCodeForm ? (
+                        <ValidateCodeForm
+                            isVisible={showValidateCodeForm}
+                            isAnonymous={this.props.isAnonymous}
+                        />
+                    ) : (
+                        <PasswordForm isVisible={showPasswordForm} />
+                    )}
                     {showResendValidationForm && <ResendValidationForm />}
                     {showUnlinkLoginForm && <UnlinkLoginForm />}
                 </SignInPageLayout>

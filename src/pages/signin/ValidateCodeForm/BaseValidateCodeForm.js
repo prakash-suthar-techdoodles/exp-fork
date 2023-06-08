@@ -27,6 +27,9 @@ import Terms from '../Terms';
 import PressableWithFeedback from '../../../components/Pressable/PressableWithFeedback';
 
 const propTypes = {
+    /** Whether the user is anonymous. True when opening the Sign-In Page from the modal */
+    isAnonymous: PropTypes.bool,
+
     /* Onyx Props */
 
     /** The details about the account that the user is signing in with */
@@ -58,6 +61,7 @@ const propTypes = {
 };
 
 const defaultProps = {
+    isAnonymous: false,
     account: {},
     credentials: {},
     preferredLocale: CONST.LOCALES.DEFAULT,
@@ -190,6 +194,11 @@ class BaseValidateCodeForm extends React.Component {
         this.setState({
             formError: {},
         });
+
+        if (this.props.isAnonymous) {
+            Session.claimAnonymousAccount(this.state.validateCode, this.props.preferredLocale);
+            return;
+        }
 
         const accountID = lodashGet(this.props, 'credentials.accountID');
         if (accountID) {
