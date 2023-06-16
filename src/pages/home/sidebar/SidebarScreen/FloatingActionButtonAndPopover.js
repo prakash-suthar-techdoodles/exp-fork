@@ -24,6 +24,7 @@ import * as Welcome from '../../../../libs/actions/Welcome';
 import withNavigationFocus from '../../../../components/withNavigationFocus';
 import * as TaskUtils from '../../../../libs/actions/Task';
 import * as Session from '../../../../libs/actions/Session';
+import * as SessionUtils from '../../../../libs/SessionUtils';
 
 /**
  * @param {Object} [policy]
@@ -78,7 +79,6 @@ class FloatingActionButtonAndPopover extends React.Component {
 
         this.state = {
             isCreateMenuActive: false,
-            isAnonymousUser: Session.isAnonymousUser(),
         };
     }
 
@@ -152,7 +152,7 @@ class FloatingActionButtonAndPopover extends React.Component {
      * @param {Function} callback
      */
     interceptAnonymousUser(callback) {
-        if (this.state.isAnonymousUser) {
+        if (SessionUtils.isAnonymousUser()) {
             Session.signOutAndRedirectToSignIn();
         } else {
             callback();

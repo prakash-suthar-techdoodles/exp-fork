@@ -37,6 +37,7 @@ import variables from '../../../styles/variables';
 import LogoComponent from '../../../../assets/images/expensify-wordmark.svg';
 import PressableWithoutFeedback from '../../../components/Pressable/PressableWithoutFeedback';
 import * as Session from '../../../libs/actions/Session';
+import * as SessionUtils from '../../../libs/SessionUtils';
 import Button from '../../../components/Button';
 import * as UserUtils from '../../../libs/UserUtils';
 
@@ -196,7 +197,7 @@ class SidebarLinks extends React.Component {
                         accessibilityRole="button"
                         onPress={Session.checkIfActionIsAllowed(this.showSettingsPage)}
                     >
-                        {Session.isAnonymousUser() ? (
+                        {SessionUtils.isAnonymousUser() ? (
                             <View style={styles.signInButtonAvatar}>
                                 <Button
                                     medium
