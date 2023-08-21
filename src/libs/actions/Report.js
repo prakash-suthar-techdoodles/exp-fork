@@ -1935,6 +1935,18 @@ function flagComment(reportID, reportAction, severity) {
     API.write('FlagComment', parameters, {optimisticData, successData, failureData});
 }
 
+/**
+ * Saves the current selection for a comment report action.
+ * This will put the cursor to the right position in "edit mode"
+ *
+ * @param {String} reportID
+ * @param {Number} reportActionID
+ * @param {Object} selection
+ */
+function saveReportActionSelection(reportID, reportActionID, selection) {
+    Onyx.set(`${ONYXKEYS.COLLECTION.REPORT_ACTIONS_SELECTION}${reportID}_${reportActionID}`, selection);
+}
+
 export {
     addComment,
     addAttachment,
@@ -1982,4 +1994,5 @@ export {
     setLastOpenedPublicRoom,
     flagComment,
     openLastOpenedPublicRoom,
+    saveReportActionSelection,
 };
