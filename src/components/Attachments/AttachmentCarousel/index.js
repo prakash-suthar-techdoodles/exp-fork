@@ -1,10 +1,11 @@
 import React, {useRef, useCallback, useState, useEffect} from 'react';
-import {View, FlatList, PixelRatio, Keyboard} from 'react-native';
+import {View, Keyboard} from 'react-native';
 import {withOnyx} from 'react-native-onyx';
 import _ from 'underscore';
 import styles from '../../../styles/styles';
 import AttachmentCarouselCellRenderer from './AttachmentCarouselCellRenderer';
 import CarouselActions from './CarouselActions';
+import Carousel from './Carousel';
 import withWindowDimensions from '../../withWindowDimensions';
 import CarouselButtons from './CarouselButtons';
 import extractAttachmentsFromReport from './extractAttachmentsFromReport';
@@ -21,18 +22,11 @@ import variables from '../../../styles/variables';
 import * as DeviceCapabilities from '../../../libs/DeviceCapabilities';
 import * as ReportActionsUtils from '../../../libs/ReportActionsUtils';
 
-const viewabilityConfig = {
-    // To facilitate paging through the attachments, we want to consider an item "viewable" when it is
-    // more than 95% visible. When that happens we update the page index in the state.
-    itemVisiblePercentThreshold: 95,
-};
-
 function AttachmentCarousel({report, reportActions, source, onNavigate, setDownloadButtonVisibility, translate}) {
     const scrollRef = useRef(null);
 
     const canUseTouchScreen = DeviceCapabilities.canUseTouchScreen();
 
-    const [containerWidth, setContainerWidth] = useState(0);
     const [page, setPage] = useState(0);
     const [attachments, setAttachments] = useState([]);
     const [activeSource, setActiveSource] = useState(source);
@@ -107,28 +101,17 @@ function AttachmentCarousel({report, reportActions, source, onNavigate, setDownl
             const nextIndex = page + deltaSlide;
             const nextItem = attachments[nextIndex];
 
-            if (!nextItem || !scrollRef.current) {
+            if (!nextItem) {
                 return;
             }
 
-            scrollRef.current.scrollToIndex({index: nextIndex, animated: canUseTouchScreen});
+            if (scrollRef.current) {
+                scrollRef.current.scrollToIndex({index: nextIndex, animated: canUseTouchScreen});
+            } else {
+                updatePage.current({viewableItems: [{item: attachments[nextIndex], index: page}]});
+            }
         },
         [attachments, canUseTouchScreen, page],
-    );
-
-    /**
-     * Calculate items layout information to optimize scrolling performance
-     * @param {*} data
-     * @param {Number} index
-     * @returns {{offset: Number, length: Number, index: Number}}
-     */
-    const getItemLayout = useCallback(
-        (_data, index) => ({
-            length: containerWidth,
-            offset: containerWidth * index,
-            index,
-        }),
-        [containerWidth],
     );
 
     /**
@@ -156,7 +139,6 @@ function AttachmentCarousel({report, reportActions, source, onNavigate, setDownl
     return (
         <View
             style={[styles.flex1, styles.attachmentCarouselContainer]}
-            onLayout={({nativeEvent}) => setContainerWidth(PixelRatio.roundToNearestPixel(nativeEvent.layout.width))}
             onMouseEnter={() => !canUseTouchScreen && setShouldShowArrows(true)}
             onMouseLeave={() => !canUseTouchScreen && setShouldShowArrows(false)}
         >
@@ -179,37 +161,12 @@ function AttachmentCarousel({report, reportActions, source, onNavigate, setDownl
                         cancelAutoHideArrow={cancelAutoHideArrows}
                     />
 
-                    {containerWidth > 0 && (
-                        <FlatList
-                            keyboardShouldPersistTaps="handled"
-                            listKey="AttachmentCarousel"
-                            horizontal
-                            decelerationRate="fast"
-                            showsHorizontalScrollIndicator={false}
-                            bounces={false}
-                            // Scroll only one image at a time no matter how fast the user swipes
-                            disableIntervalMomentum
-                            pagingEnabled
-                            snapToAlignment="start"
-                            snapToInterval={containerWidth}
-                            // Enable scrolling by swiping on mobile (touch) devices only
-                            // disable scroll for desktop/browsers because they add their scrollbars
-                            // Enable scrolling FlatList only when PDF is not in a zoomed state
-                            scrollEnabled={canUseTouchScreen}
-                            ref={scrollRef}
-                            initialScrollIndex={page}
-                            initialNumToRender={3}
-                            windowSize={5}
-                            maxToRenderPerBatch={3}
-                            data={attachments}
-                            CellRendererComponent={AttachmentCarouselCellRenderer}
-                            renderItem={renderItem}
-                            getItemLayout={getItemLayout}
-                            keyExtractor={(item) => item.source}
-                            viewabilityConfig={viewabilityConfig}
-                            onViewableItemsChanged={updatePage.current}
-                        />
-                    )}
+                    <Carousel
+                        currentIndex={page}
+                        renderItem={renderItem}
+                        attachments={attachments}
+                        windowSize={5}
+                    />
 
                     <CarouselActions onCycleThroughAttachments={cycleThroughAttachments} />
                 </>

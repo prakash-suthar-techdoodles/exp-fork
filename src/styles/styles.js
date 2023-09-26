@@ -3672,6 +3672,12 @@ const styles = (theme) => ({
         height: 30,
         width: '100%',
     },
+    webCarousel: {
+        flex: 1,
+        height: '100%',
+        width: '100%',
+        position: 'absolute',
+    },
 });
 
 // For now we need to export the styles function that takes the theme as an argument
