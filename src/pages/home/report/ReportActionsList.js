@@ -21,6 +21,7 @@ import reportPropTypes from '../../reportPropTypes';
 import FloatingMessageCounter from './FloatingMessageCounter';
 import ReportActionsListItemRenderer from './ReportActionsListItemRenderer';
 import reportActionPropTypes from './reportActionPropTypes';
+import useFrozenScroll from "../../../hooks/useFrozenScroll";
 
 const propTypes = {
     /** The report currently being looked at */
@@ -90,6 +91,10 @@ function keyExtractor(item) {
     return item.reportActionID;
 }
 
+const maintainVisibleContentPositionOptions = {
+    minIndexForVisible: 1,
+}
+
 function isMessageUnread(message, lastReadTime) {
     return Boolean(message && lastReadTime && message.created && lastReadTime < message.created);
 }
@@ -130,6 +135,7 @@ function ReportActionsList({
         opacity.value = withTiming(1, {duration: 100});
     }, [opacity]);
     const [skeletonViewHeight, setSkeletonViewHeight] = useState(0);
+    const {shouldFreezeScroll} = useFrozenScroll();
 
     useEffect(() => {
         // If the reportID changes, we reset the userActiveSince to null, we need to do it because
@@ -360,6 +366,7 @@ function ReportActionsList({
                     }}
                     onScroll={trackVerticalScrolling}
                     extraData={extraData}
+                    maintainVisibleContentPosition={shouldFreezeScroll ? maintainVisibleContentPositionOptions : null}
                 />
             </Animated.View>
         </>

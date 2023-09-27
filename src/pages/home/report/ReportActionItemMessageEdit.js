@@ -40,6 +40,7 @@ import * as EmojiPickerAction from '../../../libs/actions/EmojiPickerAction';
 import focusWithDelay from '../../../libs/focusWithDelay';
 import ONYXKEYS from '../../../ONYXKEYS';
 import * as Browser from '../../../libs/Browser';
+import useFrozenScroll from "../../../hooks/useFrozenScroll";
 
 const propTypes = {
     /** All the data of the action */
@@ -121,6 +122,8 @@ function ReportActionItemMessageEdit(props) {
     const textInputRef = useRef(null);
     const isFocusedRef = useRef(false);
     const insertedEmojis = useRef([]);
+
+    const {setShouldFreezeScroll} = useFrozenScroll();
 
     useEffect(() => {
         // required for keeping last state of isFocused variable
@@ -235,6 +238,7 @@ function ReportActionItemMessageEdit(props) {
      * Delete the draft of the comment being edited. This will take the comment out of "edit mode" with the old content.
      */
     const deleteDraft = useCallback(() => {
+        setShouldFreezeScroll(false);
         debouncedSaveDraft.cancel();
         Report.saveReportActionDraft(props.reportID, props.action.reportActionID, '');
 
@@ -250,7 +254,7 @@ function ReportActionItemMessageEdit(props) {
                 keyboardDidHideListener.remove();
             });
         }
-    }, [props.action.reportActionID, debouncedSaveDraft, props.index, props.reportID, reportScrollManager, isActive]);
+    }, [setShouldFreezeScroll, props.action.reportActionID, debouncedSaveDraft, props.index, props.reportID, reportScrollManager, isActive]);
 
     /**
      * Save the draft of the comment to be the new comment message. This will take the comment out of "edit mode" with
@@ -382,8 +386,9 @@ function ReportActionItemMessageEdit(props) {
                             maxLines={isSmallScreenWidth ? CONST.COMPOSER.MAX_LINES_SMALL_SCREEN : CONST.COMPOSER.MAX_LINES} // This is the same that slack has
                             style={[styles.textInputCompose, styles.flex1, styles.bgTransparent]}
                             onFocus={() => {
-                                setIsFocused(true);
                                 reportScrollManager.scrollToIndex({animated: true, index: props.index}, true);
+                                setIsFocused(true);
+                                setShouldFreezeScroll(true);
                                 setShouldShowComposeInputKeyboardAware(false);
 
                                 // Clear active report action when another action gets focused
@@ -396,6 +401,7 @@ function ReportActionItemMessageEdit(props) {
                             }}
                             onBlur={(event) => {
                                 setIsFocused(false);
+                                setShouldFreezeScroll(false);
                                 const relatedTargetId = lodashGet(event, 'nativeEvent.relatedTarget.id');
                                 if (_.contains([messageEditInput, emojiButtonID], relatedTargetId)) {
                                     return;
