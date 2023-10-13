@@ -1697,6 +1697,7 @@ const styles = (theme) => ({
 
     chatFooterFullCompose: {
         flex: 1,
+        flexBasis: '25%',
     },
 
     chatItemDraft: {
