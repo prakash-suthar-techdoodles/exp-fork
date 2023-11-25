@@ -59,7 +59,6 @@ function Confirmation({reimbursementAccount, reimbursementAccountDraft, onNext})
             [bankInfoStepKeys.PLAID_ACCESS_TOKEN]: '',
         };
         ReimbursementAccount.updateReimbursementAccountDraft(bankAccountData);
-
         BankAccounts.setBankAccountSubStep(null);
     };
 

@@ -7,8 +7,10 @@ import {withOnyx} from 'react-native-onyx';
 import _ from 'underscore';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import InteractiveStepSubHeader from '@components/InteractiveStepSubHeader';
+import ReimbursementAccountLoadingIndicator from '@components/ReimbursementAccountLoadingIndicator';
 import ScreenWrapper from '@components/ScreenWrapper';
 import useLocalize from '@hooks/useLocalize';
+import useStepNavigate from '@hooks/useStepNavigate';
 import useSubStep from '@hooks/useSubStep';
 import Navigation from '@libs/Navigation/Navigation';
 import reimbursementAccountDraftPropTypes from '@pages/ReimbursementAccount/ReimbursementAccountDraftPropTypes';
@@ -17,6 +19,7 @@ import * as ReimbursementAccountProps from '@pages/ReimbursementAccount/reimburs
 import getDefaultValueForReimbursementAccountField from '@pages/ReimbursementAccount/utils/getDefaultValueForReimbursementAccountField';
 import getInitialSubstepForBusinessInfo from '@pages/ReimbursementAccount/utils/getInitialSubstepForBusinessInfo';
 import getSubstepValues from '@pages/ReimbursementAccount/utils/getSubstepValues';
+import handleStepSelected from '@pages/ReimbursementAccount/utils/handleStepSelected';
 import styles from '@styles/styles';
 import * as BankAccounts from '@userActions/BankAccounts';
 import CONST from '@src/CONST';
@@ -49,10 +52,6 @@ const defaultProps = {
     policyID: '',
 };
 
-const STEPS_HEADER_HEIGHT = 40;
-// TODO Will most likely come from different place
-const STEP_NAMES = ['1', '2', '3', '4', '5'];
-
 const bodyContent = [
     NameBusiness,
     TaxIdBusiness,
@@ -69,6 +68,7 @@ const businessInfoStepKeys = CONST.BANK_ACCOUNT.BUSINESS_INFO_STEP.INPUT_KEY;
 
 function BusinessInfo({reimbursementAccount, reimbursementAccountDraft, policyID}) {
     const {translate} = useLocalize();
+    useStepNavigate(reimbursementAccount);
 
     /**
      * @param {Array} fieldNames
@@ -103,11 +103,23 @@ function BusinessInfo({reimbursementAccount, reimbursementAccountDraft, policyID
 
     const handleBackButtonPress = () => {
         if (screenIndex === 0) {
-            Navigation.goBack(ROUTES.HOME);
+            BankAccounts.goToWithdrawalAccountSetupStep(CONST.BANK_ACCOUNT.STEP.BANK_ACCOUNT);
+            Navigation.navigate(ROUTES.BANK_BANK_INFO);
         } else {
             prevScreen();
         }
     };
+
+    const isLoading = lodashGet(reimbursementAccount, 'isLoading', false);
+
+    if (isLoading) {
+        return (
+            <ReimbursementAccountLoadingIndicator
+                isSubmittingVerificationsData
+                onBackButtonPress={() => {}}
+            />
+        );
+    }
 
     return (
         <ScreenWrapper
@@ -121,12 +133,11 @@ function BusinessInfo({reimbursementAccount, reimbursementAccountDraft, policyID
                 guidesCallTaskID={CONST.GUIDES_CALL_TASK_IDS.WORKSPACE_BANK_ACCOUNT}
                 onBackButtonPress={handleBackButtonPress}
             />
-            <View style={[styles.ph5, styles.mv3, {height: STEPS_HEADER_HEIGHT}]}>
+            <View style={[styles.ph5, styles.mv3, {height: CONST.BANK_ACCOUNT.STEPS_HEADER_HEIGHT}]}>
                 <InteractiveStepSubHeader
-                    onStepSelected={() => {}}
-                    // TODO Will be replaced with proper values
-                    startStep={2}
-                    stepNames={STEP_NAMES}
+                    onStepSelected={handleStepSelected}
+                    startStep={1}
+                    stepNames={CONST.BANK_ACCOUNT.STEPS_HEADER_STEP_NAMES}
                 />
             </View>
             <SubStep

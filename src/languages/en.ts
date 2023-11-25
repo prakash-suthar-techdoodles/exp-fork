@@ -1363,6 +1363,7 @@ export default {
         continueToTransfer: 'Continue to transfer',
     },
     companyStep: {
+        businessInfo: 'Business info',
         headerTitle: 'Company information',
         subtitle: 'Almost done! For security purposes, we need to confirm some information:',
         legalBusinessName: 'Legal business name',
@@ -1440,6 +1441,7 @@ export default {
         confirmCompanyIsNot: 'I confirm that this company is not on the',
     },
     validationStep: {
+        completeVerification: 'Complete verification',
         headerTitle: 'Validate Bank Account',
         buttonText: 'Finish setup',
         maxAttemptsReached: 'Validation for this bank account has been disabled due to too many incorrect attempts.',
@@ -1456,6 +1458,7 @@ export default {
         secureYourAccount: 'Secure your account',
     },
     beneficialOwnersStep: {
+        companyOwner: 'Company owner',
         additionalInformation: 'Additional information',
         checkAllThatApply: 'Check all that apply, otherwise leave blank.',
         iOwnMoreThan25Percent: 'I own more than 25% of ',
