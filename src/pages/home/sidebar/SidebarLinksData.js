@@ -164,6 +164,7 @@ const chatReportSelector = (report) =>
         // Other important less obivous properties for filtering:
         parentReportActionID: report.parentReportActionID,
         parentReportID: report.parentReportID,
+        privateNotes: report.privateNotes,
     };
 
 /**

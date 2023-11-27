@@ -3421,6 +3421,8 @@ function shouldHideReport(report, currentReportId) {
  * @returns {boolean}
  */
 function shouldReportBeInOptionList(report, currentReportId, isInGSDMode, betas, policies, allReportActions, excludeEmptyChats = false) {
+    const reportHasNotes = _.keys(lodashGet(report, 'privateNotes', {})).length > 0;
+
     const isInDefaultMode = !isInGSDMode;
 
     // Exclude reports that have no data because there wouldn't be anything to show in the option item.
@@ -3439,7 +3441,8 @@ function shouldReportBeInOptionList(report, currentReportId, isInGSDMode, betas,
             !isUserCreatedPolicyRoom(report) &&
             !isArchivedRoom(report) &&
             !isMoneyRequestReport(report) &&
-            !isTaskReport(report))
+            !isTaskReport(report) &&
+            !reportHasNotes)
     ) {
         return false;
     }
@@ -3460,7 +3463,8 @@ function shouldReportBeInOptionList(report, currentReportId, isInGSDMode, betas,
         return true;
     }
     const lastVisibleMessage = ReportActionsUtils.getLastVisibleMessage(report.reportID);
-    const isEmptyChat = !report.lastMessageText && !report.lastMessageTranslationKey && !lastVisibleMessage.lastMessageText && !lastVisibleMessage.lastMessageTranslationKey;
+    const isEmptyChat =
+        !report.lastMessageText && !report.lastMessageTranslationKey && !lastVisibleMessage.lastMessageText && !lastVisibleMessage.lastMessageTranslationKey && !reportHasNotes;
     const canHideReport = shouldHideReport(report, currentReportId);
 
     // Include reports if they are pinned
