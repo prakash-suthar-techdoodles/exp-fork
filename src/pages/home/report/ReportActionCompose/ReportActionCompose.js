@@ -20,6 +20,7 @@ import compose from '@libs/compose';
 import getDraftComment from '@libs/ComposerUtils/getDraftComment';
 import * as DeviceCapabilities from '@libs/DeviceCapabilities';
 import getModalState from '@libs/getModalState';
+import ReportActionComposeFocusManager from '@libs/ReportActionComposeFocusManager';
 import * as ReportUtils from '@libs/ReportUtils';
 import updatePropsPaperWorklet from '@libs/updatePropsPaperWorklet';
 import willBlurTextInputOnTapOutsideFunc from '@libs/willBlurTextInputOnTapOutside';
@@ -188,15 +189,6 @@ function ReportActionCompose({
         composerRef.current.focus(true);
     };
 
-    const isKeyboardVisibleWhenShowingModalRef = useRef(false);
-    const restoreKeyboardState = useCallback(() => {
-        if (!isKeyboardVisibleWhenShowingModalRef.current) {
-            return;
-        }
-        focus();
-        isKeyboardVisibleWhenShowingModalRef.current = false;
-    }, []);
-
     const containerRef = useRef(null);
     const measureContainer = useCallback((callback) => {
         if (!containerRef.current) {
@@ -205,15 +197,8 @@ function ReportActionCompose({
         containerRef.current.measureInWindow(callback);
     }, []);
 
-    const onAddActionPressed = useCallback(() => {
-        if (!willBlurTextInputOnTapOutside) {
-            isKeyboardVisibleWhenShowingModalRef.current = composerRef.current.isFocused();
-        }
-        composerRef.current.blur();
-    }, []);
-
     const onItemSelected = useCallback(() => {
-        isKeyboardVisibleWhenShowingModalRef.current = false;
+        ReportActionComposeFocusManager.setIsKeyboardVisibleWhenShowingModal(false);
     }, []);
 
     const updateShouldShowSuggestionMenuToFalse = useCallback(() => {
@@ -241,8 +226,8 @@ function ReportActionCompose({
     const onAttachmentPreviewClose = useCallback(() => {
         updateShouldShowSuggestionMenuToFalse();
         setIsAttachmentPreviewActive(false);
-        restoreKeyboardState();
-    }, [updateShouldShowSuggestionMenuToFalse, restoreKeyboardState]);
+        ReportActionComposeFocusManager.restoreFocusState();
+    }, [updateShouldShowSuggestionMenuToFalse]);
 
     /**
      * Add a new comment to this chat
@@ -273,7 +258,7 @@ function ReportActionCompose({
             suggestionsRef.current.setShouldBlockSuggestionCalc(true);
         }
         isNextModalWillOpenRef.current = true;
-        isKeyboardVisibleWhenShowingModalRef.current = true;
+        ReportActionComposeFocusManager.setIsKeyboardVisibleWhenShowingModal(true);
     }, []);
 
     const onBlur = useCallback((e) => {
@@ -282,7 +267,7 @@ function ReportActionCompose({
             suggestionsRef.current.resetSuggestions();
         }
         if (e.relatedTarget && e.relatedTarget === actionButtonRef.current) {
-            isKeyboardVisibleWhenShowingModalRef.current = true;
+            ReportActionComposeFocusManager.setIsKeyboardVisibleWhenShowingModal(true);
         }
     }, []);
 
@@ -379,14 +364,16 @@ function ReportActionCompose({
                                         setMenuVisibility={setMenuVisibility}
                                         isMenuVisible={isMenuVisible}
                                         onTriggerAttachmentPicker={onTriggerAttachmentPicker}
-                                        onCanceledAttachmentPicker={restoreKeyboardState}
-                                        onMenuClosed={restoreKeyboardState}
-                                        onAddActionPressed={onAddActionPressed}
+                                        onCanceledAttachmentPicker={ReportActionComposeFocusManager.restoreFocusState}
+                                        onMenuClosed={ReportActionComposeFocusManager.restoreFocusState}
+                                        onAddActionPressed={ReportActionComposeFocusManager.blur}
                                         onItemSelected={onItemSelected}
                                         actionButtonRef={actionButtonRef}
                                     />
                                     <ComposerWithSuggestions
-                                        ref={composerRef}
+                                        ref={(el) => {
+                                            composerRef.current = el;
+                                        }}
                                         animatedRef={animatedRef}
                                         suggestionsRef={suggestionsRef}
                                         isNextModalWillOpenRef={isNextModalWillOpenRef}

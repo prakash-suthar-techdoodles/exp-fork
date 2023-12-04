@@ -8,6 +8,7 @@ import useWindowDimensions from '@hooks/useWindowDimensions';
 import compose from '@libs/compose';
 import * as HeaderUtils from '@libs/HeaderUtils';
 import Navigation from '@libs/Navigation/Navigation';
+import ReportActionComposeFocusManager from '@libs/ReportActionComposeFocusManager';
 import * as ReportActionsUtils from '@libs/ReportActionsUtils';
 import * as ReportUtils from '@libs/ReportUtils';
 import * as TransactionUtils from '@libs/TransactionUtils';
@@ -149,6 +150,7 @@ function MoneyRequestHeader({session, parentReport, report, parentReportAction, 
                 isVisible={isDeleteModalVisible}
                 onConfirm={deleteTransaction}
                 onCancel={() => setIsDeleteModalVisible(false)}
+                onModalHide={ReportActionComposeFocusManager.restoreFocusState}
                 prompt={translate('iou.deleteConfirmation')}
                 confirmText={translate('common.delete')}
                 cancelText={translate('common.cancel')}

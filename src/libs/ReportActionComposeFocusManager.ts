@@ -2,8 +2,9 @@ import React from 'react';
 import {TextInput} from 'react-native';
 import ROUTES from '@src/ROUTES';
 import Navigation from './Navigation/Navigation';
+import willBlurTextInputOnTapOutsideFunc from './willBlurTextInputOnTapOutside';
 
-type FocusCallback = () => void;
+type FocusCallback = (shouldFocus?: boolean) => void;
 
 const composerRef = React.createRef<TextInput>();
 const editComposerRef = React.createRef<TextInput>();
@@ -11,6 +12,9 @@ const editComposerRef = React.createRef<TextInput>();
 // The general composer callback will take priority if it exists.
 let focusCallback: FocusCallback | null = null;
 let mainComposerFocusCallback: FocusCallback | null = null;
+
+const willBlurTextInputOnTapOutside = willBlurTextInputOnTapOutsideFunc();
+let isKeyboardVisibleWhenShowingModal = false;
 
 /**
  * Register a callback to be called when focus is requested.
@@ -29,7 +33,7 @@ function onComposerFocus(callback: FocusCallback, isMainComposer = false) {
 /**
  * Request focus on the ReportActionComposer
  */
-function focus() {
+function focus(shouldFocus?: boolean) {
     /** Do not trigger the refocusing when the active route is not the report route, */
     if (!Navigation.isActiveRoute(ROUTES.REPORT_WITH_ID.getRoute(Navigation.getTopmostReportId() ?? ''))) {
         return;
@@ -39,12 +43,11 @@ function focus() {
         if (typeof mainComposerFocusCallback !== 'function') {
             return;
         }
-
-        mainComposerFocusCallback();
+        mainComposerFocusCallback(shouldFocus);
         return;
     }
 
-    focusCallback();
+    focusCallback(shouldFocus);
 }
 
 /**
@@ -72,12 +75,51 @@ function isEditFocused(): boolean {
     return !!editComposerRef.current?.isFocused();
 }
 
+function setIsKeyboardVisibleWhenShowingModal(value: boolean) {
+    isKeyboardVisibleWhenShowingModal = value;
+}
+
+/**
+ * Restore focus state of ReportActionCompose
+ */
+function restoreFocusState() {
+    if (!isKeyboardVisibleWhenShowingModal) {
+        return;
+    }
+    focus(true);
+    isKeyboardVisibleWhenShowingModal = false;
+}
+
+/**
+ * Blur ReportActionCompose
+ */
+function blur() {
+    let focusedInstance = null;
+    if (isFocused()) {
+        focusedInstance = composerRef.current;
+    } else if (isEditFocused()) {
+        focusedInstance = editComposerRef.current;
+    }
+
+    if (!willBlurTextInputOnTapOutside) {
+        isKeyboardVisibleWhenShowingModal = !!focusedInstance;
+    }
+
+    if (!focusedInstance) {
+        return;
+    }
+    focusedInstance.blur();
+}
+
 export default {
     composerRef,
+    editComposerRef,
     onComposerFocus,
     focus,
     clear,
     isFocused,
-    editComposerRef,
     isEditFocused,
+    setIsKeyboardVisibleWhenShowingModal,
+    restoreFocusState,
+    blur,
 };

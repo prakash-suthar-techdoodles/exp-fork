@@ -15,6 +15,7 @@ import * as ComposerUtils from '@libs/ComposerUtils';
 import updateIsFullComposerAvailable from '@libs/ComposerUtils/updateIsFullComposerAvailable';
 import isEnterWhileComposition from '@libs/KeyboardShortcut/isEnterWhileComposition';
 import ReportActionComposeFocusManager from '@libs/ReportActionComposeFocusManager';
+import styles from '@styles/styles';
 import * as StyleUtils from '@styles/StyleUtils';
 import useTheme from '@styles/themes/useTheme';
 import useThemeStyles from '@styles/useThemeStyles';
@@ -373,9 +374,6 @@ function Composer({
         }
 
         return () => {
-            if (!isReportActionCompose) {
-                ReportActionComposeFocusManager.clear();
-            }
             unsubscribeFocus();
             unsubscribeBlur();
             document.removeEventListener('paste', handlePaste);
@@ -450,18 +448,6 @@ function Composer({
                 rows={numberOfLines}
                 disabled={isDisabled}
                 onKeyPress={handleKeyPress}
-                onFocus={(e) => {
-                    ReportActionComposeFocusManager.onComposerFocus(() => {
-                        if (!textInput.current) {
-                            return;
-                        }
-
-                        textInput.current.focus();
-                    });
-                    if (props.onFocus) {
-                        props.onFocus(e);
-                    }
-                }}
             />
             {shouldCalculateCaretPosition && renderElementForCaretPosition}
         </>
