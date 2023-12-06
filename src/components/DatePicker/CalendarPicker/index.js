@@ -1,5 +1,6 @@
 import {addMonths, endOfDay, endOfMonth, format, getYear, isSameDay, parseISO, setDate, setYear, startOfDay, startOfMonth, subMonths} from 'date-fns';
 import Str from 'expensify-common/lib/str';
+import lodashGet from 'lodash/get';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {View} from 'react-native';
@@ -13,11 +14,11 @@ import withThemeStyles, {withThemeStylesPropTypes} from '@components/withThemeSt
 import compose from '@libs/compose';
 import DateUtils from '@libs/DateUtils';
 import getButtonState from '@libs/getButtonState';
+import Navigation from '@libs/Navigation/Navigation';
 import * as StyleUtils from '@styles/StyleUtils';
 import CONST from '@src/CONST';
 import ArrowIcon from './ArrowIcon';
 import generateMonthMatrix from './generateMonthMatrix';
-import YearPickerModal from './YearPickerModal';
 
 const propTypes = {
     /** An initial value of date string */
@@ -32,6 +33,12 @@ const propTypes = {
     /** A function called when the date is selected */
     onSelected: PropTypes.func,
 
+    /** Params object from route object */
+    // eslint-disable-next-line react/forbid-prop-types
+    params: PropTypes.object,
+
+    /** Function to call when click on Year */
+    onClickYear: PropTypes.func,
     ...withLocalizePropTypes,
     ...withThemeStylesPropTypes,
     ...withThemePropTypes,
@@ -42,6 +49,8 @@ const defaultProps = {
     minDate: setYear(new Date(), CONST.CALENDAR_PICKER.MIN_YEAR),
     maxDate: setYear(new Date(), CONST.CALENDAR_PICKER.MAX_YEAR),
     onSelected: () => {},
+    params: {},
+    onClickYear: () => {},
 };
 
 class CalendarPicker extends React.PureComponent {
@@ -63,7 +72,6 @@ class CalendarPicker extends React.PureComponent {
 
         this.state = {
             currentDateView,
-            isYearPickerVisible: false,
             years: _.map(
                 Array.from({length: maxYear - minYear + 1}, (v, i) => i + minYear),
                 (value) => ({
@@ -81,13 +89,30 @@ class CalendarPicker extends React.PureComponent {
         this.onYearSelected = this.onYearSelected.bind(this);
     }
 
+    componentDidUpdate(prevProps, prevState) {
+        const yearFromParams = lodashGet(this.props.params, ['year']);
+        const previousSelectedYear = prevState.currentDateView.getFullYear();
+
+        if (!yearFromParams) {
+            return;
+        }
+
+        if (yearFromParams === previousSelectedYear) {
+            Navigation.setParams({year: undefined});
+            return;
+        }
+
+        this.onYearSelected(yearFromParams);
+        // Remove the year from params.
+        Navigation.setParams({year: undefined});
+    }
+
     onYearSelected(year) {
         this.setState((prev) => {
             const newCurrentDateView = setYear(new Date(prev.currentDateView), year);
 
             return {
                 currentDateView: newCurrentDateView,
-                isYearPickerVisible: false,
                 years: _.map(prev.years, (item) => ({
                     ...item,
                     isSelected: item.value === newCurrentDateView.getFullYear(),
@@ -146,7 +171,11 @@ class CalendarPicker extends React.PureComponent {
                     dataSet={{[CONST.SELECTION_SCRAPER_HIDDEN_ELEMENT]: true}}
                 >
                     <PressableWithFeedback
-                        onPress={() => this.setState({isYearPickerVisible: true})}
+                        onPress={() => {
+                            this.props.onClickYear();
+                            // Pass the current selected (could be default value) as a query param
+                            Navigation.setParams({value: this.state.currentDateView.getFullYear()});
+                        }}
                         style={[this.props.themeStyles.alignItemsCenter, this.props.themeStyles.flexRow, this.props.themeStyles.flex1, this.props.themeStyles.justifyContentStart]}
                         wrapperStyle={[this.props.themeStyles.alignItemsCenter]}
                         hoverDimmingValue={1}
@@ -249,13 +278,6 @@ class CalendarPicker extends React.PureComponent {
                         })}
                     </View>
                 ))}
-                <YearPickerModal
-                    isVisible={this.state.isYearPickerVisible}
-                    years={this.state.years}
-                    currentYear={currentYearView}
-                    onYearChange={this.onYearSelected}
-                    onClose={() => this.setState({isYearPickerVisible: false})}
-                />
             </View>
         );
     }

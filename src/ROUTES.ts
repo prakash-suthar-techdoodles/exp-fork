@@ -117,6 +117,7 @@ const ROUTES = {
     SETTINGS_PERSONAL_DETAILS: 'settings/profile/personal-details',
     SETTINGS_PERSONAL_DETAILS_LEGAL_NAME: 'settings/profile/personal-details/legal-name',
     SETTINGS_PERSONAL_DETAILS_DATE_OF_BIRTH: 'settings/profile/personal-details/date-of-birth',
+    SETTINGS_PERSONAL_DETAILS_DATE_OF_BIRTH_YEAR: 'settings/profile/personal-details/date-of-birth/year',
     SETTINGS_PERSONAL_DETAILS_ADDRESS: 'settings/profile/personal-details/address',
     SETTINGS_PERSONAL_DETAILS_ADDRESS_COUNTRY: {
         route: 'settings/profile/personal-details/address/country',
@@ -262,6 +263,10 @@ const ROUTES = {
     MONEY_REQUEST_DATE: {
         route: ':iouType/new/date/:reportID?',
         getRoute: (iouType: string, reportID = '') => `${iouType}/new/date/${reportID}` as const,
+    },
+    MONEY_REQUEST_DATE_YEAR: {
+        route: ':iouType/new/date/year/:reportID?',
+        getRoute: (iouType: string, reportID = '') => `${iouType}/new/date/year/${reportID}` as const,
     },
     MONEY_REQUEST_CURRENCY: {
         route: ':iouType/new/currency/:reportID?',

@@ -36,7 +36,7 @@ const defaultProps = {
     },
 };
 
-function DateOfBirthPage({translate, privatePersonalDetails}) {
+function DateOfBirthPage({translate, privatePersonalDetails, route}) {
     const styles = useThemeStyles();
     usePrivatePersonalDetails();
     const isLoadingPersonalDetails = lodashGet(privatePersonalDetails, 'isLoading', true);
@@ -60,6 +60,8 @@ function DateOfBirthPage({translate, privatePersonalDetails}) {
 
         return errors;
     }, []);
+
+    const params = lodashGet(route, ['params'], {});
 
     return (
         <ScreenWrapper
@@ -87,6 +89,10 @@ function DateOfBirthPage({translate, privatePersonalDetails}) {
                         defaultValue={privatePersonalDetails.dob || ''}
                         minDate={subYears(new Date(), CONST.DATE_BIRTH.MAX_AGE)}
                         maxDate={subYears(new Date(), CONST.DATE_BIRTH.MIN_AGE)}
+                        params={params}
+                        onClickYear={() => {
+                            Navigation.navigate(ROUTES.SETTINGS_PERSONAL_DETAILS_DATE_OF_BIRTH_YEAR);
+                        }}
                     />
                 </FormProvider>
             )}
