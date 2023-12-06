@@ -3,22 +3,8 @@ import React, {Fragment} from 'react';
 import {View} from 'react-native';
 import _ from 'underscore';
 import Text from '@components/Text';
-import useThemeStyles from '@styles/useThemeStyles';
 import CONST from '@src/CONST';
-
-/**
- * Breaks the text into matrix
- * for eg: My Name  is Rajat
- *  [
- *    [My,' ',Name,' ',' ',is,' ',Rajat],
- *  ]
- *
- * @param {String} text
- * @returns {Array<String[]>}
- */
-function getTextMatrix(text) {
-    return _.map(text.split('\n'), (row) => _.without(row.split(CONST.REGEX.SPACE_OR_EMOJI), ''));
-}
+import { StyleSheet } from 'react-native';
 
 const propTypes = {
     /** Required text */
@@ -28,43 +14,54 @@ const propTypes = {
     // eslint-disable-next-line react/forbid-prop-types
     textStyles: PropTypes.arrayOf(PropTypes.object),
 
-    /** Style for each word(Token) in the text, remember that token also includes whitespaces among words */
+    /** Style to be applied to View */
     // eslint-disable-next-line react/forbid-prop-types
-    wordStyles: PropTypes.arrayOf(PropTypes.object),
+    viewStyles: PropTypes.arrayOf(PropTypes.object),
 };
 
 const defaultProps = {
     textStyles: [],
-    wordStyles: [],
+    viewStyles: []
 };
 
 function WrappedText(props) {
-    const styles = useThemeStyles();
     if (!_.isString(props.children)) {
         return null;
     }
+    const regex =
+        /[\p{Extended_Pictographic}](\u200D[\p{Extended_Pictographic}]|[\u{1F3FB}-\u{1F3FF}]|[\u{E0020}-\u{E007F}]|\uFE0F|\u20E3)*|[\u{1F1E6}-\u{1F1FF}]{2}|[#*0-9]\uFE0F?\u20E3|./gu;
+    const textParts = props.children.match(regex);
 
-    const textMatrix = getTextMatrix(props.children);
+    const textStyles = StyleSheet.flatten(props.textStyles);
+    const viewStyles = StyleSheet.flatten(props.viewStyles);
+
+    const sharedStyleKeys = ['borderTopColor', 'borderTopWidth', 'borderBottomColor', 'borderBottomWidth', 'backgroundColor'];
+    const sharedViewStyle = _.pick(viewStyles, sharedStyleKeys);
+    const elementStyles = {
+        first: _.pick(viewStyles, ['borderLeftColor', 'borderLeftWidth', 'borderTopLeftRadius', 'borderBottomLeftRadius', 'paddingLeft']),
+        last: _.pick(viewStyles, ['borderRightColor', 'borderRightWidth', 'borderTopRightRadius', 'borderBottomRightRadius', 'paddingRight']),
+    };
+
+    const getViewStyleAtIndex = (idx) => {
+        let positionalStyle = sharedViewStyle;
+        if (idx === 0) {
+            positionalStyle = {...positionalStyle, ...elementStyles.first};
+        }
+        if (idx === textParts.length - 1) {
+            positionalStyle = {...positionalStyle, ...elementStyles.last};
+        }
+        return positionalStyle;
+    };
+
     return (
         <>
-            {_.map(textMatrix, (rowText, rowIndex) => (
-                <Fragment
-                    // eslint-disable-next-line react/no-array-index-key
-                    key={`${rowText}-${rowIndex}`}
+            {_.map(textParts, (value, idx) => (
+                <View
+                    key={idx}
+                    style={[getViewStyleAtIndex(idx), {justifyContent: 'center'}]}
                 >
-                    {_.map(rowText, (colText, colIndex) => (
-                        // Outer View is important to vertically center the Text
-                        <View
-                            // eslint-disable-next-line react/no-array-index-key
-                            key={`${colText}-${colIndex}`}
-                            style={styles.codeWordWrapper}
-                        >
-                            <View style={[props.wordStyles, colIndex === 0 && styles.codeFirstWordStyle, colIndex === rowText.length - 1 && styles.codeLastWordStyle]}>
-                                <Text style={props.textStyles}>{colText}</Text>
-                            </View>
-                        </View>
-                    ))}
-                </Fragment>
+                    <Text style={[textStyles]}>{value}</Text>
+                </View>
             ))}
         </>
     );

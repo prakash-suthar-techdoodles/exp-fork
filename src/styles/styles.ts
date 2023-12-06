@@ -113,7 +113,7 @@ const baseCodeTagStyles = (theme: ThemeColors) =>
         borderWidth: 1,
         borderRadius: 5,
         borderColor: theme.border,
-        backgroundColor: theme.textBackground,
+        backgroundColor: theme.textBackground
     } satisfies ViewStyle & MixedStyleDeclaration);
 
 const headlineFont = {
@@ -2690,34 +2690,17 @@ const styles = (theme: ThemeColors) =>
         },
 
         codeWordWrapper: {
-            ...codeStyles.codeWordWrapper,
-        },
-
-        codeWordStyle: {
-            borderLeftWidth: 0,
-            borderRightWidth: 0,
-            borderTopLeftRadius: 0,
-            borderBottomLeftRadius: 0,
-            borderTopRightRadius: 0,
-            borderBottomRightRadius: 0,
-            paddingLeft: 0,
-            paddingRight: 0,
-            justifyContent: 'center',
-            ...codeStyles.codeWordStyle,
-        },
-
-        codeFirstWordStyle: {
             borderLeftWidth: 1,
             borderTopLeftRadius: 4,
             borderBottomLeftRadius: 4,
             paddingLeft: 5,
-        },
-
-        codeLastWordStyle: {
             borderRightWidth: 1,
             borderTopRightRadius: 4,
             borderBottomRightRadius: 4,
             paddingRight: 5,
+            whiteSpace: 'break-spaces',
+            justifyContent: 'center',
+            ...codeStyles.codeWordWrapper,
         },
 
         fullScreenLoading: {

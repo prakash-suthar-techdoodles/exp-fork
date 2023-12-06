@@ -1,19 +1,18 @@
-import _ from 'lodash';
-import React from 'react';
 import Text from '@components/Text';
+import React from 'react';
+import WrappedText from './WrappedText';
 import inlineCodeBlockPropTypes from './inlineCodeBlockPropTypes';
 
 function InlineCodeBlock(props) {
-    const TDefaultRenderer = props.TDefaultRenderer;
-    const textStyles = _.omit(props.textStyle, 'textDecorationLine');
-
     return (
-        <TDefaultRenderer
-            // eslint-disable-next-line react/jsx-props-no-spreading
-            {...props.defaultRendererProps}
-        >
-            <Text style={{...props.boxModelStyle, ...textStyles}}>{props.defaultRendererProps.tnode.data}</Text>
-        </TDefaultRenderer>
+        <Text style={{lineHeight: 22, height: 22}}>
+            <WrappedText
+                textStyles={[props.textStyle]}
+                viewStyles={[props.boxModelStyle]}
+            >
+                {props.defaultRendererProps.tnode.data}
+            </WrappedText>
+        </Text>
     );
 }
 

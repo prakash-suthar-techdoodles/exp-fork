@@ -7,10 +7,12 @@ import * as StyleUtils from '@styles/StyleUtils';
 import htmlRendererPropTypes from './htmlRendererPropTypes';
 
 function CodeRenderer(props) {
+
     // We split wrapper and inner styles
     // "boxModelStyle" corresponds to border, margin, padding and backgroundColor
     const {boxModelStyle, otherStyle: textStyle} = splitBoxModelStyle(props.style);
 
+    console.error(boxModelStyle, textStyle)
     // Get the correct fontFamily variant based in the fontStyle and fontWeight
     const font = StyleUtils.getFontFamilyMonospace({
         fontStyle: textStyle.fontStyle,
@@ -31,17 +33,20 @@ function CodeRenderer(props) {
         // for example the <strong> tag has a fontWeight: "bold" and in the android it break the font
         fontWeight: undefined,
         fontStyle: undefined,
-    };
+    }
 
+    const boxModelOverride = {
+        height: 22
+    }
     const defaultRendererProps = _.omit(props, ['TDefaultRenderer', 'style']);
-
+    // console.error('CODE RENDEERER')
     return (
         <InlineCodeBlock
-            defaultRendererProps={defaultRendererProps}
-            TDefaultRenderer={props.TDefaultRenderer}
-            boxModelStyle={boxModelStyle}
-            textStyle={{...textStyle, ...textStyleOverride}}
-            key={props.key}
+        defaultRendererProps={defaultRendererProps}
+        TDefaultRenderer={props.TDefaultRenderer}
+        boxModelStyle={{...boxModelStyle, ...boxModelOverride}}
+        textStyle={{...textStyle, ...textStyleOverride}}
+        key={props.key}
         />
     );
 }
