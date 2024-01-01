@@ -722,7 +722,7 @@ function cancelTask(taskReportID, taskTitle, originalStateNum, originalStatusNum
 
     const optimisticReportActions = {
         [parentReportAction.reportActionID]: {
-            pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.UPDATE,
+            pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE,
             previousMessage: parentReportAction.message,
             message: [
                 {

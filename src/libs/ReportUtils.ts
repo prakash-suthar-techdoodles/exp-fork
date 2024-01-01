@@ -524,6 +524,18 @@ function isCanceledTaskReport(report: OnyxEntry<Report> | EmptyObject = {}, pare
 }
 
 /**
+ * Checks if a canceled task should be hidden.
+ * When a canceled task does not have any visible actions, it can be hidden in report screen and LHN.
+ *
+ * @param parentReportAction - Represents the task preview action of the canceled task in Chat Report
+ * @param report - Represents the parent Chat Report of the canceled task.
+ * @returns Boolean
+ */
+function shouldHideCanceledTaskReport(parentReportAction: OnyxEntry<ReportAction>, report: OnyxEntry<Report> | EmptyObject = {}): boolean {
+    return isCanceledTaskReport(report, parentReportAction) && !ReportActionsUtils.isDeletedParentAction(parentReportAction);
+}
+
+/**
  * Checks if a report is an open task report.
  *
  * @param parentReportAction - The parent report action of the report (Used to check if the task has been canceled)
@@ -4355,6 +4367,7 @@ export {
     isTaskReport,
     isOpenTaskReport,
     isCanceledTaskReport,
+    shouldHideCanceledTaskReport,
     isCompletedTaskReport,
     isReportManager,
     isReportApproved,
