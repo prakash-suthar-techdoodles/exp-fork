@@ -47,7 +47,6 @@ const pagerPropTypes = {
     onPageSelected: PropTypes.func,
     onTap: PropTypes.func,
     onSwipe: PropTypes.func,
-    onSwipeSuccess: PropTypes.func,
     onSwipeDown: PropTypes.func,
     onPinchGestureChange: PropTypes.func,
     forwardedRef: refPropTypes,
@@ -58,18 +57,17 @@ const pagerDefaultProps = {
     onPageSelected: () => {},
     onTap: () => {},
     onSwipe: noopWorklet,
-    onSwipeSuccess: () => {},
     onSwipeDown: () => {},
     onPinchGestureChange: () => {},
     forwardedRef: null,
 };
 
-function AttachmentCarouselPager({items, renderItem, initialIndex, onPageSelected, onTap, onSwipe = noopWorklet, onSwipeSuccess, onSwipeDown, onPinchGestureChange, forwardedRef}) {
+function AttachmentCarouselPager({items, renderItem, initialIndex, onPageSelected, onTap, onSwipe = noopWorklet, onSwipeDown, onPinchGestureChange, forwardedRef}) {
     const styles = useThemeStyles();
     const shouldPagerScroll = useSharedValue(true);
     const pagerRef = useRef(null);
 
-    const isScrolling = useSharedValue(false);
+    const isSwipingInPager = useSharedValue(false);
     const activeIndex = useSharedValue(initialIndex);
 
     const pageScrollHandler = usePageScrollHandler(
@@ -78,7 +76,7 @@ function AttachmentCarouselPager({items, renderItem, initialIndex, onPageSelecte
                 'worklet';
 
                 activeIndex.value = e.position;
-                isScrolling.value = e.offset !== 0;
+                isSwipingInPager.value = e.offset !== 0;
             },
         },
         [],
@@ -94,7 +92,7 @@ function AttachmentCarouselPager({items, renderItem, initialIndex, onPageSelecte
     // we use reanimated for this since onPageSelected is called
     // in the middle of the pager animation
     useAnimatedReaction(
-        () => isScrolling.value,
+        () => isSwipingInPager.value,
         (stillScrolling) => {
             if (stillScrolling) {
                 return;
@@ -118,16 +116,15 @@ function AttachmentCarouselPager({items, renderItem, initialIndex, onPageSelecte
 
     const contextValue = useMemo(
         () => ({
-            isScrolling,
+            isSwipingInPager,
             pagerRef,
             shouldPagerScroll,
             onPinchGestureChange,
             onTap,
             onSwipe,
-            onSwipeSuccess,
             onSwipeDown,
         }),
-        [isScrolling, pagerRef, shouldPagerScroll, onPinchGestureChange, onTap, onSwipe, onSwipeSuccess, onSwipeDown],
+        [isSwipingInPager, pagerRef, shouldPagerScroll, onPinchGestureChange, onTap, onSwipe, onSwipeDown],
     );
 
     return (
