@@ -17,7 +17,6 @@ import * as Browser from '@libs/Browser';
 import * as ComposerUtils from '@libs/ComposerUtils';
 import updateIsFullComposerAvailable from '@libs/ComposerUtils/updateIsFullComposerAvailable';
 import isEnterWhileComposition from '@libs/KeyboardShortcut/isEnterWhileComposition';
-import ReportActionComposeFocusManager from '@libs/ReportActionComposeFocusManager';
 import CONST from '@src/CONST';
 import type {ComposerProps} from './types';
 
@@ -69,7 +68,6 @@ function Composer(
             start: 0,
             end: 0,
         },
-        isReportActionCompose = false,
         isComposerFullSize = false,
         shouldContainScroll = false,
         ...props
@@ -289,9 +287,6 @@ function Composer(
         }
 
         return () => {
-            if (!isReportActionCompose) {
-                ReportActionComposeFocusManager.clear();
-            }
             unsubscribeFocus();
             unsubscribeBlur();
             document.removeEventListener('paste', handlePaste);
@@ -370,17 +365,6 @@ function Composer(
                 rows={numberOfLines}
                 disabled={isDisabled}
                 onKeyPress={handleKeyPress}
-                onFocus={(e) => {
-                    ReportActionComposeFocusManager.onComposerFocus(() => {
-                        if (!textInput.current) {
-                            return;
-                        }
-
-                        textInput.current.focus();
-                    });
-
-                    props.onFocus?.(e);
-                }}
             />
             {shouldCalculateCaretPosition && renderElementForCaretPosition}
         </>

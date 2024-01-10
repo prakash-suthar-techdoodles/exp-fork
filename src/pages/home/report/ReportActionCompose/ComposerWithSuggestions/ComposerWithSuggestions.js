@@ -413,16 +413,22 @@ function ComposerWithSuggestions({
         focusComposerWithDelay(textInputRef.current)(shouldDelay);
     }, []);
 
-    const setUpComposeFocusManager = useCallback(() => {
-        // This callback is used in the contextMenuActions to manage giving focus back to the compose input.
-        ReportActionComposeFocusManager.onComposerFocus(() => {
-            if (!willBlurTextInputOnTapOutside || !isFocused) {
-                return;
-            }
+    /**
+     * Set focus callback
+     * @param {Boolean} [shouldTakeOverFocus=false] Whether this composer should gain focus priority
+     */
+    const setUpComposeFocusManager = useCallback(
+        (shouldTakeOverFocus = false) => {
+            ReportActionComposeFocusManager.onComposerFocus(() => {
+                if (!willBlurTextInputOnTapOutside || !isFocused) {
+                    return;
+                }
 
-            focus(false);
-        }, true);
-    }, [focus, isFocused]);
+                focus(false);
+            }, shouldTakeOverFocus);
+        },
+        [focus, isFocused],
+    );
 
     /**
      * Check if the composer is visible. Returns true if the composer is not covered up by emoji picker or menu. False otherwise.
@@ -474,8 +480,7 @@ function ComposerWithSuggestions({
         setUpComposeFocusManager();
 
         return () => {
-            ReportActionComposeFocusManager.clear(true);
-
+            ReportActionComposeFocusManager.clear();
             KeyDownListener.removeKeyDownPressListener(focusComposerOnKeyPress);
             unsubscribeNavigationBlur();
             unsubscribeNavigationFocus();
@@ -547,14 +552,17 @@ function ComposerWithSuggestions({
                     textAlignVertical="top"
                     style={[styles.textInputCompose, isComposerFullSize ? styles.textInputFullCompose : styles.textInputCollapseCompose]}
                     maxLines={maxComposerLines}
-                    onFocus={onFocus}
+                    onFocus={() => {
+                        // The last composer that had focus should re-gain focus
+                        setUpComposeFocusManager(true);
+                        onFocus();
+                    }}
                     onBlur={onBlur}
                     onClick={setShouldBlockSuggestionCalcToFalse}
                     onPasteFile={displayFileInModal}
                     shouldClear={textInputShouldClear}
                     onClear={() => setTextInputShouldClear(false)}
                     isDisabled={isBlockedFromConcierge || disabled}
-                    isReportActionCompose
                     selection={selection}
                     onSelectionChange={onSelectionChange}
                     isFullComposerAvailable={isFullComposerAvailable}

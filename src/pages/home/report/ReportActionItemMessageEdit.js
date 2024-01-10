@@ -174,6 +174,30 @@ function ReportActionItemMessageEdit(props) {
         [props.action.reportActionID],
     );
 
+    /**
+     * Focus the composer text input
+     * @param {Boolean} [shouldDelay=false] Impose delay before focusing the composer
+     * @memberof ReportActionCompose
+     */
+    const focus = useCallback((shouldDelay = false) => {
+        focusComposerWithDelay(textInputRef.current)(shouldDelay);
+    }, []);
+
+    // Take over focus priority
+    const setUpComposeFocusManager = useCallback(() => {
+        ReportActionComposeFocusManager.onComposerFocus(() => {
+            focus(true);
+        }, true);
+    }, [focus]);
+
+    useEffect(
+        // Remove focus callback on unmount to avoid stale callbacks
+        () => () => {
+            ReportActionComposeFocusManager.clear(true);
+        },
+        [],
+    );
+
     useEffect(() => {
         // For mobile Safari, updating the selection prop on an unfocused input will cause it to automatically gain focus
         // and subsequent programmatic focus shifts (e.g., modal focus trap) to show the blue frame (:focus-visible style),
@@ -289,8 +313,9 @@ function ReportActionItemMessageEdit(props) {
         Report.deleteReportActionDraft(props.reportID, props.action);
 
         if (isActive()) {
-            ReportActionComposeFocusManager.clear();
-            ReportActionComposeFocusManager.focus();
+            ReportActionComposeFocusManager.clear(true);
+            // Wait for report action compose re-mounting on mWeb
+            InteractionManager.runAfterInteractions(() => ReportActionComposeFocusManager.focus());
         }
 
         // Scroll to the last comment after editing to make sure the whole comment is clearly visible in the report.
@@ -360,11 +385,6 @@ function ReportActionItemMessageEdit(props) {
         [deleteDraft, isKeyboardShown, isSmallScreenWidth, publishDraft],
     );
 
-    /**
-     * Focus the composer text input
-     */
-    const focus = focusComposerWithDelay(textInputRef.current);
-
     useEffect(() => {
         validateCommentMaxLength(draft);
     }, [draft, validateCommentMaxLength]);
@@ -420,6 +440,8 @@ function ReportActionItemMessageEdit(props) {
                                 setIsFocused(true);
                                 reportScrollManager.scrollToIndex(props.index, true);
                                 setShouldShowComposeInputKeyboardAware(false);
+                                // The last composer that had focus should re-gain focus
+                                setUpComposeFocusManager();
 
                                 // Clear active report action when another action gets focused
                                 if (!EmojiPickerAction.isActive(props.action.reportActionID)) {
@@ -444,10 +466,14 @@ function ReportActionItemMessageEdit(props) {
                     <View style={styles.editChatItemEmojiWrapper}>
                         <EmojiPickerButton
                             isDisabled={props.shouldDisableEmojiPicker}
-                            onModalHide={() => focus(true)}
+                            onModalHide={() => {
+                                ReportActionComposeFocusManager.focus();
+                            }}
                             onEmojiSelected={addEmojiToTextBox}
                             id={emojiButtonID}
                             emojiPickerID={props.action.reportActionID}
+                            // Edit composer should be focused after emoji picker closed
+                            onPress={setUpComposeFocusManager}
                         />
                     </View>
 
