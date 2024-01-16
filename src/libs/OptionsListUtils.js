@@ -487,6 +487,7 @@ function createOption(accountIDs, personalDetails, report, reportActions = {}, {
         isExpenseReport: false,
         policyID: null,
         isOptimisticPersonalDetail: false,
+        isServerSearchResult: false,
     };
 
     const personalDetailMap = getPersonalDetailsForAccountIDs(accountIDs, personalDetails);
@@ -498,6 +499,7 @@ function createOption(accountIDs, personalDetails, report, reportActions = {}, {
 
     result.participantsList = personalDetailList;
     result.isOptimisticPersonalDetail = personalDetail.isOptimisticPersonalDetail;
+    result.isServerSearchResult = personalDetail.isServerSearchResult;
 
     if (report) {
         result.isChatRoom = ReportUtils.isChatRoom(report);
@@ -1478,6 +1480,10 @@ function getOptions(
                 continue;
             }
 
+            if (reportOption.isServerSearchResult) {
+                continue;
+            }
+
             const isCurrentUserOwnedPolicyExpenseChatThatCouldShow =
                 reportOption.isPolicyExpenseChat && reportOption.ownerAccountID === currentUserAccountID && includeOwnedWorkspaceChats && !reportOption.isArchivedRoom;
 
@@ -1522,6 +1528,7 @@ function getOptions(
         }
     }
 
+    const serverSearchOptions = [];
     if (includePersonalDetails) {
         // Next loop over all personal details removing any that are selectedUsers or recentChats
         _.each(allPersonalDetailsOptions, (personalDetailOption) => {
@@ -1533,8 +1540,15 @@ function getOptions(
             if (searchValue && !isSearchStringMatch(searchValue, searchText, participantNames, isChatRoom)) {
                 return;
             }
+            if (!searchValue && personalDetailOption.isServerSearchResult) {
+                return;
+            }
 
-            personalDetailsOptions.push(personalDetailOption);
+            if (personalDetailOption.isServerSearchResult) {
+                serverSearchOptions.push(personalDetailOption);
+            } else {
+                personalDetailsOptions.push(personalDetailOption);
+            }
         });
     }
 
@@ -1544,9 +1558,9 @@ function getOptions(
     }
 
     let userToInvite = null;
-    const noOptions = recentReportOptions.length + personalDetailsOptions.length === 0 && !currentUserOption;
+    const noOptions = recentReportOptions.length + personalDetailsOptions.length + serverSearchOptions.length === 0 && !currentUserOption;
     const noOptionsMatchExactly = !_.find(
-        personalDetailsOptions.concat(recentReportOptions),
+        personalDetailsOptions.concat(recentReportOptions, serverSearchOptions),
         (option) => option.login === addSMSDomainIfPhoneNumber(searchValue).toLowerCase() || option.login === searchValue.toLowerCase(),
     );
 
@@ -1619,6 +1633,7 @@ function getOptions(
     return {
         personalDetails: personalDetailsOptions,
         recentReports: recentReportOptions,
+        serverSearchResults: serverSearchOptions,
         userToInvite: canInviteUser ? userToInvite : null,
         currentUserOption,
         categoryOptions: [],

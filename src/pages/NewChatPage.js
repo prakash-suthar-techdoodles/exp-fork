@@ -57,6 +57,7 @@ function NewChatPage({betas, isGroupChat, personalDetails, reports, translate, i
     const [searchTerm, setSearchTerm] = useState('');
     const [filteredRecentReports, setFilteredRecentReports] = useState([]);
     const [filteredPersonalDetails, setFilteredPersonalDetails] = useState([]);
+    const [filterdServerSearchResults, setFilteredServerSearchResults] = useState([]);
     const [filteredUserToInvite, setFilteredUserToInvite] = useState();
     const [selectedOptions, setSelectedOptions] = useState([]);
     const {isOffline} = useNetwork();
@@ -65,7 +66,7 @@ function NewChatPage({betas, isGroupChat, personalDetails, reports, translate, i
 
     const maxParticipantsReached = selectedOptions.length === CONST.REPORT.MAXIMUM_PARTICIPANTS;
     const headerMessage = OptionsListUtils.getHeaderMessage(
-        filteredPersonalDetails.length + filteredRecentReports.length !== 0,
+        filteredPersonalDetails.length + filteredRecentReports.length + filterdServerSearchResults.length !== 0,
         Boolean(filteredUserToInvite),
         searchTerm.trim(),
         maxParticipantsReached,
@@ -84,6 +85,14 @@ function NewChatPage({betas, isGroupChat, personalDetails, reports, translate, i
         if (maxParticipantsReached) {
             return sectionsList;
         }
+
+        sectionsList.push({
+            title: undefined,
+            data: filterdServerSearchResults,
+            shouldShow: !_.isEmpty(filterdServerSearchResults),
+            indexOffset,
+        });
+        indexOffset += filterdServerSearchResults.length;
 
         sectionsList.push({
             title: translate('common.recents'),
@@ -184,6 +193,7 @@ function NewChatPage({betas, isGroupChat, personalDetails, reports, translate, i
             recentReports,
             personalDetails: newChatPersonalDetails,
             userToInvite,
+            serverSearchResults,
         } = OptionsListUtils.getFilteredOptions(
             reports,
             personalDetails,
@@ -205,6 +215,7 @@ function NewChatPage({betas, isGroupChat, personalDetails, reports, translate, i
         setFilteredRecentReports(recentReports);
         setFilteredPersonalDetails(newChatPersonalDetails);
         setFilteredUserToInvite(userToInvite);
+        setFilteredServerSearchResults(serverSearchResults);
         // props.betas is not added as dependency since it doesn't change during the component lifecycle
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [reports, personalDetails, searchTerm]);

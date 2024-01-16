@@ -623,6 +623,9 @@ function openReport(
             };
 
             settledPersonalDetails[accountID] = allPersonalDetails?.[accountID] ?? null;
+            if (settledPersonalDetails[accountID]?.isServerSearchResult) {
+                delete settledPersonalDetails[accountID]?.isServerSearchResult;
+            }
         });
 
         optimisticData.push({
