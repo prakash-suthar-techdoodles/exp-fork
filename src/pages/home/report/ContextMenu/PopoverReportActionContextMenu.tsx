@@ -63,6 +63,7 @@ function PopoverReportActionContextMenu(_props: never, ref: ForwardedRef<ReportA
     const [isChatPinned, setIsChatPinned] = useState(false);
     const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
     const [disabledActions, setDisabledActions] = useState<ContextMenuAction[]>([]);
+    const [restoreFocusType, setRestoreFocusType] = useState<ContextMenuAction['restoreType']>(undefined);
 
     const contentRef = useRef<View>(null);
     const anchorRef = useRef<View | HTMLDivElement>(null);
@@ -210,6 +211,7 @@ function PopoverReportActionContextMenu(_props: never, ref: ForwardedRef<ReportA
 
     /** After Popover shows, call the registered onPopoverShow callback and reset it */
     const runAndResetOnPopoverShow = () => {
+        setRestoreFocusType(CONST.MODAL.RESTORE_FOCUS_TYPE.DEFAULT);
         onPopoverShow.current();
 
         // After we have called the action, reset it.
@@ -308,6 +310,7 @@ function PopoverReportActionContextMenu(_props: never, ref: ForwardedRef<ReportA
                 fullscreen
                 withoutOverlay
                 anchorRef={anchorRef}
+                restoreFocusType={restoreFocusType}
             >
                 <BaseReportActionContextMenu
                     isVisible
@@ -322,6 +325,7 @@ function PopoverReportActionContextMenu(_props: never, ref: ForwardedRef<ReportA
                     isUnreadChat={hasUnreadMessages}
                     anchor={contextMenuTargetNode}
                     contentRef={contentRef}
+                    onItemSelected={(action) => setRestoreFocusType(action.restoreType ?? CONST.MODAL.RESTORE_FOCUS_TYPE.DEFAULT)}
                     originalReportID={originalReportIDRef.current}
                     disabledActions={disabledActions}
                 />

@@ -38,6 +38,7 @@ const getRootNavigatorScreenOptions: GetRootNavigatorScreenOptions = (isSmallScr
                 // Excess space should be on the left so we need to position from right.
                 right: 0,
             },
+            keyboardHandlingEnabled: false,
         },
         leftModalNavigator: {
             ...commonScreenOptions,

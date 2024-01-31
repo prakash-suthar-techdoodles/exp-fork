@@ -1,6 +1,7 @@
 import type {ReactNode} from 'react';
 import React from 'react';
 import type {StyleProp, TextStyle, ViewStyle} from 'react-native';
+import type {ValueOf} from 'type-fest';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import CONST from '@src/CONST';
 import type IconAsset from '@src/types/utils/IconAsset';
@@ -64,6 +65,9 @@ type ConfirmModalProps = {
 
     /** Whether to stack the buttons */
     shouldStackButtons?: boolean;
+
+    /** How to re-focus after the modal is dismissed */
+    restoreFocusType?: ValueOf<typeof CONST.MODAL.RESTORE_FOCUS_TYPE>;
 };
 
 function ConfirmModal({
@@ -86,6 +90,7 @@ function ConfirmModal({
     shouldStackButtons = true,
     isVisible,
     onConfirm,
+    restoreFocusType,
 }: ConfirmModalProps) {
     const {isSmallScreenWidth} = useWindowDimensions();
 
@@ -97,6 +102,7 @@ function ConfirmModal({
             shouldSetModalVisibility={shouldSetModalVisibility}
             onModalHide={onModalHide}
             type={isSmallScreenWidth ? CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED : CONST.MODAL.MODAL_TYPE.CONFIRM}
+            restoreFocusType={restoreFocusType}
         >
             <ConfirmContent
                 title={title}

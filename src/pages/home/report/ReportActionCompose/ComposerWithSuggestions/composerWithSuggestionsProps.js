@@ -103,9 +103,6 @@ const propTypes = {
     /** Ref for the composer */
     forwardedRef: PropTypes.shape({current: PropTypes.shape({})}),
 
-    /** Ref for the isNextModalWillOpen */
-    isNextModalWillOpenRef: PropTypes.shape({current: PropTypes.bool.isRequired}).isRequired,
-
     /** A flag to indicate whether the onScroll callback is likely triggered by a layout change (caused by text change) or not */
     isScrollLikelyLayoutTriggered: PropTypes.shape({current: PropTypes.bool.isRequired}).isRequired,
 

@@ -409,17 +409,7 @@ function Composer(
                 numberOfLines={numberOfLines}
                 disabled={isDisabled}
                 onKeyPress={handleKeyPress}
-                onFocus={(e) => {
-                    ReportActionComposeFocusManager.onComposerFocus(() => {
-                        if (!textInput.current) {
-                            return;
-                        }
-
-                        textInput.current.focus();
-                    });
-
-                    props.onFocus?.(e);
-                }}
+                onFocus={(e) => props.onFocus?.(e)}
             />
             {shouldCalculateCaretPosition && renderElementForCaretPosition}
         </>

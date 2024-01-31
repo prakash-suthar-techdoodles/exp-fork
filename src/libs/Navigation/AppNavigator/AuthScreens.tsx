@@ -5,6 +5,7 @@ import Onyx, {withOnyx} from 'react-native-onyx';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
+import ComposerFocusManager from '@libs/ComposerFocusManager';
 import KeyboardShortcut from '@libs/KeyboardShortcut';
 import getCurrentUrl from '@libs/Navigation/currentUrl';
 import Navigation from '@libs/Navigation/Navigation';
@@ -131,6 +132,8 @@ function handleNetworkReconnect() {
     }
 }
 
+const modalId = ComposerFocusManager.getId();
+
 const RootStack = createCustomStackNavigator<AuthScreensParamList>();
 // We want to delay the re-rendering for components(e.g. ReportActionCompose)
 // that depends on modal visibility until Modal is completely closed and its focused
@@ -139,9 +142,12 @@ const RootStack = createCustomStackNavigator<AuthScreensParamList>();
 
 const modalScreenListeners = {
     focus: () => {
+        ComposerFocusManager.saveFocusState(modalId);
         Modal.setModalVisibility(true);
     },
     beforeRemove: () => {
+        ComposerFocusManager.restoreFocusState(modalId, true);
+
         // Clear search input (WorkspaceInvitePage) when modal is closed
         SearchInputManager.searchInput = '';
         Modal.setModalVisibility(false);
@@ -299,7 +305,6 @@ function AuthScreens({session, lastOpenedPublicRoomID, isUsingMemoryOnlyKeys = f
                         presentation: 'transparentModal',
                     }}
                     getComponent={loadReportAttachments}
-                    listeners={modalScreenListeners}
                 />
                 <RootStack.Screen
                     name={SCREENS.PROFILE_AVATAR}

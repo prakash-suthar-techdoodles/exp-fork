@@ -1,6 +1,6 @@
 import lodashGet from 'lodash/get';
 import PropTypes from 'prop-types';
-import React, {useCallback, useEffect, useMemo} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {View} from 'react-native';
 import {withOnyx} from 'react-native-onyx';
 import _ from 'underscore';
@@ -18,6 +18,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import * as Browser from '@libs/Browser';
 import compose from '@libs/compose';
+import ComposerFocusManager from '@libs/ComposerFocusManager';
 import Navigation from '@libs/Navigation/Navigation';
 import * as ReportUtils from '@libs/ReportUtils';
 import * as IOU from '@userActions/IOU';
@@ -73,17 +74,8 @@ const propTypes = {
     /** Called when opening the attachment picker */
     onTriggerAttachmentPicker: PropTypes.func.isRequired,
 
-    /** Called when cancelling the attachment picker */
-    onCanceledAttachmentPicker: PropTypes.func.isRequired,
-
     /** Called when the menu with the items is closed after it was open */
     onMenuClosed: PropTypes.func.isRequired,
-
-    /** Called when the add action button is pressed */
-    onAddActionPressed: PropTypes.func.isRequired,
-
-    /** Called when the menu item is selected */
-    onItemSelected: PropTypes.func.isRequired,
 
     /** A ref for the add action button */
     actionButtonRef: PropTypes.shape({
@@ -122,10 +114,7 @@ function AttachmentPickerWithMenuItems({
     setMenuVisibility,
     isMenuVisible,
     onTriggerAttachmentPicker,
-    onCanceledAttachmentPicker,
     onMenuClosed,
-    onAddActionPressed,
-    onItemSelected,
     actionButtonRef,
     isFocused,
     raiseIsScrollLikelyLayoutTriggered,
@@ -134,6 +123,7 @@ function AttachmentPickerWithMenuItems({
     const styles = useThemeStyles();
     const {translate} = useLocalize();
     const {windowHeight} = useWindowDimensions();
+    const [restoreFocusType, setRestoreFocusType] = useState(undefined);
 
     /**
      * Returns the list of IOU Options
@@ -211,7 +201,7 @@ function AttachmentPickerWithMenuItems({
                     onTriggerAttachmentPicker();
                     openPicker({
                         onPicked: displayFileInModal,
-                        onCanceled: onCanceledAttachmentPicker,
+                        onCanceled: () => ComposerFocusManager.tryRestoreFocusByExternal(CONST.MODAL.BUSINESS_TYPE.ATTACHMENT),
                     });
                 };
                 const menuItems = [
@@ -283,7 +273,6 @@ function AttachmentPickerWithMenuItems({
                                         if (!isFocused) {
                                             return;
                                         }
-                                        onAddActionPressed();
 
                                         // Drop focus to avoid blue focus ring.
                                         actionButtonRef.current.blur();
@@ -302,17 +291,23 @@ function AttachmentPickerWithMenuItems({
                             </Tooltip>
                         </View>
                         <PopoverMenu
+                            shouldClearFocusWithType
+                            restoreFocusType={restoreFocusType}
                             animationInTiming={CONST.ANIMATION_IN_TIMING}
                             isVisible={isMenuVisible && isFocused}
+                            onModalShow={() => setRestoreFocusType(CONST.MODAL.RESTORE_FOCUS_TYPE.DEFAULT)}
                             onClose={onPopoverMenuClose}
                             onItemSelected={(item, index) => {
                                 setMenuVisibility(false);
-                                onItemSelected();
+                                if (index !== menuItems.length - 1) {
+                                    return;
+                                }
+                                setRestoreFocusType(CONST.MODAL.RESTORE_FOCUS_TYPE.PRESERVE);
 
                                 // In order for the file picker to open dynamically, the click
                                 // function must be called from within a event handler that was initiated
                                 // by the user on Safari.
-                                if (index === menuItems.length - 1 && Browser.isSafari()) {
+                                if (Browser.isSafari()) {
                                     triggerAttachmentPicker();
                                 }
                             }}

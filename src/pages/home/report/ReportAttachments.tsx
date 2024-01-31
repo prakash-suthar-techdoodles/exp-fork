@@ -2,7 +2,6 @@ import type {StackScreenProps} from '@react-navigation/stack';
 import React, {useCallback} from 'react';
 import type {Attachment} from '@components/AttachmentModal';
 import AttachmentModal from '@components/AttachmentModal';
-import ComposerFocusManager from '@libs/ComposerFocusManager';
 import Navigation from '@libs/Navigation/Navigation';
 import type {AuthScreensParamList} from '@libs/Navigation/types';
 import * as ReportUtils from '@libs/ReportUtils';
@@ -33,11 +32,7 @@ function ReportAttachments({route}: ReportAttachmentsProps) {
             defaultOpen
             report={report}
             source={source}
-            onModalHide={() => {
-                Navigation.dismissModal();
-                // This enables Composer refocus when the attachments modal is closed by the browser navigation
-                ComposerFocusManager.setReadyToFocus();
-            }}
+            onModalHide={() => Navigation.dismissModal()}
             onCarouselAttachmentChange={onCarouselAttachmentChange}
         />
     );

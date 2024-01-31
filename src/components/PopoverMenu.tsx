@@ -3,6 +3,7 @@ import type {RefObject} from 'react';
 import React, {useRef} from 'react';
 import {View} from 'react-native';
 import type {ModalProps} from 'react-native-modal';
+import type {ValueOf} from 'type-fest';
 import useArrowKeyFocusManager from '@hooks/useArrowKeyFocusManager';
 import useKeyboardShortcut from '@hooks/useKeyboardShortcut';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -50,6 +51,15 @@ type PopoverMenuProps = Partial<PopoverModalProps> & {
     /** Callback method fired when the user requests to close the modal */
     onClose: () => void;
 
+    /** Callback method fired when the modal is shown */
+    onModalShow?: () => void;
+
+    /** Whether the modal should clear the focus record for the current business type. */
+    shouldClearFocusWithType?: boolean;
+
+    /** How to re-focus after the modal is dismissed */
+    restoreFocusType?: ValueOf<typeof CONST.MODAL.RESTORE_FOCUS_TYPE>;
+
     /** State that determines whether to display the modal or not */
     isVisible: boolean;
 
@@ -91,6 +101,9 @@ function PopoverMenu({
     anchorPosition,
     anchorRef,
     onClose,
+    shouldClearFocusWithType,
+    restoreFocusType,
+    onModalShow = () => {},
     headerText,
     fromSidebarMediumScreen,
     anchorAlignment = {
@@ -142,6 +155,9 @@ function PopoverMenu({
             anchorAlignment={anchorAlignment}
             onClose={onClose}
             isVisible={isVisible}
+            shouldClearFocusWithType={shouldClearFocusWithType}
+            restoreFocusType={restoreFocusType}
+            onModalShow={onModalShow}
             onModalHide={onModalHide}
             animationIn={animationIn}
             animationOut={animationOut}

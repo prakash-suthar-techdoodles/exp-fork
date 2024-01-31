@@ -86,6 +86,9 @@ type BaseReportActionContextMenuProps = BaseReportActionContextMenuOnyxProps & {
 
     /** List of disabled actions */
     disabledActions?: ContextMenuAction[];
+
+    /** Callback to fire when a menu item is selected */
+    onItemSelected?: (action: ContextMenuAction) => void;
 };
 
 type MenuItemRefs = Record<string, ContextMenuItemHandle | null>;
@@ -108,6 +111,7 @@ function BaseReportActionContextMenu({
     reportActions,
     checkIfContextMenuActive,
     disabledActions = [],
+    onItemSelected = () => {},
 }: BaseReportActionContextMenuProps) {
     const StyleUtils = useStyleUtils();
     const {translate} = useLocalize();
@@ -228,6 +232,7 @@ function BaseReportActionContextMenu({
                         openContextMenu: () => setShouldKeepOpen(true),
                         interceptAnonymousUser,
                         openOverflowMenu,
+                        onPressAddReaction: () => onItemSelected(contextAction),
                     };
 
                     if ('renderContent' in contextAction) {
@@ -252,7 +257,17 @@ function BaseReportActionContextMenu({
                             successText={contextAction.successTextTranslateKey ? translate(contextAction.successTextTranslateKey) : undefined}
                             isMini={isMini}
                             key={contextAction.textTranslateKey}
-                            onPress={(event) => interceptAnonymousUser(() => contextAction.onPress?.(closePopup, {...payload, event}), contextAction.isAnonymousAction)}
+                            onPress={(event) => {
+                                onItemSelected(contextAction);
+                                interceptAnonymousUser(
+                                    () =>
+                                        contextAction.onPress?.(closePopup, {
+                                            ...payload,
+                                            event,
+                                        }),
+                                    contextAction.isAnonymousAction,
+                                );
+                            }}
                             description={contextAction.getDescription?.(selection) ?? ''}
                             isAnonymousAction={contextAction.isAnonymousAction}
                             isFocused={focusedIndex === index}

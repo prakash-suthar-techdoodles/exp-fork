@@ -7,6 +7,7 @@ import useSingleExecution from '@hooks/useSingleExecution';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Accessibility from '@libs/Accessibility';
+import ComposerFocusManager from '@libs/ComposerFocusManager';
 import HapticFeedback from '@libs/HapticFeedback';
 import KeyboardShortcut from '@libs/KeyboardShortcut';
 import CONST from '@src/CONST';
@@ -97,6 +98,8 @@ function GenericPressable(
 
     const onPressHandler = useCallback(
         (event?: GestureResponderEvent | KeyboardEvent) => {
+            ComposerFocusManager.clearFocusedInput();
+
             if (isDisabled) {
                 return;
             }

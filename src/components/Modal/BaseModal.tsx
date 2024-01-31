@@ -1,4 +1,4 @@
-import React, {forwardRef, useCallback, useEffect, useMemo, useRef} from 'react';
+import React, {forwardRef, useCallback, useContext, useEffect, useMemo, useRef} from 'react';
 import {View} from 'react-native';
 import ReactNativeModal from 'react-native-modal';
 import ColorSchemeWrapper from '@components/ColorSchemeWrapper';
@@ -15,6 +15,8 @@ import useNativeDriver from '@libs/useNativeDriver';
 import variables from '@styles/variables';
 import * as Modal from '@userActions/Modal';
 import CONST from '@src/CONST';
+import {ModalBusinessTypeContext} from './ModalBusinessTypeProvider';
+import ModalContent from './ModalContent';
 import type BaseModalProps from './types';
 
 function BaseModal(
@@ -38,6 +40,8 @@ function BaseModal(
         animationOutTiming,
         statusBarTranslucent = true,
         onLayout,
+        restoreFocusType,
+        shouldClearFocusWithType = false,
         avoidKeyboard = false,
         children,
         shouldUseCustomBackdrop = false,
@@ -55,6 +59,13 @@ function BaseModal(
     const isVisibleRef = useRef(isVisible);
     const wasVisible = usePrevious(isVisible);
 
+    const modalId = useMemo(() => ComposerFocusManager.getId(), []);
+    const {businessType} = useContext(ModalBusinessTypeContext);
+    const saveFocusState = () => {
+        ComposerFocusManager.saveFocusState(modalId, businessType, shouldClearFocusWithType);
+        ComposerFocusManager.resetReadyToFocus(modalId);
+    };
+
     /**
      * Hides modal
      * @param callHideCallback - Should we call the onModalHide callback
@@ -69,11 +80,9 @@ function BaseModal(
                 onModalHide();
             }
             Modal.onModalDidClose();
-            if (!fullscreen) {
-                ComposerFocusManager.setReadyToFocus();
-            }
+            ComposerFocusManager.tryRestoreFocusAfterClosedCompletely(modalId, businessType, restoreFocusType);
         },
-        [shouldSetModalVisibility, onModalHide, fullscreen],
+        [shouldSetModalVisibility, onModalHide, businessType, restoreFocusType, modalId],
     );
 
     useEffect(() => {
@@ -121,7 +130,7 @@ function BaseModal(
     };
 
     const handleDismissModal = () => {
-        ComposerFocusManager.setReadyToFocus();
+        ComposerFocusManager.setReadyToFocus(modalId);
     };
 
     const {
@@ -183,7 +192,7 @@ function BaseModal(
             onModalShow={handleShowModal}
             propagateSwipe={propagateSwipe}
             onModalHide={hideModal}
-            onModalWillShow={() => ComposerFocusManager.resetReadyToFocus()}
+            onModalWillShow={saveFocusState}
             onDismiss={handleDismissModal}
             onSwipeComplete={() => onClose?.()}
             swipeDirection={swipeDirection}
@@ -207,12 +216,14 @@ function BaseModal(
             avoidKeyboard={avoidKeyboard}
             customBackdrop={shouldUseCustomBackdrop ? <Overlay onPress={handleBackdropPress} /> : undefined}
         >
-            <View
-                style={[styles.defaultModalContainer, modalContainerStyle, modalPaddingStyles, !isVisible && styles.pointerEventsNone]}
-                ref={ref}
-            >
-                <ColorSchemeWrapper>{children}</ColorSchemeWrapper>
-            </View>
+            <ModalContent onDismiss={handleDismissModal}>
+                <View
+                    style={[styles.defaultModalContainer, modalContainerStyle, modalPaddingStyles, !isVisible && styles.pointerEventsNone]}
+                    ref={ref}
+                >
+                    <ColorSchemeWrapper>{children}</ColorSchemeWrapper>
+                </View>
+            </ModalContent>
         </ReactNativeModal>
     );
 }

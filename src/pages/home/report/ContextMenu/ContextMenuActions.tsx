@@ -5,6 +5,7 @@ import type {GestureResponderEvent} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import type {Emoji} from '@assets/emojis/types';
 import * as Expensicons from '@components/Icon/Expensicons';
+import type BaseModalProps from '@components/Modal/types';
 import MiniQuickEmojiReactions from '@components/Reactions/MiniQuickEmojiReactions';
 import QuickEmojiReactions from '@components/Reactions/QuickEmojiReactions';
 import addEncryptedAuthTokenToURL from '@libs/addEncryptedAuthTokenToURL';
@@ -76,6 +77,7 @@ type ContextMenuActionPayload = {
     interceptAnonymousUser: (callback: () => void, isAnonymousAction?: boolean) => void;
     openOverflowMenu: (event: GestureResponderEvent | MouseEvent) => void;
     event?: GestureResponderEvent | MouseEvent | KeyboardEvent;
+    onPressAddReaction?: () => void;
 };
 
 type OnPress = (closePopover: boolean, payload: ContextMenuActionPayload, selection?: string, reportID?: string, draftMessage?: string) => void;
@@ -100,15 +102,17 @@ type ContextMenuActionWithIcon = {
 type ContextMenuAction = (ContextMenuActionWithContent | ContextMenuActionWithIcon) & {
     isAnonymousAction: boolean;
     shouldShow: ShouldShow;
+    restoreType?: BaseModalProps['restoreFocusType'];
 };
 
 // A list of all the context actions in this menu.
 const ContextMenuActions: ContextMenuAction[] = [
     {
         isAnonymousAction: false,
+        restoreType: CONST.MODAL.RESTORE_FOCUS_TYPE.PRESERVE,
         shouldShow: (type, reportAction): reportAction is ReportAction =>
             type === CONST.CONTEXT_MENU_TYPES.REPORT_ACTION && !!reportAction && 'message' in reportAction && !ReportActionsUtils.isMessageDeleted(reportAction),
-        renderContent: (closePopover, {reportID, reportAction, close: closeManually, openContextMenu}) => {
+        renderContent: (closePopover, {reportID, reportAction, close: closeManually, openContextMenu, onPressAddReaction}) => {
             const isMini = !closePopover;
 
             const closeContextMenu = (onHideCallback?: () => void) => {
@@ -143,7 +147,10 @@ const ContextMenuActions: ContextMenuAction[] = [
             return (
                 <QuickEmojiReactions
                     key="BaseQuickEmojiReactions"
-                    closeContextMenu={closeContextMenu}
+                    closeContextMenu={(onHideCallback) => {
+                        onPressAddReaction?.();
+                        closeContextMenu(onHideCallback);
+                    }}
                     onEmojiSelected={toggleEmojiAndCloseMenu}
                     reportActionID={reportAction?.reportActionID}
                     reportAction={reportAction}
@@ -187,6 +194,7 @@ const ContextMenuActions: ContextMenuAction[] = [
             }
             return !ReportUtils.shouldDisableThread(reportAction, reportID);
         },
+        restoreType: CONST.MODAL.RESTORE_FOCUS_TYPE.DELETE,
         onPress: (closePopover, {reportAction, reportID}) => {
             if (closePopover) {
                 hideContextMenu(false, () => {
@@ -206,6 +214,7 @@ const ContextMenuActions: ContextMenuAction[] = [
         icon: Expensicons.Pencil,
         shouldShow: (type, reportAction, isArchivedRoom, betas, menuTarget, isChronosReport) =>
             type === CONST.CONTEXT_MENU_TYPES.REPORT_ACTION && ReportUtils.canEditReportAction(reportAction) && !isArchivedRoom && !isChronosReport,
+        restoreType: CONST.MODAL.RESTORE_FOCUS_TYPE.DELETE,
         onPress: (closePopover, {reportID, reportAction, draftMessage}) => {
             if (ReportActionsUtils.isMoneyRequestAction(reportAction)) {
                 hideContextMenu(false);
@@ -442,6 +451,7 @@ const ContextMenuActions: ContextMenuAction[] = [
             !isArchivedRoom &&
             !isChronosReport &&
             !ReportActionsUtils.isMessageDeleted(reportAction),
+        restoreType: CONST.MODAL.RESTORE_FOCUS_TYPE.PRESERVE,
         onPress: (closePopover, {reportID, reportAction}) => {
             if (closePopover) {
                 // Hide popover, then call showDeleteConfirmModal

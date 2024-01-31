@@ -24,7 +24,6 @@ import useWindowDimensions from '@hooks/useWindowDimensions';
 import * as Browser from '@libs/Browser';
 import * as ComposerUtils from '@libs/ComposerUtils';
 import * as EmojiUtils from '@libs/EmojiUtils';
-import focusComposerWithDelay from '@libs/focusComposerWithDelay';
 import onyxSubscribe from '@libs/onyxSubscribe';
 import ReportActionComposeFocusManager from '@libs/ReportActionComposeFocusManager';
 import * as ReportActionsUtils from '@libs/ReportActionsUtils';
@@ -368,11 +367,6 @@ function ReportActionItemMessageEdit(
         [deleteDraft, isKeyboardShown, isSmallScreenWidth, publishDraft],
     );
 
-    /**
-     * Focus the composer text input
-     */
-    const focus = focusComposerWithDelay(textInputRef.current);
-
     useEffect(() => {
         validateCommentMaxLength(draft);
     }, [draft, validateCommentMaxLength]);
@@ -456,7 +450,6 @@ function ReportActionItemMessageEdit(
                     <View style={styles.editChatItemEmojiWrapper}>
                         <EmojiPickerButton
                             isDisabled={shouldDisableEmojiPicker}
-                            onModalHide={() => focus(true)}
                             onEmojiSelected={addEmojiToTextBox}
                             id={emojiButtonID}
                             emojiPickerID={action.reportActionID}
