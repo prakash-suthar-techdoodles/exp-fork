@@ -12,8 +12,8 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import Section from '@components/Section';
 import withCurrentUserPersonalDetails, {withCurrentUserPersonalDetailsDefaultProps, withCurrentUserPersonalDetailsPropTypes} from '@components/withCurrentUserPersonalDetails';
 import withLocalize, {withLocalizePropTypes} from '@components/withLocalize';
-import withWindowDimensions, {windowDimensionsPropTypes} from '@components/withWindowDimensions';
 import usePrivatePersonalDetails from '@hooks/usePrivatePersonalDetails';
+import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -59,7 +59,6 @@ const propTypes = {
     }),
 
     ...withLocalizePropTypes,
-    ...windowDimensionsPropTypes,
     ...withCurrentUserPersonalDetailsPropTypes,
 };
 
@@ -85,6 +84,7 @@ function ProfilePage(props) {
     const theme = useTheme();
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
+    const {shouldUseNarrowLayout} = useResponsiveLayout();
     const getPronouns = () => {
         let pronounsKey = lodashGet(props.currentUserPersonalDetails, 'pronouns', '');
         if (pronounsKey.startsWith(CONST.PRONOUNS.PREFIX)) {
@@ -165,7 +165,7 @@ function ProfilePage(props) {
             <HeaderWithBackButton
                 title={props.translate('common.profile')}
                 onBackButtonPress={() => Navigation.goBack()}
-                shouldShowBackButton={props.isSmallScreenWidth}
+                shouldShowBackButton={shouldUseNarrowLayout}
                 icon={Illustrations.Profile}
             />
             <ScrollView style={styles.pt3}>
@@ -227,7 +227,6 @@ ProfilePage.displayName = 'ProfilePage';
 
 export default compose(
     withLocalize,
-    withWindowDimensions,
     withCurrentUserPersonalDetails,
     withOnyx({
         loginList: {

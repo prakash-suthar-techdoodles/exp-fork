@@ -9,9 +9,9 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import useAutoFocusInput from '@hooks/useAutoFocusInput';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
+import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useSearchTermAndSearch from '@hooks/useSearchTermAndSearch';
 import useThemeStyles from '@hooks/useThemeStyles';
-import useWindowDimensions from '@hooks/useWindowDimensions';
 import * as DeviceCapabilities from '@libs/DeviceCapabilities';
 import doInteractionTask from '@libs/DoInteractionTask';
 import * as OptionsListUtils from '@libs/OptionsListUtils';
@@ -55,7 +55,7 @@ function NewChatPage({betas, isGroupChat, personalDetails, reports, isSearchingF
     const [filteredUserToInvite, setFilteredUserToInvite] = useState<ReportUtils.OptionData | null>();
     const [selectedOptions, setSelectedOptions] = useState<OptionData[]>([]);
     const {isOffline} = useNetwork();
-    const {isSmallScreenWidth} = useWindowDimensions();
+    const {shouldUseNarrowLayout} = useResponsiveLayout();
     const [didScreenTransitionEnd, setDidScreenTransitionEnd] = useState(false);
 
     const maxParticipantsReached = selectedOptions.length === CONST.REPORT.MAXIMUM_PARTICIPANTS;
@@ -276,7 +276,7 @@ function NewChatPage({betas, isGroupChat, personalDetails, reports, isSearchingF
                             autoFocus={false}
                         />
                     </View>
-                    {isSmallScreenWidth && <OfflineIndicator />}
+                    {shouldUseNarrowLayout && <OfflineIndicator />}
                 </KeyboardAvoidingView>
             )}
         </ScreenWrapper>

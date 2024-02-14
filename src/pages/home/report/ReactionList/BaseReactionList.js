@@ -5,7 +5,7 @@ import React from 'react';
 import {FlatList} from 'react-native';
 import OptionRow from '@components/OptionRow';
 import participantPropTypes from '@components/participantPropTypes';
-import withWindowDimensions from '@components/withWindowDimensions';
+import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
 import * as UserUtils from '@libs/UserUtils';
@@ -59,6 +59,7 @@ const getItemLayout = (_, index) => ({
 
 function BaseReactionList(props) {
     const styles = useThemeStyles();
+    const {shouldUseNarrowLayout} = useResponsiveLayout();
     if (!props.isVisible) {
         return null;
     }
@@ -114,7 +115,7 @@ function BaseReactionList(props) {
                 keyExtractor={keyExtractor}
                 getItemLayout={getItemLayout}
                 contentContainerStyle={styles.pv2}
-                style={[styles.reactionListContainer, !props.isSmallScreenWidth && styles.reactionListContainerFixedWidth]}
+                style={[styles.reactionListContainer, !shouldUseNarrowLayout && styles.reactionListContainerFixedWidth]}
             />
         </>
     );
@@ -124,4 +125,4 @@ BaseReactionList.propTypes = propTypes;
 BaseReactionList.defaultProps = defaultProps;
 BaseReactionList.displayName = 'BaseReactionList';
 
-export default withWindowDimensions(BaseReactionList);
+export default BaseReactionList;
