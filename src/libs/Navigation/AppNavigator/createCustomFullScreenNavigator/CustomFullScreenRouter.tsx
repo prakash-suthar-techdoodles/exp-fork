@@ -1,6 +1,6 @@
 import type {ParamListBase, PartialState, RouterConfigOptions, StackNavigationState} from '@react-navigation/native';
 import {StackRouter} from '@react-navigation/native';
-import getIsNarrowLayout from '@libs/getIsNarrowLayout';
+import getShouldUseNarrowLayout from '@libs/getShouldUseNarrowLayout';
 import SCREENS from '@src/SCREENS';
 import type {FullScreenNavigatorRouterOptions} from './types';
 
@@ -9,7 +9,7 @@ type StackState = StackNavigationState<ParamListBase> | PartialState<StackNaviga
 const isAtLeastOneInState = (state: StackState, screenName: string): boolean => !!state.routes.find((route) => route.name === screenName);
 
 function adaptStateIfNecessary(state: StackState) {
-    const isNarrowLayout = getIsNarrowLayout();
+    const isNarrowLayout = getShouldUseNarrowLayout();
 
     // There should always be SETTINGS.ROOT screen in the state to make sure go back works properly if we deeplinkg to a subpage of settings.
     if (!isAtLeastOneInState(state, SCREENS.SETTINGS.ROOT)) {
