@@ -14,10 +14,10 @@ import withCurrentUserPersonalDetails, {withCurrentUserPersonalDetailsDefaultPro
 import withLocalize, {withLocalizePropTypes} from '@components/withLocalize';
 import withWindowDimensions, {windowDimensionsPropTypes} from '@components/withWindowDimensions';
 import usePrivatePersonalDetails from '@hooks/usePrivatePersonalDetails';
+import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-import useWindowDimensions from '@hooks/useWindowDimensions';
 import compose from '@libs/compose';
 import {translatableTextPropTypes} from '@libs/Localize';
 import Navigation from '@libs/Navigation/Navigation';
@@ -99,7 +99,7 @@ function ProfilePage(props) {
     const currentUserDetails = props.currentUserPersonalDetails || {};
     const contactMethodBrickRoadIndicator = UserUtils.getLoginListBrickRoadIndicator(props.loginList);
     const emojiCode = lodashGet(props, 'currentUserPersonalDetails.status.emojiCode', '');
-    const {isSmallScreenWidth} = useWindowDimensions();
+    const {shouldUseNarrowLayout} = useResponsiveLayout();
     usePrivatePersonalDetails();
     const privateDetails = props.privatePersonalDetails || {};
     const legalName = `${privateDetails.legalFirstName || ''} ${privateDetails.legalLastName || ''}`.trim();
@@ -165,11 +165,11 @@ function ProfilePage(props) {
             <HeaderWithBackButton
                 title={props.translate('common.profile')}
                 onBackButtonPress={() => Navigation.goBack()}
-                shouldShowBackButton={props.isSmallScreenWidth}
+                shouldShowBackButton={shouldUseNarrowLayout}
                 icon={Illustrations.Profile}
             />
             <ScrollView style={styles.pt3}>
-                <View style={[styles.flex1, isSmallScreenWidth ? styles.workspaceSectionMobile : styles.workspaceSection]}>
+                <View style={[styles.flex1, shouldUseNarrowLayout ? styles.workspaceSectionMobile : styles.workspaceSection]}>
                     <Section
                         title={props.translate('profilePage.publicSection.title')}
                         subtitle={props.translate('profilePage.publicSection.subtitle')}

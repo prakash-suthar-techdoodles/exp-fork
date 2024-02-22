@@ -23,8 +23,8 @@ import withCurrentUserPersonalDetails from '@components/withCurrentUserPersonalD
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import usePrevious from '@hooks/usePrevious';
+import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
-import useWindowDimensions from '@hooks/useWindowDimensions';
 import * as DeviceCapabilities from '@libs/DeviceCapabilities';
 import Log from '@libs/Log';
 import Navigation from '@libs/Navigation/Navigation';
@@ -82,7 +82,7 @@ function WorkspaceMembersPage({policyMembers, personalDetails, route, policy, se
     const isOfflineAndNoMemberDataAvailable = isEmptyObject(policyMembers) && isOffline;
     const prevPersonalDetails = usePrevious(personalDetails);
     const {translate, formatPhoneNumber, preferredLocale} = useLocalize();
-    const {isSmallScreenWidth} = useWindowDimensions();
+    const {shouldUseNarrowLayout} = useResponsiveLayout();
 
     const isFocusedScreen = useIsFocused();
 
@@ -402,7 +402,7 @@ function WorkspaceMembersPage({policyMembers, personalDetails, route, policy, se
     };
 
     const getHeaderButtons = () => (
-        <View style={[styles.w100, styles.flexRow, isSmallScreenWidth && styles.mb3]}>
+        <View style={[styles.w100, styles.flexRow, shouldUseNarrowLayout && styles.mb3]}>
             <Button
                 medium
                 success
@@ -410,13 +410,13 @@ function WorkspaceMembersPage({policyMembers, personalDetails, route, policy, se
                 text={translate('workspace.invite.member')}
                 icon={Expensicons.Plus}
                 iconStyles={{transform: [{scale: 0.6}]}}
-                innerStyles={[isSmallScreenWidth && styles.alignItemsCenter]}
-                style={[isSmallScreenWidth && styles.flexGrow1]}
+                innerStyles={[shouldUseNarrowLayout && styles.alignItemsCenter]}
+                style={[shouldUseNarrowLayout && styles.flexGrow1]}
             />
             <Button
                 medium
                 danger
-                style={[styles.ml2, isSmallScreenWidth && styles.w50]}
+                style={[styles.ml2, shouldUseNarrowLayout && styles.w50]}
                 isDisabled={selectedEmployees.length === 0}
                 text={translate('common.remove')}
                 onPress={askForConfirmationToRemove}
@@ -443,12 +443,12 @@ function WorkspaceMembersPage({policyMembers, personalDetails, route, policy, se
                         setSearchValue('');
                         Navigation.goBack();
                     }}
-                    shouldShowBackButton={isSmallScreenWidth}
+                    shouldShowBackButton={shouldUseNarrowLayout}
                     guidesCallTaskID={CONST.GUIDES_CALL_TASK_IDS.WORKSPACE_MEMBERS}
                 >
-                    {!isSmallScreenWidth && getHeaderButtons()}
+                    {!shouldUseNarrowLayout && getHeaderButtons()}
                 </HeaderWithBackButton>
-                {isSmallScreenWidth && <View style={[styles.pl5, styles.pr5]}>{getHeaderButtons()}</View>}
+                {shouldUseNarrowLayout && <View style={[styles.pl5, styles.pr5]}>{getHeaderButtons()}</View>}
                 <ConfirmModal
                     danger
                     title={translate('workspace.people.removeMembersTitle')}

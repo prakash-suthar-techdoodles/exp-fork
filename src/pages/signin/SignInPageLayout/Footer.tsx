@@ -162,7 +162,7 @@ function Footer({navigateFocus}: FooterProps) {
     return (
         <View style={[styles.flex1]}>
             <View style={footerWrapper}>
-                {isVertical ? (
+                {shouldUseNarrowLayout ? (
                     <View style={[styles.signInPageGradientMobile]}>
                         <ImageSVG
                             src={SignInGradient}
@@ -216,8 +216,8 @@ function Footer({navigateFocus}: FooterProps) {
                             </View>
                         ))}
                     </View>
-                    <View style={[!isVertical && styles.footerBottomLogo]}>
-                        {!isVertical ? (
+                    <View style={[!shouldUseNarrowLayout && styles.footerBottomLogo]}>
+                        {!shouldUseNarrowLayout ? (
                             <ImageSVG src={Expensicons.ExpensifyFooterLogo} />
                         ) : (
                             <ImageSVG

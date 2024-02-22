@@ -3,9 +3,9 @@ import {View} from 'react-native';
 import {withOnyx} from 'react-native-onyx';
 import type {OnyxEntry} from 'react-native-onyx';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
+import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
-import useWindowDimensions from '@hooks/useWindowDimensions';
 import Navigation from '@libs/Navigation/Navigation';
 import onyxSubscribe from '@libs/onyxSubscribe';
 import * as ReportUtils from '@libs/ReportUtils';
@@ -36,7 +36,7 @@ type ReportActionItemParentActionProps = ReportActionItemParentActionOnyxProps &
 function ReportActionItemParentAction({report, index = 0, shouldHideThreadDividerLine = false}: ReportActionItemParentActionProps) {
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
-    const {isSmallScreenWidth} = useWindowDimensions();
+    const {shouldUseNarrowLayout} = useResponsiveLayout();
     const ancestorIDs = useRef(ReportUtils.getAllAncestorReportActionIDs(report));
     const [allAncestors, setAllAncestors] = useState<ReportUtils.Ancestor[]>([]);
 
@@ -71,9 +71,9 @@ function ReportActionItemParentAction({report, index = 0, shouldHideThreadDivide
 
     return (
         <>
-            <View style={[StyleUtils.getReportWelcomeContainerStyle(isSmallScreenWidth)]}>
+            <View style={[StyleUtils.getReportWelcomeContainerStyle(shouldUseNarrowLayout)]}>
                 <AnimatedEmptyStateBackground />
-                <View style={[StyleUtils.getReportWelcomeTopMarginStyle(isSmallScreenWidth)]} />
+                <View style={[StyleUtils.getReportWelcomeTopMarginStyle(shouldUseNarrowLayout)]} />
                 {allAncestors.map((ancestor) => (
                     <OfflineWithFeedback
                         key={ancestor.reportAction.reportActionID}
