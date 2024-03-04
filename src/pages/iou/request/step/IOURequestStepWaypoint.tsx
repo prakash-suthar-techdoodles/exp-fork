@@ -69,6 +69,7 @@ function IOURequestStepWaypoint({
     const [isDeleteStopModalOpen, setIsDeleteStopModalOpen] = useState(false);
     const navigation = useNavigation();
     const isFocused = navigation.isFocused();
+    const isCreatingRequest = action === CONST.IOU.ACTION.CREATE;
     const {translate} = useLocalize();
     const {isOffline} = useNetwork();
     const textInput = useRef<TextInput | null>(null);
@@ -111,13 +112,13 @@ function IOURequestStepWaypoint({
         return errors;
     };
 
-    const saveWaypoint = (waypoint: FormOnyxValues<'waypointForm'>) => Transaction.saveWaypoint(transactionID, pageIndex, waypoint, action === CONST.IOU.ACTION.CREATE);
+    const saveWaypoint = (waypoint: FormOnyxValues<'waypointForm'>) => Transaction.saveWaypoint(transactionID, pageIndex, waypoint, isCreatingRequest);
 
     const submit = (values: FormOnyxValues<'waypointForm'>) => {
         const waypointValue = values[`waypoint${pageIndex}`] ?? '';
         // Allows letting you set a waypoint to an empty value
         if (waypointValue === '') {
-            Transaction.removeWaypoint(transaction, pageIndex, true);
+            Transaction.removeWaypoint(transaction, pageIndex, isCreatingRequest);
         }
 
         // While the user is offline, the auto-complete address search will not work
@@ -135,7 +136,7 @@ function IOURequestStepWaypoint({
     };
 
     const deleteStopAndHideModal = () => {
-        Transaction.removeWaypoint(transaction, pageIndex, true);
+        Transaction.removeWaypoint(transaction, pageIndex, isCreatingRequest);
         setIsDeleteStopModalOpen(false);
         Navigation.goBack(ROUTES.MONEY_REQUEST_DISTANCE_TAB.getRoute(iouType));
     };
@@ -148,7 +149,7 @@ function IOURequestStepWaypoint({
             name: values.name,
         };
 
-        Transaction.saveWaypoint(transactionID, pageIndex, waypoint, action === CONST.IOU.ACTION.CREATE);
+        Transaction.saveWaypoint(transactionID, pageIndex, waypoint, isCreatingRequest);
         if (backTo) {
             Navigation.goBack(backTo);
             return;
