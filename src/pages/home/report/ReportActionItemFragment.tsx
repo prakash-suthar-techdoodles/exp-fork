@@ -50,9 +50,6 @@ type ReportActionItemFragmentProps = {
     /** Whether the report action type is 'APPROVED' or 'SUBMITTED'. Used to style system messages from Old Dot */
     isApprovedOrSubmittedReportAction?: boolean;
 
-    /** Whether the report action type is 'UNHOLD' or 'HOLD'. Used to style messages related to hold requests */
-    isHoldReportAction?: boolean;
-
     /** Used to format RTL display names in Old Dot system messages e.g. Arabic */
     isFragmentContainingDisplayName?: boolean;
 
@@ -74,7 +71,6 @@ function ReportActionItemFragment({
     actorIcon = {},
     isThreadParentMessage = false,
     isApprovedOrSubmittedReportAction = false,
-    isHoldReportAction = false,
     isFragmentContainingDisplayName = false,
     displayAsGroup = false,
     moderationDecision,
@@ -127,17 +123,6 @@ function ReportActionItemFragment({
                     <Text
                         numberOfLines={isSingleLine ? 1 : undefined}
                         style={[styles.chatItemMessage, styles.colorMuted]}
-                    >
-                        {isFragmentContainingDisplayName ? convertToLTR(fragment.text) : fragment.text}
-                    </Text>
-                );
-            }
-
-            if (isHoldReportAction) {
-                return (
-                    <Text
-                        numberOfLines={isSingleLine ? 1 : undefined}
-                        style={[styles.chatItemMessage]}
                     >
                         {isFragmentContainingDisplayName ? convertToLTR(fragment.text) : fragment.text}
                     </Text>
