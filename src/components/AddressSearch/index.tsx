@@ -390,7 +390,7 @@ function AddressSearch(
                                     {(isHovered) => (
                                         <View style={[styles.pv4, styles.ph3, StyleUtils.getBackgroundAndBorderStyle(isHovered || focusedIndex === index ? theme.border : theme.appBG)]}>
                                             {!!title && <Text style={[styles.googleSearchText]}>{title}</Text>}
-                                            <Text style={[styles.textLabelSupporting]}>{subtitle}</Text>
+                                            <Text style={[title ? styles.textLabelSupporting : styles.googleSearchText]}>{subtitle}</Text>
                                         </View>
                                     )}
                                 </Hoverable>
