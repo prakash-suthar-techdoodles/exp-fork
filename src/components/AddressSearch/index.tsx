@@ -1,12 +1,13 @@
 import React, {forwardRef, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import type {BaseSyntheticEvent, ForwardedRef} from 'react';
-import {ActivityIndicator, Keyboard, LogBox, ScrollView, View} from 'react-native';
+import {ActivityIndicator, Keyboard, LogBox, View} from 'react-native';
 import type {LayoutChangeEvent, VirtualizedList} from 'react-native';
 import {GooglePlacesAutocomplete} from 'react-native-google-places-autocomplete';
 import type {GooglePlaceData, GooglePlaceDetail} from 'react-native-google-places-autocomplete';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import Hoverable from '@components/Hoverable';
 import LocationErrorMessage from '@components/LocationErrorMessage';
+import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
 import TextInput from '@components/TextInput';
 import useArrowKeyFocusManager from '@hooks/useArrowKeyFocusManager';
