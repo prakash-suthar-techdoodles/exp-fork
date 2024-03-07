@@ -1753,6 +1753,7 @@ export default {
             disabled: 'Desactivada',
             delete: 'Eliminar espacio de trabajo',
             settings: 'Configuración',
+            accounting: 'Accounting',
             reimburse: 'Reembolsos',
             categories: 'Categorías',
             tags: 'Etiquetas',

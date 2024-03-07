@@ -201,6 +201,7 @@ const SCREENS = {
 
     WORKSPACE: {
         INITIAL: 'Workspace_Initial',
+        ACCOUNTING: 'Workspace_Accounting',
         PROFILE: 'Workspace_Profile',
         CARD: 'Workspace_Card',
         REIMBURSE: 'Workspace_Reimburse',

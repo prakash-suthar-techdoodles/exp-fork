@@ -110,6 +110,7 @@ const WRITE_COMMANDS = {
     DELETE_WORKSPACE_AVATAR: 'DeleteWorkspaceAvatar',
     UPDATE_WORKSPACE_GENERAL_SETTINGS: 'UpdateWorkspaceGeneralSettings',
     UPDATE_WORKSPACE_CUSTOM_UNIT_AND_RATE: 'UpdateWorkspaceCustomUnitAndRate',
+    REMOVE_WORKSPACE_INTEGRATION: 'RemoveWorkspaceIntegration',
     UPDATE_WORKSPACE_DESCRIPTION: 'UpdateWorkspaceDescription',
     UPDATE_WORKSPACE_MEMBERS_ROLE: 'UpdateWorkspaceMembersRole',
     CREATE_WORKSPACE: 'CreateWorkspace',

@@ -88,6 +88,9 @@ type CentralPaneNavigatorParamList = {
     [SCREENS.WORKSPACE.MEMBERS]: {
         policyID: string;
     };
+    [SCREENS.WORKSPACE.ACCOUNTING]: {
+        policyID: string;
+    };
     [SCREENS.WORKSPACE.CATEGORIES]: {
         policyID: string;
     };
@@ -179,6 +182,9 @@ type SettingsNavigatorParamList = {
     [SCREENS.SETTINGS.PROFILE.STATUS_CLEAR_AFTER]: undefined;
     [SCREENS.SETTINGS.PROFILE.STATUS_CLEAR_AFTER_DATE]: undefined;
     [SCREENS.SETTINGS.PROFILE.STATUS_CLEAR_AFTER_TIME]: undefined;
+    [SCREENS.WORKSPACE.INITIAL]: undefined;
+    [SCREENS.WORKSPACE.SETTINGS]: undefined;
+    [SCREENS.WORKSPACE.ACCOUNTING]: undefined;
     [SCREENS.WORKSPACE.CURRENCY]: undefined;
     [SCREENS.WORKSPACE.NAME]: undefined;
     [SCREENS.WORKSPACE.DESCRIPTION]: undefined;
