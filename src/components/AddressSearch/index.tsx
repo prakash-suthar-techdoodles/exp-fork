@@ -1,7 +1,7 @@
 import React, {forwardRef, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import type {BaseSyntheticEvent, ForwardedRef} from 'react';
 import {ActivityIndicator, Keyboard, LogBox, View} from 'react-native';
-import type {LayoutChangeEvent, VirtualizedList} from 'react-native';
+import type {LayoutChangeEvent, VirtualizedList, ScrollView as RNScrollView} from 'react-native';
 import {GooglePlacesAutocomplete} from 'react-native-google-places-autocomplete';
 import type {GooglePlaceData, GooglePlaceDetail} from 'react-native-google-places-autocomplete';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
@@ -494,7 +494,7 @@ function AddressSearch(
                             // to prevent a lingering border when there are no address suggestions.
                             setDisplayListViewBorder(event.nativeEvent.layout.height > variables.googleEmptyListViewHeight);
                             setIsFocused(true);
-                            const nativeEvent = event.nativeEvent as unknown as BaseSyntheticEvent<ScrollView>;
+                            const nativeEvent = event.nativeEvent as unknown as BaseSyntheticEvent<RNScrollView>;
                             const target = nativeEvent.target.getScrollResponder() as VirtualizedList<HTMLElement>;
                             const data = target?.props?.data;
                             if (data) {
