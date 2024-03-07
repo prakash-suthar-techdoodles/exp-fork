@@ -1,7 +1,8 @@
 import React, {forwardRef, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import type {BaseSyntheticEvent, ForwardedRef} from 'react';
 import {ActivityIndicator, Keyboard, LogBox, View} from 'react-native';
-import type {LayoutChangeEvent, VirtualizedList, ScrollView as RNScrollView} from 'react-native';
+// eslint-disable-next-line no-restricted-imports
+import type {LayoutChangeEvent, ScrollView as RNScrollView, VirtualizedList} from 'react-native';
 import {GooglePlacesAutocomplete} from 'react-native-google-places-autocomplete';
 import type {GooglePlaceData, GooglePlaceDetail} from 'react-native-google-places-autocomplete';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
