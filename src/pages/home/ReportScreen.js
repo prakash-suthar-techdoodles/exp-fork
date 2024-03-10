@@ -37,6 +37,7 @@ import * as Report from '@userActions/Report';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
+import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import HeaderView from './HeaderView';
 import reportActionPropTypes from './report/reportActionPropTypes';
 import ReportActionsView from './report/ReportActionsView';
@@ -356,11 +357,17 @@ function ReportScreen({
         // is not stored locally yet. If report.reportID exists, then the report has been stored locally and nothing more needs to be done.
         // If it doesn't exist, then we fetch the report from the API.
         if (report.reportID && report.reportID === getReportID(route) && !isLoadingInitialReportActions) {
+            const parentReport = ReportUtils.getParentReport(report);
+
+            if (ReportUtils.isThread(report) && isEmptyObject(parentReport)) {
+                Report.openReport(report.parentReportID);
+            }
+
             return;
         }
 
         Report.openReport(reportIDFromPath);
-    }, [report.reportID, route, isLoadingInitialReportActions]);
+    }, [report, route, isLoadingInitialReportActions]);
 
     const dismissBanner = useCallback(() => {
         setIsBannerVisible(false);
