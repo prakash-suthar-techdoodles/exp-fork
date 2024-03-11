@@ -3,6 +3,13 @@ import type {NativeSyntheticEvent, StyleProp, TextInputProps, TextInputSelection
 type TextSelection = {
     start: number;
     end?: number;
+
+    // selection position for mobile
+    cursorPosition?: {start: {x: number; y: number}; end: {x: number; y: number}};
+
+    // selection position for web
+    positionX?: number;
+    positionY?: number;
 };
 
 type ComposerProps = TextInputProps & {

@@ -1,5 +1,5 @@
 import type {ForwardedRef, RefAttributes} from 'react';
-import React, {forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState} from 'react';
+import React, {forwardRef, useCallback, useImperativeHandle, useRef, useState} from 'react';
 import type {NativeSyntheticEvent, TextInputSelectionChangeEventData} from 'react-native';
 import {withOnyx} from 'react-native-onyx';
 import type {Emoji} from '@assets/emojis/types';
@@ -45,7 +45,6 @@ const defaultSuggestionsValues: SuggestionsValue = {
     colonIndex: -1,
     shouldShowSuggestionMenu: false,
 };
-
 function SuggestionEmoji(
     {
         preferredSkinTone = CONST.EMOJI_DEFAULT_SKIN_TONE,
@@ -55,11 +54,11 @@ function SuggestionEmoji(
         updateComment,
         isAutoSuggestionPickerLarge,
         resetKeyboardInput,
-        measureParentContainer,
-        isComposerFocused,
+        measureParentContainerAndReportCursor,
     }: SuggestionEmojiProps,
     ref: ForwardedRef<SuggestionsRef>,
 ) {
+    const prevValueRef = useRef(value);
     const [suggestionValues, setSuggestionValues] = useState(defaultSuggestionsValues);
 
     const isEmojiSuggestionsMenuVisible = suggestionValues.suggestedEmojis.length > 0 && suggestionValues.shouldShowSuggestionMenu;
@@ -151,11 +150,13 @@ function SuggestionEmoji(
      */
     const calculateEmojiSuggestion = useCallback(
         (selectionEnd: number) => {
-            if (shouldBlockCalc.current || !value) {
+            if (shouldBlockCalc.current || !value || prevValueRef.current === value) {
                 shouldBlockCalc.current = false;
                 resetSuggestions();
                 return;
             }
+            prevValueRef.current = value;
+
             const leftString = value.substring(0, selectionEnd);
             const colonIndex = leftString.lastIndexOf(':');
             const isCurrentlyShowingEmojiSuggestion = isEmojiCode(value, selectionEnd);
@@ -177,13 +178,6 @@ function SuggestionEmoji(
         },
         [value, preferredLocale, setHighlightedEmojiIndex, resetSuggestions],
     );
-
-    useEffect(() => {
-        if (!isComposerFocused) {
-            return;
-        }
-        calculateEmojiSuggestion(selection.end);
-    }, [selection, calculateEmojiSuggestion, isComposerFocused]);
 
     const onSelectionChange = useCallback(
         (e: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => {
@@ -231,7 +225,7 @@ function SuggestionEmoji(
             onSelect={insertSelectedEmoji}
             preferredSkinToneIndex={preferredSkinTone}
             isEmojiPickerLarge={!!isAutoSuggestionPickerLarge}
-            measureParentContainer={measureParentContainer}
+            measureParentContainerAndReportCursor={measureParentContainerAndReportCursor}
         />
     );
 }

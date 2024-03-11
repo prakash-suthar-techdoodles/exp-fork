@@ -53,7 +53,8 @@ type Selection = {
  * Returns the new selection object based on the updated amount's length
  */
 const getNewSelection = (oldSelection: Selection, prevLength: number, newLength: number): Selection => {
-    const cursorPosition = oldSelection.end + (newLength - prevLength);
+    const oldEnd = oldSelection?.end ?? 0;
+    const cursorPosition = oldEnd + (newLength - prevLength);
     return {start: cursorPosition, end: cursorPosition};
 };
 
@@ -87,13 +88,13 @@ function MoneyRequestAmountForm(
     const decimals = CurrencyUtils.getCurrencyDecimals(currency);
     const selectedAmountAsString = amount ? CurrencyUtils.convertToFrontendAmount(amount).toString() : '';
 
-    const [currentAmount, setCurrentAmount] = useState(selectedAmountAsString);
+    const [currentAmount, setCurrentAmount] = useState<string>(selectedAmountAsString);
     const [formError, setFormError] = useState<MaybePhraseKey>('');
     const [shouldUpdateSelection, setShouldUpdateSelection] = useState(true);
 
     const [selection, setSelection] = useState({
-        start: selectedAmountAsString.length,
-        end: selectedAmountAsString.length,
+        start: selectedAmountAsString.length ?? 0,
+        end: selectedAmountAsString.length ?? 0,
     });
 
     const forwardDeletePressedRef = useRef(false);
@@ -148,7 +149,7 @@ function MoneyRequestAmountForm(
             // Use a shallow copy of selection to trigger setSelection
             // More info: https://github.com/Expensify/App/issues/16385
             if (!MoneyRequestUtils.validateAmount(newAmountWithoutSpaces, decimals)) {
-                setSelection((prevSelection) => ({...prevSelection}));
+                setSelection((prevSelection: Selection) => ({...prevSelection}));
                 return;
             }
             if (formError) {
@@ -158,12 +159,12 @@ function MoneyRequestAmountForm(
             // setCurrentAmount contains another setState(setSelection) making it error-prone since it is leading to setSelection being called twice for a single setCurrentAmount call. This solution introducing the hasSelectionBeenSet flag was chosen for its simplicity and lower risk of future errors https://github.com/Expensify/App/issues/23300#issuecomment-1766314724.
 
             let hasSelectionBeenSet = false;
-            setCurrentAmount((prevAmount) => {
+            setCurrentAmount((prevAmount: string) => {
                 const strippedAmount = MoneyRequestUtils.stripCommaFromAmount(newAmountWithoutSpaces);
                 const isForwardDelete = prevAmount.length > strippedAmount.length && forwardDeletePressedRef.current;
                 if (!hasSelectionBeenSet) {
                     hasSelectionBeenSet = true;
-                    setSelection((prevSelection) => getNewSelection(prevSelection, isForwardDelete ? strippedAmount.length : prevAmount.length, strippedAmount.length));
+                    setSelection((prevSelection: Selection) => getNewSelection(prevSelection, isForwardDelete ? strippedAmount.length : prevAmount.length, strippedAmount.length));
                 }
                 return strippedAmount;
             });
