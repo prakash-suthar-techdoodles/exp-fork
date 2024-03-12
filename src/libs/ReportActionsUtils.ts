@@ -506,6 +506,7 @@ function getLastVisibleMessage(reportID: string, actionsToMerge: OnyxCollection<
     }
     return {
         lastMessageText: messageText,
+        lastMessageHtml: message?.html,
     };
 }
 
