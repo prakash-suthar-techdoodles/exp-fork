@@ -447,6 +447,7 @@ function AddressSearch(
                                 }
                                 // If the text is empty and we have no predefined places, we set displayListViewBorder to false to prevent UI flickering
                                 if (!text && !predefinedPlaces?.length) {
+                                    setMaxIndex(0);
                                     setDisplayListViewBorder(false);
                                 }
                             },
