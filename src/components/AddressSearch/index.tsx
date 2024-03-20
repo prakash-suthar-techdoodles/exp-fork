@@ -242,11 +242,11 @@ function AddressSearch(
         [inputID, onInputChange, onPress, renamedInputKeys],
     );
     const selectFocusedOption = useCallback(() => {
-        if (!resultRef.current) {
-            return;
-        }
         if (focusedIndex === -1 && shouldShowCurrentLocationButton) {
             currentLocationButtonRef?.current?.press();
+            return;
+        }
+        if (!resultRef.current) {
             return;
         }
         const data = resultRef?.current[focusedIndex];
