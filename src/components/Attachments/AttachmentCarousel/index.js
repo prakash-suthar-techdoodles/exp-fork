@@ -26,6 +26,7 @@ const viewabilityConfig = {
     // To facilitate paging through the attachments, we want to consider an item "viewable" when it is
     // more than 95% visible. When that happens we update the page index in the state.
     itemVisiblePercentThreshold: 95,
+    minimumViewTime: 300,
 };
 
 function AttachmentCarousel({report, reportActions, parentReportActions, source, onNavigate, setDownloadButtonVisibility, translate}) {
@@ -193,16 +194,19 @@ function AttachmentCarousel({report, reportActions, parentReportActions, source,
                             disableIntervalMomentum
                             pagingEnabled
                             snapToAlignment="start"
-                            snapToInterval={containerWidth}
+                            // Without explicitly setting this value (despite it being the default), 
+                            // the view may appear slightly different (with a 1-2px padding)
+                            contentInset={{top: 0, left: 0, bottom: 0, right: 0}}
+                            contentInsetAdjustmentBehavior="automatic"
+                            snapToOffsets={_.map(attachments, (__, index) => index * containerWidth)}
                             // Enable scrolling by swiping on mobile (touch) devices only
                             // disable scroll for desktop/browsers because they add their scrollbars
                             // Enable scrolling FlatList only when PDF is not in a zoomed state
                             scrollEnabled={canUseTouchScreen}
                             ref={scrollRef}
                             initialScrollIndex={page}
-                            initialNumToRender={3}
-                            windowSize={5}
-                            maxToRenderPerBatch={CONST.MAX_TO_RENDER_PER_BATCH.CAROUSEL}
+                            initialNumToRender={1}
+                            windowSize={1}
                             data={attachments}
                             CellRendererComponent={AttachmentCarouselCellRenderer}
                             renderItem={renderItem}
