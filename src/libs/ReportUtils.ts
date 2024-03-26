@@ -3,7 +3,6 @@ import ExpensiMark from 'expensify-common/lib/ExpensiMark';
 import Str from 'expensify-common/lib/str';
 import {isEmpty} from 'lodash';
 import lodashEscape from 'lodash/escape';
-import lodashFindLastIndex from 'lodash/findLastIndex';
 import lodashIntersection from 'lodash/intersection';
 import lodashIsEqual from 'lodash/isEqual';
 import type {OnyxCollection, OnyxEntry, OnyxUpdate} from 'react-native-onyx';
@@ -55,7 +54,6 @@ import * as store from './actions/ReimbursementAccount/store';
 import * as CollectionUtils from './CollectionUtils';
 import * as CurrencyUtils from './CurrencyUtils';
 import DateUtils from './DateUtils';
-import originalGetReportPolicyID from './getReportPolicyID';
 import isReportMessageAttachment from './isReportMessageAttachment';
 import localeCompare from './LocaleCompare';
 import * as LocalePhoneNumber from './LocalePhoneNumber';
@@ -109,6 +107,7 @@ type ParticipantDetails = [number, string, UserUtils.AvatarSource, UserUtils.Ava
 type OptimisticAddCommentReportAction = Pick<
     ReportAction,
     | 'reportActionID'
+    | 'previousReportActionID'
     | 'actionName'
     | 'actorAccountID'
     | 'person'
@@ -173,6 +172,7 @@ type OptimisticIOUReportAction = Pick<
     | 'message'
     | 'person'
     | 'reportActionID'
+    | 'previousReportActionID'
     | 'shouldShow'
     | 'created'
     | 'pendingAction'
@@ -193,39 +193,86 @@ type ReportOfflinePendingActionAndErrors = {
 
 type OptimisticApprovedReportAction = Pick<
     ReportAction,
-    'actionName' | 'actorAccountID' | 'automatic' | 'avatar' | 'isAttachment' | 'originalMessage' | 'message' | 'person' | 'reportActionID' | 'shouldShow' | 'created' | 'pendingAction'
+    | 'actionName'
+    | 'actorAccountID'
+    | 'automatic'
+    | 'avatar'
+    | 'isAttachment'
+    | 'originalMessage'
+    | 'message'
+    | 'person'
+    | 'reportActionID'
+    | 'previousReportActionID'
+    | 'shouldShow'
+    | 'created'
+    | 'pendingAction'
 >;
 
 type OptimisticSubmittedReportAction = Pick<
     ReportAction,
-    'actionName' | 'actorAccountID' | 'automatic' | 'avatar' | 'isAttachment' | 'originalMessage' | 'message' | 'person' | 'reportActionID' | 'shouldShow' | 'created' | 'pendingAction'
+    | 'actionName'
+    | 'actorAccountID'
+    | 'automatic'
+    | 'avatar'
+    | 'isAttachment'
+    | 'originalMessage'
+    | 'message'
+    | 'person'
+    | 'reportActionID'
+    | 'previousReportActionID'
+    | 'shouldShow'
+    | 'created'
+    | 'pendingAction'
 >;
 
 type OptimisticHoldReportAction = Pick<
     ReportAction,
-    'actionName' | 'actorAccountID' | 'automatic' | 'avatar' | 'isAttachment' | 'originalMessage' | 'message' | 'person' | 'reportActionID' | 'shouldShow' | 'created' | 'pendingAction'
+    | 'actionName'
+    | 'actorAccountID'
+    | 'automatic'
+    | 'avatar'
+    | 'isAttachment'
+    | 'originalMessage'
+    | 'message'
+    | 'person'
+    | 'reportActionID'
+    | 'previousReportActionID'
+    | 'shouldShow'
+    | 'created'
+    | 'pendingAction'
 >;
 
 type OptimisticCancelPaymentReportAction = Pick<
     ReportAction,
-    'actionName' | 'actorAccountID' | 'message' | 'originalMessage' | 'person' | 'reportActionID' | 'shouldShow' | 'created' | 'pendingAction'
+    'actionName' | 'actorAccountID' | 'message' | 'originalMessage' | 'person' | 'reportActionID' | 'previousReportActionID' | 'shouldShow' | 'created' | 'pendingAction'
 >;
 
 type OptimisticEditedTaskReportAction = Pick<
     ReportAction,
-    'reportActionID' | 'actionName' | 'pendingAction' | 'actorAccountID' | 'automatic' | 'avatar' | 'created' | 'shouldShow' | 'message' | 'person'
+    'reportActionID' | 'previousReportActionID' | 'actionName' | 'pendingAction' | 'actorAccountID' | 'automatic' | 'avatar' | 'created' | 'shouldShow' | 'message' | 'person'
 >;
 
 type OptimisticClosedReportAction = Pick<
     ReportAction,
-    'actionName' | 'actorAccountID' | 'automatic' | 'avatar' | 'created' | 'message' | 'originalMessage' | 'pendingAction' | 'person' | 'reportActionID' | 'shouldShow'
+    | 'actionName'
+    | 'actorAccountID'
+    | 'automatic'
+    | 'avatar'
+    | 'created'
+    | 'message'
+    | 'originalMessage'
+    | 'pendingAction'
+    | 'person'
+    | 'reportActionID'
+    | 'previousReportActionID'
+    | 'shouldShow'
 >;
 
 type OptimisticCreatedReportAction = OriginalMessageCreated &
-    Pick<ReportActionBase, 'actorAccountID' | 'automatic' | 'avatar' | 'created' | 'message' | 'person' | 'reportActionID' | 'shouldShow' | 'pendingAction'>;
+    Pick<ReportActionBase, 'actorAccountID' | 'automatic' | 'avatar' | 'created' | 'message' | 'person' | 'reportActionID' | 'previousReportActionID' | 'shouldShow' | 'pendingAction'>;
 
 type OptimisticRenamedReportAction = OriginalMessageRenamed &
-    Pick<ReportActionBase, 'actorAccountID' | 'automatic' | 'avatar' | 'created' | 'message' | 'person' | 'reportActionID' | 'shouldShow' | 'pendingAction'>;
+    Pick<ReportActionBase, 'actorAccountID' | 'automatic' | 'avatar' | 'created' | 'message' | 'person' | 'reportActionID' | 'previousReportActionID' | 'shouldShow' | 'pendingAction'>;
 
 type OptimisticChatReport = Pick<
     Report,
@@ -264,6 +311,7 @@ type OptimisticChatReport = Pick<
 type OptimisticTaskReportAction = Pick<
     ReportAction,
     | 'reportActionID'
+    | 'previousReportActionID'
     | 'actionName'
     | 'actorAccountID'
     | 'automatic'
@@ -298,7 +346,19 @@ type OptimisticWorkspaceChats = {
 
 type OptimisticModifiedExpenseReportAction = Pick<
     ReportAction,
-    'actionName' | 'actorAccountID' | 'automatic' | 'avatar' | 'created' | 'isAttachment' | 'message' | 'originalMessage' | 'person' | 'pendingAction' | 'reportActionID' | 'shouldShow'
+    | 'actionName'
+    | 'actorAccountID'
+    | 'automatic'
+    | 'avatar'
+    | 'created'
+    | 'isAttachment'
+    | 'message'
+    | 'originalMessage'
+    | 'person'
+    | 'pendingAction'
+    | 'reportActionID'
+    | 'previousReportActionID'
+    | 'shouldShow'
 > & {reportID?: string};
 
 type OptimisticTaskReport = Pick<
@@ -501,16 +561,17 @@ Onyx.connect({
     },
 });
 
-const reportActionsByReport: OnyxCollection<ReportActions> = {};
+const newestReportActionPerReport: Record<string, ReportAction> = {};
 Onyx.connect({
     key: ONYXKEYS.COLLECTION.REPORT_ACTIONS,
     callback: (actions, key) => {
-        if (!key || !actions) {
+        if (!key || !actions || isEmptyObject(actions)) {
             return;
         }
 
         const reportID = CollectionUtils.extractCollectionItemID(key);
-        reportActionsByReport[reportID] = actions;
+        const sortedReportActionsForReport = ReportActionsUtils.getSortedReportActions(Object.values(actions), true);
+        newestReportActionPerReport[reportID] = sortedReportActionsForReport[0];
     },
 });
 
@@ -812,13 +873,6 @@ function isPolicyExpenseChat(report: OnyxEntry<Report> | Participant | EmptyObje
 }
 
 /**
- * Whether the provided report belongs to a Control policy and is an expense chat
- */
-function isControlPolicyExpenseChat(report: OnyxEntry<Report>): boolean {
-    return isPolicyExpenseChat(report) && getPolicyType(report, allPolicies) === CONST.POLICY.TYPE.CORPORATE;
-}
-
-/**
  * Whether the provided report belongs to a Free, Collect or Control policy
  */
 function isGroupPolicy(report: OnyxEntry<Report>): boolean {
@@ -839,13 +893,6 @@ function isPaidGroupPolicy(report: OnyxEntry<Report>): boolean {
  */
 function isPaidGroupPolicyExpenseChat(report: OnyxEntry<Report>): boolean {
     return isPolicyExpenseChat(report) && isPaidGroupPolicy(report);
-}
-
-/**
- * Whether the provided report belongs to a Control policy and is an expense report
- */
-function isControlPolicyExpenseReport(report: OnyxEntry<Report>): boolean {
-    return isExpenseReport(report) && getPolicyType(report, allPolicies) === CONST.POLICY.TYPE.CORPORATE;
 }
 
 /**
@@ -1140,19 +1187,6 @@ function isAllowedToComment(report: OnyxEntry<Report>): boolean {
 }
 
 /**
- * Checks if the current user is the admin of the policy given the policy expense chat.
- */
-function isPolicyExpenseChatAdmin(report: OnyxEntry<Report>, policies: OnyxCollection<Policy>): boolean {
-    if (!isPolicyExpenseChat(report)) {
-        return false;
-    }
-
-    const policyRole = policies?.[`${ONYXKEYS.COLLECTION.POLICY}${report?.policyID}`]?.role;
-
-    return policyRole === CONST.POLICY.ROLE.ADMIN;
-}
-
-/**
  * Checks if the current user is the admin of the policy.
  */
 function isPolicyAdmin(policyID: string, policies: OnyxCollection<Policy>): boolean {
@@ -1194,13 +1228,6 @@ function isWorkspaceThread(report: OnyxEntry<Report>): boolean {
  */
 function isThreadFirstChat(reportAction: OnyxEntry<ReportAction>, reportID: string): boolean {
     return reportAction?.childReportID?.toString() === reportID;
-}
-
-/**
- * Checks if a report is a child report.
- */
-function isChildReport(report: OnyxEntry<Report>): boolean {
-    return isThread(report) || isTaskReport(report);
 }
 
 /**
@@ -1861,9 +1888,12 @@ function getReimbursementDeQueuedActionMessage(reportAction: OnyxEntry<ReportAct
     return Localize.translateLocal('iou.canceledRequest', {submitterDisplayName, amount: formattedAmount});
 }
 
+function getOptimisticPreviousReportActionIDForNewAction(reportID: string) {
+    return newestReportActionPerReport[reportID]?.reportActionID;
+}
+
 /**
  * Builds an optimistic REIMBURSEMENTDEQUEUED report action with a randomly generated reportActionID.
- *
  */
 function buildOptimisticCancelPaymentReportAction(expenseReportID: string, amount: number, currency: string): OptimisticCancelPaymentReportAction {
     return {
@@ -1893,6 +1923,7 @@ function buildOptimisticCancelPaymentReportAction(expenseReportID: string, amoun
             },
         ],
         reportActionID: NumberUtils.rand64(),
+        previousReportActionID: getOptimisticPreviousReportActionIDForNewAction(expenseReportID),
         shouldShow: true,
         created: DateUtils.getDBTime(),
         pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD,
@@ -3717,6 +3748,7 @@ function buildOptimisticChatReport(
 function buildOptimisticCreatedReportAction(emailCreatingAction: string, created = DateUtils.getDBTime()): OptimisticCreatedReportAction {
     return {
         reportActionID: NumberUtils.rand64(),
+        previousReportActionID: null,
         actionName: CONST.REPORT.ACTIONS.TYPE.CREATED,
         pendingAction: CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD,
         actorAccountID: currentUserAccountID,
@@ -3953,12 +3985,12 @@ function buildOptimisticChangedTaskAssigneeReportAction(assigneeAccountID: numbe
     };
 }
 
-/**
- * Returns the necessary reportAction onyx data to indicate that a chat has been archived
- *
- * @param reason - A reason why the chat has been archived
- */
-function buildOptimisticClosedReportAction(emailClosingReport: string, policyName: string, reason: string = CONST.REPORT.ARCHIVE_REASON.DEFAULT): OptimisticClosedReportAction {
+function buildOptimisticClosedReportAction(
+    reportID: string,
+    policyName: string,
+    emailClosingReport: string,
+    reason: string = CONST.REPORT.ARCHIVE_REASON.DEFAULT,
+): OptimisticClosedReportAction {
     return {
         actionName: CONST.REPORT.ACTIONS.TYPE.CLOSED,
         actorAccountID: currentUserAccountID,
@@ -3990,6 +4022,7 @@ function buildOptimisticClosedReportAction(emailClosingReport: string, policyNam
             },
         ],
         reportActionID: NumberUtils.rand64(),
+        previousReportActionID: getOptimisticPreviousReportActionIDForNewAction(reportID),
         shouldShow: true,
     };
 }
@@ -4533,19 +4566,6 @@ function shouldShowFlagComment(reportAction: OnyxEntry<ReportAction>, report: On
 }
 
 /**
- * @param sortedAndFilteredReportActions - reportActions for the report, sorted newest to oldest, and filtered for only those that should be visible
- */
-function getNewMarkerReportActionID(report: OnyxEntry<Report>, sortedAndFilteredReportActions: ReportAction[]): string {
-    if (!isUnread(report)) {
-        return '';
-    }
-
-    const newMarkerIndex = lodashFindLastIndex(sortedAndFilteredReportActions, (reportAction) => (reportAction.created ?? '') > (report?.lastReadTime ?? ''));
-
-    return 'reportActionID' in sortedAndFilteredReportActions[newMarkerIndex] ? sortedAndFilteredReportActions[newMarkerIndex].reportActionID : '';
-}
-
-/**
  * Performs the markdown conversion, and replaces code points > 127 with C escape sequences
  * Used for compatibility with the backend auth validator for AddComment, and to account for MD in comments
  * @returns The comment's total length as seen from the backend
@@ -4620,13 +4640,6 @@ function getReportIDFromLink(url: string | null): string {
         return '';
     }
     return reportID;
-}
-
-/**
- * Get the report policyID given a reportID
- */
-function getReportPolicyID(reportID?: string): string | undefined {
-    return originalGetReportPolicyID(reportID);
 }
 
 /**
@@ -5543,7 +5556,6 @@ export {
     isClosedExpenseReportWithNoExpenses,
     isExpensifyOnlyParticipantInReport,
     canCreateTaskInReport,
-    isPolicyExpenseChatAdmin,
     isPolicyAdmin,
     isPublicRoom,
     isPublicAnnounceRoom,
@@ -5561,8 +5573,6 @@ export {
     isPolicyExpenseChat,
     isGroupPolicy,
     isPaidGroupPolicy,
-    isControlPolicyExpenseChat,
-    isControlPolicyExpenseReport,
     isPaidGroupPolicyExpenseChat,
     isPaidGroupPolicyExpenseReport,
     getIconsForParticipants,
@@ -5573,7 +5583,6 @@ export {
     getReport,
     getReportNotificationPreference,
     getReportIDFromLink,
-    getReportPolicyID,
     getRouteFromLink,
     getDeletedParentActionMessageForChatReport,
     getLastVisibleMessage,
@@ -5629,7 +5638,6 @@ export {
     isMoneyRequestReport,
     isMoneyRequest,
     chatIncludesChronos,
-    getNewMarkerReportActionID,
     canSeeDefaultRoom,
     getDefaultWorkspaceAvatar,
     getDefaultWorkspaceAvatarTestID,
@@ -5644,7 +5652,6 @@ export {
     isThread,
     isChatThread,
     isThreadFirstChat,
-    isChildReport,
     shouldReportShowSubscript,
     isReportDataReady,
     isValidReportIDFromPath,
