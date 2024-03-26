@@ -519,6 +519,7 @@ export default {
         hereAlternateText: 'Notify everyone online in this room',
     },
     newMessages: 'New messages',
+    youHaveBeenBanned: 'Note: You have been banned from communicating in this channel',
     reportTypingIndicator: {
         isTyping: 'is typing...',
         areTyping: 'are typing...',
