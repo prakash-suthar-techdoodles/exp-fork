@@ -1,4 +1,5 @@
 import {useFocusEffect, useIsFocused} from '@react-navigation/native';
+import lodashDebounce from 'lodash/debounce';
 import isEmpty from 'lodash/isEmpty';
 import type {ForwardedRef} from 'react';
 import React, {forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState} from 'react';
@@ -33,6 +34,7 @@ function BaseSelectionList<TItem extends ListItem>(
         ListItem,
         canSelectMultiple = false,
         onSelectRow,
+        shouldDebounceRowSelect = false,
         onCheckboxPress,
         onSelectAll,
         onDismissError,
@@ -166,6 +168,9 @@ function BaseSelectionList<TItem extends ListItem>(
     // If `initiallyFocusedOptionKey` is not passed, we fall back to `-1`, to avoid showing the highlight on the first member
     const [focusedIndex, setFocusedIndex] = useState(() => flattenedSections.allOptions.findIndex((option) => option.keyForList === initiallyFocusedOptionKey));
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const debouncedOnSelectRow = useCallback(lodashDebounce(onSelectRow, 1000, {leading: true}), [onSelectRow]);
+
     const [slicedSections, ShowMoreButtonInstance] = useMemo(() => {
         let remainingOptionsLimit = CONST.MAX_OPTIONS_SELECTOR_PAGE_LENGTH * currentPage;
         const processedSections = getSectionsWithIndexOffset(
@@ -243,7 +248,11 @@ function BaseSelectionList<TItem extends ListItem>(
             }
         }
 
-        onSelectRow(item);
+        if (shouldDebounceRowSelect) {
+            debouncedOnSelectRow(item);
+        } else {
+            onSelectRow(item);
+        }
 
         if (shouldShowTextInput && shouldPreventDefaultFocusOnSelectRow && innerTextInputRef.current) {
             innerTextInputRef.current.focus();
@@ -267,6 +276,11 @@ function BaseSelectionList<TItem extends ListItem>(
 
         selectRow(focusedOption);
     };
+
+    // This debounce happens on the trailing edge because on repeated enter presses, rapid component state update cancels the existing debounce and the redundant
+    // enter presses runs the debounced function again. This is solved by running the debounce on trailing edge.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const debouncedSelectFocusedOption = useCallback(lodashDebounce(selectFocusedOption, 100), [selectFocusedOption]);
 
     /**
      * This function is used to compute the layout of any given item in our list.
@@ -341,6 +355,26 @@ function BaseSelectionList<TItem extends ListItem>(
             />
         );
     };
+
+    useEffect(() => {
+        if (!(shouldDebounceRowSelect && debouncedOnSelectRow.cancel)) {
+            return;
+        }
+
+        return () => {
+            debouncedOnSelectRow.cancel();
+        };
+    }, [debouncedOnSelectRow, shouldDebounceRowSelect]);
+
+    useEffect(() => {
+        if (!(shouldDebounceRowSelect && debouncedSelectFocusedOption.cancel)) {
+            return;
+        }
+
+        return () => {
+            debouncedSelectFocusedOption.cancel();
+        };
+    }, [debouncedSelectFocusedOption, shouldDebounceRowSelect]);
 
     const scrollToFocusedIndexOnFirstRender = useCallback(
         (nativeEvent: LayoutChangeEvent) => {
@@ -450,7 +484,7 @@ function BaseSelectionList<TItem extends ListItem>(
     useImperativeHandle(ref, () => ({scrollAndHighlightItem}), [scrollAndHighlightItem]);
 
     /** Selects row when pressing Enter */
-    useKeyboardShortcut(CONST.KEYBOARD_SHORTCUTS.ENTER, selectFocusedOption, {
+    useKeyboardShortcut(CONST.KEYBOARD_SHORTCUTS.ENTER, shouldDebounceRowSelect ? debouncedSelectFocusedOption : selectFocusedOption, {
         captureOnInputs: true,
         shouldBubble: !flattenedSections.allOptions[focusedIndex],
         shouldStopPropagation,
@@ -509,7 +543,7 @@ function BaseSelectionList<TItem extends ListItem>(
                                     inputMode={inputMode}
                                     selectTextOnFocus
                                     spellCheck={false}
-                                    onSubmitEditing={selectFocusedOption}
+                                    onSubmitEditing={shouldDebounceRowSelect ? debouncedSelectFocusedOption : selectFocusedOption}
                                     blurOnSubmit={!!flattenedSections.allOptions.length}
                                     isLoading={isLoadingNewOptions}
                                     testID="selection-list-text-input"

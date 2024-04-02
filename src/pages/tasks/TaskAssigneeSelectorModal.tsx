@@ -218,6 +218,7 @@ function TaskAssigneeSelectorModal({reports, task, didScreenTransitionEnd}: Task
                         sections={didScreenTransitionEnd && !isLoading ? sections : []}
                         ListItem={UserListItem}
                         onSelectRow={selectReport}
+                        shouldDebounceRowSelect
                         onChangeText={onChangeText}
                         textInputValue={searchValue}
                         headerMessage={headerMessage}
