@@ -43,12 +43,12 @@ function WorkspaceProfileSharePage({policy}: WithPolicyProps) {
     const hasAvatar = Boolean(policy?.avatar);
     const logo = hasAvatar ? (policy?.avatar as ImageSourcePropType) : undefined;
 
-    const defaultWsAvatar = ReportUtils.getDefaultWorkspaceAvatar(policyName) || Expensicons.FallbackAvatar;
-    const defaultWsAvatarColors = StyleUtils.getDefaultWorkspaceAvatarColor(policyName);
+    const defaultWorkspaceAvatar = ReportUtils.getDefaultWorkspaceAvatar(policyName) || Expensicons.FallbackAvatar;
+    const defaultWorkspaceAvatarColors = StyleUtils.getDefaultWorkspaceAvatarColor(policyName);
 
-    const logoSVG = !hasAvatar ? defaultWsAvatar : undefined;
-    const logoBackground = !hasAvatar ? defaultWsAvatarColors.backgroundColor?.toString() : undefined;
-    const logoColor = !hasAvatar ? defaultWsAvatarColors.fill : undefined;
+    const logoSVG = !hasAvatar ? defaultWorkspaceAvatar : undefined;
+    const logoBackground = !hasAvatar ? defaultWorkspaceAvatarColors.backgroundColor?.toString() : undefined;
+    const logoColor = !hasAvatar ? defaultWorkspaceAvatarColors.fill : undefined;
 
     return (
         <ScreenWrapper

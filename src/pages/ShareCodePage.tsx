@@ -36,7 +36,7 @@ type ShareCodePageOnyxProps = {
 type ShareCodePageProps = ShareCodePageOnyxProps;
 
 // In case of sharing a policy (workspace) only return user defined avatar. Default ws avatars have separate logic
-function getLogoForWorkspace(policy?: OnyxEntry<Policy>) {
+function getLogoForWorkspace(policy?: OnyxEntry<Policy>): ImageSourcePropType | undefined {
     if (policy && policy.avatar) {
         return policy.avatar as ImageSourcePropType;
     }
@@ -82,15 +82,15 @@ function ShareCodePage({report, policy}: ShareCodePageProps) {
 
     // default logos (avatars) are SVG and because of that require some special logic
     let logoSVG: React.FC<SvgProps> | undefined;
-    let logoBackground;
-    let logoColor;
+    let logoBackground: string | undefined;
+    let logoColor: string | undefined;
 
     if (policy && !policy.avatar) {
         logoSVG = ReportUtils.getDefaultWorkspaceAvatar(policy?.name) || Expensicons.FallbackAvatar;
 
-        const defaultWsAvatarColors = StyleUtils.getDefaultWorkspaceAvatarColor(policy?.name);
-        logoBackground = defaultWsAvatarColors.backgroundColor?.toString();
-        logoColor = defaultWsAvatarColors.fill;
+        const defaultWorkspaceAvatarColors = StyleUtils.getDefaultWorkspaceAvatarColor(policy?.name);
+        logoBackground = defaultWorkspaceAvatarColors.backgroundColor?.toString();
+        logoColor = defaultWorkspaceAvatarColors.fill;
     }
 
     return (
