@@ -128,10 +128,6 @@ type SendMoneyParamsData = {
     failureData: OnyxUpdate[];
 };
 
-type OutstandingChildRequest = {
-    hasOutstandingChildRequest?: boolean;
-};
-
 let betas: OnyxTypes.Beta[] = [];
 Onyx.connect({
     key: ONYXKEYS.BETAS,
@@ -451,39 +447,28 @@ function getReceiptError(receipt?: Receipt, filename?: string, isScanRequest = t
         : ErrorUtils.getMicroSecondOnyxErrorObject({error: CONST.IOU.RECEIPT_ERROR, source: receipt.source?.toString() ?? '', filename: filename ?? ''}, errorKey);
 }
 
-function needsToBeManuallySubmitted(iouReport: OnyxTypes.Report) {
-    const isPolicyExpenseChat = ReportUtils.isExpenseReport(iouReport);
-
-    if (isPolicyExpenseChat) {
-        const policy = getPolicy(iouReport.policyID);
-        const isFromPaidPolicy = PolicyUtils.isPaidGroupPolicy(policy);
-
-        // If the scheduled submit is turned off on the policy, user needs to manually submit the report which is indicated by GBR in LHN
-        return isFromPaidPolicy && !policy.harvesting?.enabled;
+function needsToBeManuallySubmitted(report: OnyxTypes.Report) {
+    // Only expense reports need to be manually submitted
+    if (!ReportUtils.isExpenseReport(report)) {
+        return false;
     }
 
-    return true;
+    const policy = getPolicy(report.policyID);
+    const isFromPaidPolicy = PolicyUtils.isPaidGroupPolicy(policy);
+
+    // If the scheduled submit is turned off on the policy, user needs to manually submit the report which is indicated by GBR in LHN
+    return isFromPaidPolicy && !policy.harvesting?.enabled;
 }
 
 /**
  * Return the object to update hasOutstandingChildRequest
  */
-function getOutstandingChildRequest(policy: OnyxEntry<OnyxTypes.Policy> | EmptyObject, iouReport: OnyxTypes.Report): OutstandingChildRequest {
-    if (!needsToBeManuallySubmitted(iouReport)) {
-        return {
-            hasOutstandingChildRequest: false,
-        };
+function hasOutstandingChildRequest(report: OnyxTypes.Report): boolean {
+    if (needsToBeManuallySubmitted(report)) {
+        return true;
     }
 
-    if (PolicyUtils.isPolicyAdmin(policy)) {
-        return {
-            hasOutstandingChildRequest: true,
-        };
-    }
-
-    return {
-        hasOutstandingChildRequest: iouReport.managerID === userAccountID && iouReport.total !== 0,
-    };
+    return report.managerID === userAccountID && report.total !== 0;
 }
 
 /** Builds the Onyx data for a money request */
@@ -509,7 +494,6 @@ function buildOnyxDataForMoneyRequest(
     isOneOnOneSplit = false,
 ): [OnyxUpdate[], OnyxUpdate[], OnyxUpdate[]] {
     const isScanRequest = TransactionUtils.isScanRequest(transaction);
-    const outstandingChildRequest = getOutstandingChildRequest(policy ?? {}, iouReport);
     const clearedPendingFields = Object.fromEntries(Object.keys(transaction.pendingFields ?? {}).map((key) => [key, null]));
     const optimisticData: OnyxUpdate[] = [];
     let newQuickAction: ValueOf<typeof CONST.QUICK_ACTIONS> = isScanRequest ? CONST.QUICK_ACTIONS.REQUEST_SCAN : CONST.QUICK_ACTIONS.REQUEST_MANUAL;
@@ -527,7 +511,7 @@ function buildOnyxDataForMoneyRequest(
                 lastReadTime: DateUtils.getDBTime(),
                 lastMessageTranslationKey: '',
                 iouReportID: iouReport.reportID,
-                ...outstandingChildRequest,
+                hasOutstandingChildRequest: hasOutstandingChildRequest(iouReport),
                 ...(isNewChatReport ? {pendingFields: {createChat: CONST.RED_BRICK_ROAD_PENDING_ACTION.ADD}} : {}),
             },
         });
@@ -5347,4 +5331,6 @@ export {
     trackExpense,
     canIOUBePaid,
     canApproveIOU,
+    needsToBeManuallySubmitted,
+    hasOutstandingChildRequest,
 };

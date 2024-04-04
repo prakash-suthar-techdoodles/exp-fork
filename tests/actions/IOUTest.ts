@@ -22,6 +22,7 @@ import type {IOUMessage, OriginalMessageIOU} from '@src/types/onyx/OriginalMessa
 import type {ReportActionBase} from '@src/types/onyx/ReportAction';
 import {toCollectionDataSet} from '@src/types/utils/CollectionDataSet';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
+import * as LHNTestUtils from '../utils/LHNTestUtils';
 import PusherHelper from '../utils/PusherHelper';
 import * as TestHelper from '../utils/TestHelper';
 import waitForBatchedUpdates from '../utils/waitForBatchedUpdates';
@@ -51,10 +52,11 @@ describe('actions/IOU', () => {
         });
     });
 
-    beforeEach(() => {
+    beforeEach(async () => {
         // @ts-expect-error TODO: Remove this once TestHelper (https://github.com/Expensify/App/issues/25318) is migrated to TypeScript.
         global.fetch = TestHelper.getGlobalFetchMock();
-        return Onyx.clear().then(waitForBatchedUpdates);
+        await Onyx.clear();
+        await waitForBatchedUpdates();
     });
 
     describe('requestMoney', () => {
@@ -3249,6 +3251,112 @@ describe('actions/IOU', () => {
                             });
                         }),
                 );
+        });
+    });
+
+    describe('needsToBeManuallySubmitted', () => {
+        it('should return true for any expense report on a paid policy w/o harvesting enabled', async () => {
+            const policy = {
+                ...LHNTestUtils.getFakePolicy(),
+                type: CONST.POLICY.TYPE.TEAM,
+                harvesting: {
+                    enabled: false,
+                },
+            };
+            const report = {
+                ...LHNTestUtils.getFakeReport(),
+                type: CONST.REPORT.TYPE.EXPENSE,
+                policyID: policy.id,
+            };
+            await Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${policy.id}`, policy);
+            expect(IOU.needsToBeManuallySubmitted(report)).toBe(true);
+        });
+        it('should return false for any expense report on a paid policy w/ harvesting enabled', async () => {
+            const policy = {
+                ...LHNTestUtils.getFakePolicy(),
+                type: CONST.POLICY.TYPE.TEAM,
+            };
+            const report = {
+                ...LHNTestUtils.getFakeReport(),
+                type: CONST.REPORT.TYPE.EXPENSE,
+                policyID: policy.id,
+            };
+            await Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${policy.id}`, policy);
+            expect(IOU.needsToBeManuallySubmitted(report)).toBe(false);
+        });
+        it('should return false for any non-expense report', () => {
+            const report = LHNTestUtils.getFakeReport();
+            expect(IOU.needsToBeManuallySubmitted(report)).toBe(false);
+        });
+    });
+
+    describe('hasOutstandingChildRequest', () => {
+        it('should return true if an expense report needs to be manually submitted', async () => {
+            const policy = {
+                ...LHNTestUtils.getFakePolicy(),
+                type: CONST.POLICY.TYPE.TEAM,
+                harvesting: {
+                    enabled: false,
+                },
+            };
+            const report = {
+                ...LHNTestUtils.getFakeReport(),
+                type: CONST.REPORT.TYPE.EXPENSE,
+                policyID: policy.id,
+            };
+            await Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${policy.id}`, policy);
+            expect(IOU.hasOutstandingChildRequest(report)).toBe(true);
+        });
+        it('should return false if an expense report does not need to be manually submitted', async () => {
+            const policy = {
+                ...LHNTestUtils.getFakePolicy(),
+                type: CONST.POLICY.TYPE.TEAM,
+            };
+            const report = {
+                ...LHNTestUtils.getFakeReport(),
+                type: CONST.REPORT.TYPE.EXPENSE,
+                policyID: policy.id,
+            };
+            await Onyx.set(`${ONYXKEYS.COLLECTION.POLICY}${policy.id}`, policy);
+            expect(IOU.hasOutstandingChildRequest(report)).toBe(false);
+        });
+        it('should return false for an IOU report where no money is owed', async () => {
+            const report = {
+                ...LHNTestUtils.getFakeReport(),
+                type: CONST.REPORT.TYPE.IOU,
+                managerID: RORY_ACCOUNT_ID,
+                total: 0,
+            };
+            await Onyx.merge(ONYXKEYS.SESSION, {
+                email: RORY_EMAIL,
+                accountID: RORY_ACCOUNT_ID,
+            });
+            expect(IOU.hasOutstandingChildRequest(report)).toBe(false);
+        });
+        it('should return true for an IOU report where money is owed and the current user is the manager', async () => {
+            const report = {
+                ...LHNTestUtils.getFakeReport(),
+                type: CONST.REPORT.TYPE.IOU,
+                managerID: RORY_ACCOUNT_ID,
+                total: 1000,
+            };
+            await Onyx.merge(ONYXKEYS.SESSION, {
+                email: RORY_EMAIL,
+                accountID: RORY_ACCOUNT_ID,
+            });
+            expect(IOU.hasOutstandingChildRequest(report)).toBe(true);
+        });
+        it('should return false for an IOU report where money is owed but the current user is not the manager', async () => {
+            const report = {
+                ...LHNTestUtils.getFakeReport(),
+                type: CONST.REPORT.TYPE.IOU,
+                total: 1000,
+            };
+            await Onyx.merge(ONYXKEYS.SESSION, {
+                email: RORY_EMAIL,
+                accountID: RORY_ACCOUNT_ID,
+            });
+            expect(IOU.hasOutstandingChildRequest(report)).toBe(false);
         });
     });
 });
