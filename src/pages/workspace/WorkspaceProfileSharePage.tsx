@@ -17,7 +17,6 @@ import useWindowDimensions from '@hooks/useWindowDimensions';
 import Clipboard from '@libs/Clipboard';
 import Navigation from '@libs/Navigation/Navigation';
 import * as ReportUtils from '@libs/ReportUtils';
-import shouldAllowDownloadQRCode from '@libs/shouldAllowDownloadQRCode';
 import * as Url from '@libs/Url';
 import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
