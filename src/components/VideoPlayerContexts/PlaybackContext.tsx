@@ -16,23 +16,23 @@ function PlaybackContextProvider({children}: ChildrenProps) {
     const {currentReportID} = useCurrentReportID() ?? {};
     const videoResumeTryNumber = useRef<number>(0);
 
-    const pauseVideo = useCallback(() => {
-        currentVideoPlayerRef.current?.setStatusAsync?.({shouldPlay: false});
-    }, [currentVideoPlayerRef]);
+    const pauseVideo = useCallback(() => currentVideoPlayerRef.current?.setStatusAsync?.({shouldPlay: false}), [currentVideoPlayerRef]);
 
     const stopVideo = useCallback(() => {
         currentVideoPlayerRef.current?.stopAsync?.();
     }, [currentVideoPlayerRef]);
 
-    const playVideo = useCallback(() => {
-        currentVideoPlayerRef.current?.getStatusAsync?.().then((status) => {
-            const newStatus: AVPlaybackStatusToSet = {shouldPlay: true};
-            if ('durationMillis' in status && status.durationMillis === status.positionMillis) {
-                newStatus.positionMillis = 0;
-            }
-            currentVideoPlayerRef.current?.setStatusAsync(newStatus);
-        });
-    }, [currentVideoPlayerRef]);
+    const playVideo = useCallback(
+        () =>
+            currentVideoPlayerRef.current?.getStatusAsync?.().then((status) => {
+                const newStatus: AVPlaybackStatusToSet = {shouldPlay: true};
+                if ('durationMillis' in status && status.durationMillis === status.positionMillis) {
+                    newStatus.positionMillis = 0;
+                }
+                return currentVideoPlayerRef.current?.setStatusAsync(newStatus);
+            }),
+        [currentVideoPlayerRef],
+    );
 
     const unloadVideo = useCallback(() => {
         currentVideoPlayerRef.current?.unloadAsync?.();

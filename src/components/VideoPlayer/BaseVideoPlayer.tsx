@@ -18,7 +18,6 @@ import * as DeviceCapabilities from '@libs/DeviceCapabilities';
 import CONST from '@src/CONST';
 import shouldReplayVideo from './shouldReplayVideo';
 import type {VideoPlayerProps, VideoWithOnFullScreenUpdate} from './types';
-import * as VideoUtils from './utils';
 import VideoPlayerControls from './VideoPlayerControls';
 
 function BaseVideoPlayer({
@@ -54,8 +53,7 @@ function BaseVideoPlayer({
     const [isPlaying, setIsPlaying] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isBuffering, setIsBuffering] = useState(true);
-    // we add "#t=0.001" at the end of the URL to skip first milisecond of the video and always be able to show proper video preview when video is paused at the beginning
-    const [sourceURL] = useState(VideoUtils.addSkipTimeTagToURL(url.includes('blob:') || url.includes('file:///') ? url : addEncryptedAuthTokenToURL(url), 0.001));
+    const [sourceURL] = useState(url.includes('blob:') || url.includes('file:///') ? url : addEncryptedAuthTokenToURL(url));
     const [isPopoverVisible, setIsPopoverVisible] = useState(false);
     const [popoverAnchorPosition, setPopoverAnchorPosition] = useState({horizontal: 0, vertical: 0});
 
@@ -67,6 +65,7 @@ function BaseVideoPlayer({
     const isCurrentlyURLSet = currentlyPlayingURL === url;
     const isUploading = CONST.ATTACHMENT_LOCAL_URL_PREFIX.some((prefix) => url.startsWith(prefix));
     const videoStateRef = useRef<AVPlaybackStatus | null>(null);
+    const shouldFreezePlayIconRef = useRef(true);
 
     const togglePlayCurrentVideo = useCallback(() => {
         videoResumeTryNumber.current = 0;
@@ -172,6 +171,18 @@ function BaseVideoPlayer({
         });
     }, [currentVideoPlayerRef, handleFullscreenUpdate, handlePlaybackStatusUpdate]);
 
+    const playPauseForVideoPreview = useCallback(
+        () =>
+            playVideo()?.then(() => {
+                pauseVideo()?.then(() => {
+                    // After the preview (thumbnail) is displayed, set the ref to false for
+                    // the play / pause icons to be shown as expected based on isPlaying
+                    shouldFreezePlayIconRef.current = false;
+                });
+            }),
+        [playVideo, pauseVideo],
+    );
+
     useEffect(() => {
         if (!isUploading || !videoPlayerRef.current) {
             return;
@@ -179,7 +190,13 @@ function BaseVideoPlayer({
 
         // If we are uploading a new video, we want to immediately set the video player ref.
         currentVideoPlayerRef.current = videoPlayerRef.current;
-    }, [url, currentVideoPlayerRef, isUploading]);
+        // Reset the ref to true to prevent the play / pause icons toggle until after the preview is set,
+        // this needs to always be done after we are uploading a new video
+        shouldFreezePlayIconRef.current = true;
+        // We play / pause in quick succession to skip the first milisecond of the video in order
+        // to display the video preview (thumbnail) when uploading a new video
+        playPauseForVideoPreview();
+    }, [url, currentVideoPlayerRef, isUploading, playPauseForVideoPreview]);
 
     // update shared video elements
     useEffect(() => {
@@ -311,7 +328,7 @@ function BaseVideoPlayer({
                                     position={position}
                                     url={url}
                                     videoPlayerRef={videoPlayerRef}
-                                    isPlaying={isPlaying}
+                                    isPlaying={shouldFreezePlayIconRef.current ? false : isPlaying}
                                     small={shouldUseSmallVideoControls}
                                     style={videoControlsStyle}
                                     togglePlayCurrentVideo={togglePlayCurrentVideo}
