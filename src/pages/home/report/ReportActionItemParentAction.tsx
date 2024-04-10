@@ -101,9 +101,16 @@ function ReportActionItemParentAction({
                     errorRowStyles={[styles.ml10, styles.mr2]}
                     onClose={() => Report.navigateToConciergeChatAndDeleteReport(ancestor.report.reportID)}
                 >
-                    <ThreadDivider ancestor={ancestor} />
+                    <ThreadDivider
+                        ancestor={ancestor}
+                        isLinkDisabled={!ReportUtils.canCurrentUserOpenReport(ReportUtils.getReport(ancestor?.report?.parentReportID))}
+                    />
                     <ReportActionItem
-                        onPress={() => Navigation.navigate(ROUTES.REPORT_WITH_ID.getRoute(ancestor.report.parentReportID ?? ''))}
+                        onPress={
+                            ReportUtils.canCurrentUserOpenReport(ReportUtils.getReport(ancestor?.report?.parentReportID))
+                                ? () => Navigation.navigate(ROUTES.REPORT_WITH_ID.getRoute(ancestor.report.parentReportID ?? ''))
+                                : undefined
+                        }
                         parentReportAction={parentReportAction}
                         report={ancestor.report}
                         reportActions={reportActions}
