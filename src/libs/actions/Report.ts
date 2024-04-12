@@ -1238,6 +1238,7 @@ function deleteReportComment(reportID: string, reportAction: ReportAction) {
 
     CachedPDFPaths.clearByKey(reportActionID);
 
+    let shouldRequestHappen = true;
     API.write(
         WRITE_COMMANDS.DELETE_COMMENT,
         parameters,
@@ -1245,14 +1246,14 @@ function deleteReportComment(reportID: string, reportAction: ReportAction) {
         {
             getConflictingRequests: (persistedRequests) => {
                 const conflictingCommands = (
-                    isDeletedParentAction
-                        ? [WRITE_COMMANDS.UPDATE_COMMENT]
-                        : [WRITE_COMMANDS.ADD_COMMENT, WRITE_COMMANDS.ADD_ATTACHMENT, WRITE_COMMANDS.UPDATE_COMMENT, WRITE_COMMANDS.DELETE_COMMENT]
+                    isDeletedParentAction ? [WRITE_COMMANDS.UPDATE_COMMENT] : [WRITE_COMMANDS.ADD_COMMENT, WRITE_COMMANDS.ADD_ATTACHMENT, WRITE_COMMANDS.UPDATE_COMMENT]
                 ) as string[];
-                return persistedRequests.filter((request) => conflictingCommands.includes(request.command) && request.data?.reportActionID === reportActionID);
+                const conflictingRequests = persistedRequests.filter((request) => conflictingCommands.includes(request.command) && request.data?.reportActionID === reportActionID);
+                shouldRequestHappen = conflictingRequests.some((request) => request.command !== WRITE_COMMANDS.UPDATE_COMMENT);
+                return conflictingRequests;
             },
             handleConflictingRequest: () => Onyx.update(successData),
-            shouldIncludeCurrentRequest: !isDeletedParentAction,
+            shouldSkipThisRequestOnConflict: () => !shouldRequestHappen,
         },
     );
 }
