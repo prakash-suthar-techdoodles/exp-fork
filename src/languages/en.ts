@@ -1,9 +1,7 @@
 import {CONST as COMMON_CONST} from 'expensify-common/lib/CONST';
 import Str from 'expensify-common/lib/str';
-import {getReportActionOriginalMessage} from '@libs/ReportActionsUtils';
 import CONST from '@src/CONST';
 import type {Country} from '@src/CONST';
-import type {IOUMessage} from '@src/types/onyx/OriginalMessage';
 import type {PolicyConnectionSyncStage} from '@src/types/onyx/Policy';
 import type {
     AddressLineParams,
@@ -473,22 +471,12 @@ export default {
         markAsUnread: 'Mark as unread',
         markAsRead: 'Mark as read',
         editAction: ({action}: EditActionParams) =>
-            `Edit ${
-                action?.actionName === CONST.REPORT.ACTIONS.TYPE.IOU
-                    ? `${getReportActionOriginalMessage<IOUMessage>(action).type === CONST.IOU.REPORT_ACTION_TYPE.TRACK ? 'expense' : 'request'}`
-                    : 'comment'
-            }`,
+            `Edit ${action?.actionName === CONST.REPORT.ACTIONS.TYPE.IOU ? `${action?.originalMessage.type === CONST.IOU.REPORT_ACTION_TYPE.TRACK ? 'expense' : 'request'}` : 'comment'}`,
         deleteAction: ({action}: DeleteActionParams) =>
-            `Delete ${
-                action?.actionName === CONST.REPORT.ACTIONS.TYPE.IOU
-                    ? `${getReportActionOriginalMessage<IOUMessage>(action).type === CONST.IOU.REPORT_ACTION_TYPE.TRACK ? 'expense' : 'request'}`
-                    : 'comment'
-            }`,
+            `Delete ${action?.actionName === CONST.REPORT.ACTIONS.TYPE.IOU ? `${action?.originalMessage.type === CONST.IOU.REPORT_ACTION_TYPE.TRACK ? 'expense' : 'request'}` : 'comment'}`,
         deleteConfirmation: ({action}: DeleteConfirmationParams) =>
             `Are you sure you want to delete this ${
-                action?.actionName === CONST.REPORT.ACTIONS.TYPE.IOU
-                    ? `${getReportActionOriginalMessage<IOUMessage>(action).type === CONST.IOU.REPORT_ACTION_TYPE.TRACK ? 'expense' : 'request'}`
-                    : 'comment'
+                action?.actionName === CONST.REPORT.ACTIONS.TYPE.IOU ? `${action?.originalMessage.type === CONST.IOU.REPORT_ACTION_TYPE.TRACK ? 'expense' : 'request'}` : 'comment'
             }?`,
         onlyVisible: 'Only visible to',
         replyInThread: 'Reply in thread',

@@ -1,7 +1,5 @@
 import Str from 'expensify-common/lib/str';
-import {getReportActionOriginalMessage} from '@libs/ReportActionsUtils';
 import CONST from '@src/CONST';
-import type {IOUMessage} from '@src/types/onyx/OriginalMessage';
 import type {PolicyConnectionSyncStage} from '@src/types/onyx/Policy';
 import type {
     AddressLineParams,
@@ -465,21 +463,15 @@ export default {
         markAsRead: 'Marcar como leído',
         editAction: ({action}: EditActionParams) =>
             `Editar ${
-                action?.actionName === CONST.REPORT.ACTIONS.TYPE.IOU
-                    ? `${getReportActionOriginalMessage<IOUMessage>(action).type === CONST.IOU.REPORT_ACTION_TYPE.TRACK ? 'gastos' : 'solicitud'}`
-                    : 'comentario'
+                action?.actionName === CONST.REPORT.ACTIONS.TYPE.IOU ? `${action?.originalMessage.type === CONST.IOU.REPORT_ACTION_TYPE.TRACK ? 'gastos' : 'solicitud'}` : 'comentario'
             }`,
         deleteAction: ({action}: DeleteActionParams) =>
             `Eliminar ${
-                action?.actionName === CONST.REPORT.ACTIONS.TYPE.IOU
-                    ? `${getReportActionOriginalMessage<IOUMessage>(action).type === CONST.IOU.REPORT_ACTION_TYPE.TRACK ? 'gastos' : 'solicitud'}`
-                    : 'comentario'
+                action?.actionName === CONST.REPORT.ACTIONS.TYPE.IOU ? `${action?.originalMessage.type === CONST.IOU.REPORT_ACTION_TYPE.TRACK ? 'gastos' : 'solicitud'}` : 'comentario'
             }`,
         deleteConfirmation: ({action}: DeleteConfirmationParams) =>
             `¿Estás seguro de que quieres eliminar esta ${
-                action?.actionName === CONST.REPORT.ACTIONS.TYPE.IOU
-                    ? `${getReportActionOriginalMessage<IOUMessage>(action).type === CONST.IOU.REPORT_ACTION_TYPE.TRACK ? 'gastos' : 'solicitud'}`
-                    : 'comentario'
+                action?.actionName === CONST.REPORT.ACTIONS.TYPE.IOU ? `${action?.originalMessage.type === CONST.IOU.REPORT_ACTION_TYPE.TRACK ? 'gastos' : 'solicitud'}` : 'comentario'
             }`,
         onlyVisible: 'Visible sólo para',
         replyInThread: 'Responder en el hilo',
