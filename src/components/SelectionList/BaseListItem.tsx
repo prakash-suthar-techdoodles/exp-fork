@@ -1,11 +1,11 @@
-import React from 'react';
+import React, {useRef} from 'react';
 import {View} from 'react-native';
 import Icon from '@components/Icon';
 import * as Expensicons from '@components/Icon/Expensicons';
 import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
 import useHover from '@hooks/useHover';
-import useStyleUtils from '@hooks/useStyleUtils';
+import useSyncFocus from '@hooks/useSyncFocus';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import CONST from '@src/CONST';
@@ -15,12 +15,11 @@ function BaseListItem<TItem extends ListItem>({
     item,
     pressableStyle,
     wrapperStyle,
-    selectMultipleStyle,
+    containerStyle,
     isDisabled = false,
     shouldPreventDefaultFocusOnSelectRow = false,
     canSelectMultiple = false,
     onSelectRow,
-    onCheckboxPress,
     onDismissError = () => {},
     rightHandSideComponent,
     keyForList,
@@ -28,11 +27,17 @@ function BaseListItem<TItem extends ListItem>({
     pendingAction,
     FooterComponent,
     children,
+    isFocused,
+    onFocus = () => {},
 }: BaseListItemProps<TItem>) {
     const theme = useTheme();
     const styles = useThemeStyles();
-    const StyleUtils = useStyleUtils();
     const {hovered, bind} = useHover();
+
+    const pressableRef = useRef<View | HTMLDivElement>(null);
+
+    // Sync focus on an item
+    useSyncFocus(pressableRef, Boolean(isFocused));
 
     const rightHandSideComponentRender = () => {
         if (canSelectMultiple || !rightHandSideComponent) {
@@ -46,57 +51,31 @@ function BaseListItem<TItem extends ListItem>({
         return rightHandSideComponent;
     };
 
-    const handleCheckboxPress = () => {
-        if (onCheckboxPress) {
-            onCheckboxPress(item);
-        } else {
-            onSelectRow(item);
-        }
-    };
-
     return (
         <OfflineWithFeedback
             onClose={() => onDismissError(item)}
             pendingAction={pendingAction}
             errors={errors}
             errorRowStyles={styles.ph5}
+            contentContainerStyle={containerStyle}
         >
             <PressableWithFeedback
                 // eslint-disable-next-line react/jsx-props-no-spreading
                 {...bind}
+                ref={pressableRef}
                 onPress={() => onSelectRow(item)}
                 disabled={isDisabled}
-                accessibilityLabel={item.text}
+                accessibilityLabel={item.text ?? ''}
                 role={CONST.ROLE.BUTTON}
                 hoverDimmingValue={1}
-                hoverStyle={!item.isSelected && styles.hoveredComponentBG}
+                hoverStyle={!item.isDisabled && !item.isSelected && styles.hoveredComponentBG}
                 dataSet={{[CONST.SELECTION_SCRAPER_HIDDEN_ELEMENT]: true}}
                 onMouseDown={shouldPreventDefaultFocusOnSelectRow ? (e) => e.preventDefault() : undefined}
-                nativeID={keyForList}
+                nativeID={keyForList ?? ''}
                 style={pressableStyle}
+                onFocus={onFocus}
             >
                 <View style={wrapperStyle}>
-                    {canSelectMultiple && (
-                        <PressableWithFeedback
-                            accessibilityLabel={item.text}
-                            role={CONST.ROLE.BUTTON}
-                            disabled={isDisabled}
-                            onPress={handleCheckboxPress}
-                            style={[styles.cursorUnset, StyleUtils.getCheckboxPressableStyle()]}
-                        >
-                            <View style={selectMultipleStyle}>
-                                {item.isSelected && (
-                                    <Icon
-                                        src={Expensicons.Checkmark}
-                                        fill={theme.textLight}
-                                        height={14}
-                                        width={14}
-                                    />
-                                )}
-                            </View>
-                        </PressableWithFeedback>
-                    )}
-
                     {typeof children === 'function' ? children(hovered) : children}
 
                     {!canSelectMultiple && item.isSelected && !rightHandSideComponent && (
@@ -112,6 +91,15 @@ function BaseListItem<TItem extends ListItem>({
                             </View>
                         </View>
                     )}
+                    {!item.isSelected && !!item.brickRoadIndicator && (
+                        <View style={[styles.alignItemsCenter, styles.justifyContentCenter]}>
+                            <Icon
+                                src={Expensicons.DotIndicator}
+                                fill={item.brickRoadIndicator === CONST.BRICK_ROAD_INDICATOR_STATUS.INFO ? theme.iconSuccessFill : theme.danger}
+                            />
+                        </View>
+                    )}
+
                     {rightHandSideComponentRender()}
                 </View>
                 {FooterComponent}

@@ -5,9 +5,9 @@ import expensifyLogo from '@assets/images/expensify-logo-round-transparent.png';
 import ContextMenuItem from '@components/ContextMenuItem';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import * as Expensicons from '@components/Icon/Expensicons';
-import MenuItem from '@components/MenuItem';
-import QRShareWithDownload from '@components/QRShare/QRShareWithDownload';
-import type QRShareWithDownloadHandle from '@components/QRShare/QRShareWithDownload/types';
+import {useSession} from '@components/OnyxProvider';
+import QRShare from '@components/QRShare';
+import type {QRShareHandle} from '@components/QRShare/types';
 import ScreenWrapper from '@components/ScreenWrapper';
 import ScrollView from '@components/ScrollView';
 import useEnvironment from '@hooks/useEnvironment';
@@ -16,7 +16,6 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import Clipboard from '@libs/Clipboard';
 import Navigation from '@libs/Navigation/Navigation';
-import shouldAllowDownloadQRCode from '@libs/shouldAllowDownloadQRCode';
 import * as Url from '@libs/Url';
 import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
@@ -27,14 +26,17 @@ function WorkspaceProfileSharePage({policy}: WithPolicyProps) {
     const themeStyles = useThemeStyles();
     const {translate} = useLocalize();
     const {environmentURL} = useEnvironment();
-    const qrCodeRef = useRef<QRShareWithDownloadHandle>(null);
+    const qrCodeRef = useRef<QRShareHandle>(null);
     const {isSmallScreenWidth} = useWindowDimensions();
+    const session = useSession();
 
     const policyName = policy?.name ?? '';
     const id = policy?.id ?? '';
+    const adminEmail = session?.email ?? '';
     const urlWithTrailingSlash = Url.addTrailingForwardSlash(environmentURL);
 
-    const url = `${urlWithTrailingSlash}${ROUTES.WORKSPACE_PROFILE.getRoute(id)}`;
+    const url = `${urlWithTrailingSlash}${ROUTES.WORKSPACE_JOIN_USER.getRoute(id, adminEmail)}`;
+
     return (
         <ScreenWrapper
             testID={WorkspaceProfileSharePage.displayName}
@@ -47,7 +49,14 @@ function WorkspaceProfileSharePage({policy}: WithPolicyProps) {
             <ScrollView style={[themeStyles.flex1, themeStyles.pt2]}>
                 <View style={[themeStyles.flex1, isSmallScreenWidth ? themeStyles.workspaceSectionMobile : themeStyles.workspaceSection]}>
                     <View style={[themeStyles.workspaceSectionMobile, themeStyles.ph9]}>
-                        <QRShareWithDownload
+                        {/* 
+                            Right now QR code download button is not shown anymore
+                            This is a temporary measure because right now it's broken because of the Fabric update.
+                            We need to wait for react-native v0.74 to be released so react-native-view-shot gets fixed.
+                            
+                            Please see https://github.com/Expensify/App/issues/40110 to see if it can be re-enabled.
+                        */}
+                        <QRShare
                             ref={qrCodeRef}
                             url={url}
                             title={policyName}
@@ -68,15 +77,6 @@ function WorkspaceProfileSharePage({policy}: WithPolicyProps) {
                             shouldLimitWidth={false}
                             wrapperStyle={themeStyles.sectionMenuItemTopDescription}
                         />
-                        {shouldAllowDownloadQRCode && (
-                            <MenuItem
-                                isAnonymousAction
-                                title={translate('common.download')}
-                                icon={Expensicons.Download}
-                                onPress={() => qrCodeRef.current?.download?.()}
-                                wrapperStyle={themeStyles.sectionMenuItemTopDescription}
-                            />
-                        )}
                     </View>
                 </View>
             </ScrollView>

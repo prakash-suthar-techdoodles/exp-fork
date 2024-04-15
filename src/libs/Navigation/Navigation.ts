@@ -13,13 +13,14 @@ import type {Report} from '@src/types/onyx';
 import type {EmptyObject} from '@src/types/utils/EmptyObject';
 import originalDismissModal from './dismissModal';
 import originalDismissModalWithReport from './dismissModalWithReport';
+import originalDismissRHP from './dismissRHP';
 import originalGetTopmostReportActionId from './getTopmostReportActionID';
 import originalGetTopmostReportId from './getTopmostReportId';
 import linkingConfig from './linkingConfig';
 import linkTo from './linkTo';
 import navigationRef from './navigationRef';
 import switchPolicyID from './switchPolicyID';
-import type {State, StateOrRoute, SwitchPolicyIDParams} from './types';
+import type {NavigationStateRoute, State, StateOrRoute, SwitchPolicyIDParams} from './types';
 
 let resolveNavigationIsReadyPromise: () => void;
 const navigationIsReadyPromise = new Promise<void>((resolve) => {
@@ -61,6 +62,11 @@ const dismissModal = (reportID?: string, ref = navigationRef) => {
     originalDismissModalWithReport({reportID, ...report}, ref);
 };
 
+// Re-exporting the dismissRHP here to fill in default value for navigationRef. The dismissRHP isn't defined in this file to avoid cyclic dependencies.
+const dismissRHP = (ref = navigationRef) => {
+    originalDismissRHP(ref);
+};
+
 // Re-exporting the dismissModalWithReport here to fill in default value for navigationRef. The dismissModalWithReport isn't defined in this file to avoid cyclic dependencies.
 // This method is needed because it allows to dismiss the modal and then open the report. Within this method is checked whether the report belongs to a specific workspace. Sometimes the report we want to check, hasn't been added to the Onyx yet.
 // Then we can pass the report as a param without getting it from the Onyx.
@@ -94,7 +100,7 @@ function getActiveRouteIndex(stateOrRoute: StateOrRoute, index?: number): number
 function parseHybridAppUrl(url: HybridAppRoute | Route): Route {
     switch (url) {
         case HYBRID_APP_ROUTES.MONEY_REQUEST_CREATE:
-            return ROUTES.MONEY_REQUEST_CREATE.getRoute(CONST.IOU.TYPE.REQUEST, CONST.IOU.OPTIMISTIC_TRANSACTION_ID, ReportUtils.generateReportID());
+            return ROUTES.MONEY_REQUEST_CREATE.getRoute(CONST.IOU.ACTION.CREATE, CONST.IOU.TYPE.REQUEST, CONST.IOU.OPTIMISTIC_TRANSACTION_ID, ReportUtils.generateReportID());
         default:
             return url;
     }
@@ -235,10 +241,14 @@ function goBack(fallbackRoute?: Route, shouldEnforceFallback = false, shouldPopT
 }
 
 /**
- * Close the full screen modal.
+ * Reset the navigation state to Home page
  */
-function closeFullScreen() {
+function resetToHome() {
     const rootState = navigationRef.getRootState();
+    const bottomTabKey = rootState.routes.find((item: NavigationStateRoute) => item.name === NAVIGATORS.BOTTOM_TAB_NAVIGATOR)?.state?.key;
+    if (bottomTabKey) {
+        navigationRef.dispatch({...StackActions.popToTop(), target: bottomTabKey});
+    }
     navigationRef.dispatch({...StackActions.popToTop(), target: rootState.key});
 }
 
@@ -347,10 +357,19 @@ function navigateWithSwitchPolicyID(params: SwitchPolicyIDParams) {
     return switchPolicyID(navigationRef.current, params);
 }
 
+/** Check if the modal is being displayed */
+function isDisplayedInModal() {
+    const state = navigationRef?.current?.getRootState();
+    const lastRoute = state?.routes?.at(-1);
+    const lastRouteName = lastRoute?.name;
+    return lastRouteName === NAVIGATORS.LEFT_MODAL_NAVIGATOR || lastRouteName === NAVIGATORS.RIGHT_MODAL_NAVIGATOR;
+}
+
 export default {
     setShouldPopAllStateOnUP,
     navigate,
     setParams,
+    dismissRHP,
     dismissModal,
     dismissModalWithReport,
     isActiveRoute,
@@ -364,8 +383,9 @@ export default {
     getTopmostReportActionId,
     waitForProtectedRoutes,
     parseHybridAppUrl,
-    closeFullScreen,
     navigateWithSwitchPolicyID,
+    resetToHome,
+    isDisplayedInModal,
 };
 
 export {navigationRef};

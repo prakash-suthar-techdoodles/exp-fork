@@ -21,7 +21,7 @@ type ReportActionItemFragmentProps = {
     accountID: number;
 
     /** The message fragment needing to be displayed */
-    fragment: Message;
+    fragment: Message | undefined;
 
     /** Message(text) of an IOU report action */
     iouMessage?: string;
@@ -70,6 +70,7 @@ const MUTED_ACTIONS = [
     CONST.REPORT.ACTIONS.TYPE.IOU,
     CONST.REPORT.ACTIONS.TYPE.APPROVED,
     CONST.REPORT.ACTIONS.TYPE.MOVED,
+    CONST.REPORT.ACTIONS.TYPE.ACTIONABLEJOINREQUEST,
 ] as ActionName[];
 
 function ReportActionItemFragment({
@@ -94,7 +95,7 @@ function ReportActionItemFragment({
     const {isOffline} = useNetwork();
     const {translate} = useLocalize();
 
-    switch (fragment.type) {
+    switch (fragment?.type) {
         case 'COMMENT': {
             const isPendingDelete = pendingAction === CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE;
 
@@ -102,7 +103,7 @@ function ReportActionItemFragment({
             // While offline we display the previous message with a strikethrough style. Once online we want to
             // immediately display "[Deleted message]" while the delete action is pending.
 
-            if ((!isOffline && isThreadParentMessage && isPendingDelete) || fragment.isDeletedParentAction) {
+            if ((!isOffline && isThreadParentMessage && isPendingDelete) || fragment?.isDeletedParentAction) {
                 return <RenderHTML html={`<comment>${translate('parentReportAction.deletedMessage')}</comment>`} />;
             }
 
@@ -114,7 +115,7 @@ function ReportActionItemFragment({
                 return (
                     <AttachmentCommentFragment
                         source={source}
-                        html={fragment.html ?? ''}
+                        html={fragment?.html ?? ''}
                         addExtraMargin={!displayAsGroup}
                         styleAsDeleted={!!(isOffline && isPendingDelete)}
                     />
@@ -140,7 +141,7 @@ function ReportActionItemFragment({
                         numberOfLines={isSingleLine ? 1 : undefined}
                         style={[styles.chatItemMessage, styles.colorMuted]}
                     >
-                        {isFragmentContainingDisplayName ? convertToLTR(fragment.text) : fragment.text}
+                        {isFragmentContainingDisplayName ? convertToLTR(fragment?.text ?? '') : fragment?.text}
                     </Text>
                 );
             }
@@ -151,7 +152,7 @@ function ReportActionItemFragment({
                         numberOfLines={isSingleLine ? 1 : undefined}
                         style={[styles.chatItemMessage]}
                     >
-                        {isFragmentContainingDisplayName ? convertToLTR(fragment.text) : fragment.text}
+                        {isFragmentContainingDisplayName ? convertToLTR(fragment?.text ?? '') : fragment?.text}
                     </Text>
                 );
             }
@@ -166,7 +167,7 @@ function ReportActionItemFragment({
                         numberOfLines={isSingleLine ? 1 : undefined}
                         style={[styles.chatItemMessageHeaderSender, isSingleLine ? styles.pre : styles.preWrap]}
                     >
-                        {fragment.text}
+                        {fragment?.text}
                     </Text>
                 </UserDetailsTooltip>
             );
