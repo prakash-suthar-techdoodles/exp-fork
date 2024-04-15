@@ -134,7 +134,10 @@ function MoneyReportHeader({session, policy, chatReport, nextStep, report: money
 
     const deleteTransaction = useCallback(() => {
         if (requestParentReportAction) {
-            const iouTransactionID = requestParentReportAction.actionName === CONST.REPORT.ACTIONS.TYPE.IOU ? (ReportActionsUtils.getReportActionOriginalMessage(requestParentReportAction) as IOUMessage)?.IOUTransactionID ?? '' : '';
+            const iouTransactionID =
+                requestParentReportAction.actionName === CONST.REPORT.ACTIONS.TYPE.IOU
+                    ? ReportActionsUtils.getReportActionOriginalMessage<IOUMessage>(requestParentReportAction)?.IOUTransactionID ?? ''
+                    : '';
             if (ReportActionsUtils.isTrackExpenseAction(requestParentReportAction)) {
                 IOU.deleteTrackExpense(moneyRequestReport?.reportID ?? '', iouTransactionID, requestParentReportAction, true);
                 return;

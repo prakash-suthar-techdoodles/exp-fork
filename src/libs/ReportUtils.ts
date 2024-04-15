@@ -38,10 +38,12 @@ import type {Participant} from '@src/types/onyx/IOU';
 import type {Errors, Icon, PendingAction} from '@src/types/onyx/OnyxCommon';
 import type {
     ChangeLog,
+    Closed,
     IOUMessage,
     OriginalMessageActionName,
     OriginalMessageCreated,
     OriginalMessageReimbursementDequeued,
+    OriginalMessageReimbursementQueued,
     OriginalMessageRenamed,
     PaymentMethodType,
     ReimbursementDeQueuedMessage,
@@ -1435,7 +1437,7 @@ function canDeleteReportAction(reportAction: OnyxEntry<ReportAction>, reportID: 
 
     if (reportAction?.actionName === CONST.REPORT.ACTIONS.TYPE.IOU) {
         // For now, users cannot delete split actions
-        const isSplitAction = reportAction?.originalMessage?.type === CONST.IOU.REPORT_ACTION_TYPE.SPLIT;
+        const isSplitAction = ReportActionsUtils.getReportActionOriginalMessage<IOUMessage>(reportAction)?.type === CONST.IOU.REPORT_ACTION_TYPE.SPLIT;
 
         if (isSplitAction) {
             return false;
@@ -2014,7 +2016,7 @@ function getDeletedParentActionMessageForChatReport(reportAction: OnyxEntry<Repo
  */
 function getReimbursementQueuedActionMessage(reportAction: OnyxEntry<ReportAction>, report: OnyxEntry<Report>, shouldUseShortDisplayName = true): string {
     const submitterDisplayName = getDisplayNameForParticipant(report?.ownerAccountID, shouldUseShortDisplayName) ?? '';
-    const originalMessage = reportAction?.originalMessage as IOUMessage | undefined;
+    const originalMessage = ReportActionsUtils.getReportActionOriginalMessage<IOUMessage | undefined>(reportAction);
     let messageKey: TranslationPaths;
     if (originalMessage?.paymentType === CONST.IOU.PAYMENT_TYPE.EXPENSIFY) {
         messageKey = 'iou.waitingOnEnabledWallet';
@@ -2033,7 +2035,7 @@ function getReimbursementDeQueuedActionMessage(
     report: OnyxEntry<Report> | EmptyObject,
     isLHNPreview = false,
 ): string {
-    const originalMessage = reportAction?.originalMessage as ReimbursementDeQueuedMessage | undefined;
+    const originalMessage = ReportActionsUtils.getReportActionOriginalMessage<ReimbursementDeQueuedMessage | undefined>(reportAction);
     const amount = originalMessage?.amount;
     const currency = originalMessage?.currency;
     const formattedAmount = CurrencyUtils.convertToDisplayString(amount, currency);
@@ -2234,7 +2236,8 @@ function getPolicyExpenseChatName(report: OnyxEntry<Report>, policy: OnyxEntry<P
     // of the account which was merged into the current user's account. Use the name of the policy as the name of the report.
     if (isArchivedRoom(report)) {
         const lastAction = ReportActionsUtils.getLastVisibleAction(report?.reportID ?? '');
-        const archiveReason = lastAction?.actionName === CONST.REPORT.ACTIONS.TYPE.CLOSED ? lastAction?.originalMessage?.reason : CONST.REPORT.ARCHIVE_REASON.DEFAULT;
+        const archiveReason =
+            lastAction?.actionName === CONST.REPORT.ACTIONS.TYPE.CLOSED ? ReportActionsUtils.getReportActionOriginalMessage<Closed>(lastAction)?.reason : CONST.REPORT.ARCHIVE_REASON.DEFAULT;
         if (archiveReason === CONST.REPORT.ARCHIVE_REASON.ACCOUNT_MERGED && policyExpenseChatRole !== CONST.POLICY.ROLE.ADMIN) {
             return getPolicyName(report, false, policy);
         }
@@ -2447,11 +2450,13 @@ function canEditMoneyRequest(reportAction: OnyxEntry<ReportAction>): boolean {
     //     return true;
     // }
 
-    if (reportAction.originalMessage.type !== CONST.IOU.REPORT_ACTION_TYPE.CREATE) {
+    const originalMessage = ReportActionsUtils.getReportActionOriginalMessage<IOUMessage>(reportAction);
+
+    if (originalMessage.type !== CONST.IOU.REPORT_ACTION_TYPE.CREATE) {
         return false;
     }
 
-    const moneyRequestReportID = reportAction?.originalMessage?.IOUReportID ?? 0;
+    const moneyRequestReportID = originalMessage?.IOUReportID ?? 0;
 
     if (!moneyRequestReportID) {
         return false;
@@ -2500,7 +2505,7 @@ function canEditFieldOfMoneyRequest(reportAction: OnyxEntry<ReportAction>, field
         return true;
     }
 
-    const iouMessage = reportAction?.originalMessage as IOUMessage;
+    const iouMessage = ReportActionsUtils.getReportActionOriginalMessage<IOUMessage>(reportAction);
     const moneyRequestReport = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${iouMessage?.IOUReportID}`] ?? ({} as Report);
     const transaction = allTransactions?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${iouMessage?.IOUTransactionID}`] ?? ({} as Transaction);
 
@@ -2594,7 +2599,7 @@ function getLinkedTransaction(reportAction: OnyxEntry<ReportAction | OptimisticI
     let transactionID = '';
 
     if (reportAction?.actionName === CONST.REPORT.ACTIONS.TYPE.IOU) {
-        transactionID = (reportAction?.originalMessage as IOUMessage)?.IOUTransactionID ?? '';
+        transactionID = ReportActionsUtils.getReportActionOriginalMessage<IOUMessage>(reportAction)?.IOUTransactionID ?? '';
     }
 
     return allTransactions?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionID}`] ?? {};
@@ -2750,7 +2755,7 @@ function getReportPreviewMessage(
         return Localize.translateLocal('iou.routePending');
     }
 
-    const originalMessage = iouReportAction?.originalMessage as IOUMessage | undefined;
+    const originalMessage = ReportActionsUtils.getReportActionOriginalMessage<IOUMessage | undefined>(iouReportAction);
 
     // Show Paid preview message if it's settled or if the amount is paid & stuck at receivers end for only chat reports.
     if (isSettled(report.reportID) || (report.isWaitingOnBankAccount && isPreviewMessageForParentChatReport)) {
@@ -2899,7 +2904,7 @@ function getAdminRoomInvitedParticipants(parentReportAction: ReportAction | Reco
     if (!parentReportAction?.originalMessage) {
         return parentReportActionMessage || Localize.translateLocal('parentReportAction.deletedMessage');
     }
-    const originalMessage = isChangeLogObject(parentReportAction.originalMessage);
+    const originalMessage = isChangeLogObject(ReportActionsUtils.getReportActionOriginalMessage<ChangeLog>(parentReportAction));
     const participantAccountIDs = originalMessage?.targetAccountIDs ?? [];
 
     const participants = participantAccountIDs.map((id) => {
@@ -4490,7 +4495,7 @@ function doesTransactionThreadHaveViolations(report: OnyxEntry<Report>, transact
     if (parentReportAction?.actionName !== CONST.REPORT.ACTIONS.TYPE.IOU) {
         return false;
     }
-    const {IOUTransactionID, IOUReportID} = parentReportAction.originalMessage ?? {};
+    const {IOUTransactionID, IOUReportID} = ReportActionsUtils.getReportActionOriginalMessage<IOUMessage>(parentReportAction) ?? {};
     if (!IOUTransactionID || !IOUReportID) {
         return false;
     }
@@ -4511,7 +4516,7 @@ function shouldDisplayTransactionThreadViolations(
     transactionViolations: OnyxCollection<TransactionViolation[]>,
     parentReportAction: OnyxEntry<ReportAction>,
 ): boolean {
-    const {IOUReportID} = (parentReportAction?.originalMessage as IOUMessage) ?? {};
+    const {IOUReportID} = ReportActionsUtils.getReportActionOriginalMessage<IOUMessage>(parentReportAction) ?? {};
     if (isSettled(IOUReportID)) {
         return false;
     }
@@ -5344,7 +5349,7 @@ function getIOUReportActionDisplayMessage(reportAction: OnyxEntry<ReportAction>,
     if (reportAction?.actionName !== CONST.REPORT.ACTIONS.TYPE.IOU) {
         return '';
     }
-    const originalMessage = reportAction.originalMessage;
+    const originalMessage = ReportActionsUtils.getReportActionOriginalMessage<IOUMessage>(reportAction);
     const {IOUReportID} = originalMessage;
     const iouReport = getReport(IOUReportID);
     let translationKey: TranslationPaths;
@@ -5497,7 +5502,7 @@ function hasSmartscanError(reportActions: ReportAction[]) {
         }
         const IOUReportID = ReportActionsUtils.getIOUReportIDFromReportActionPreview(action);
         const isReportPreviewError = ReportActionsUtils.isReportPreviewAction(action) && hasMissingSmartscanFields(IOUReportID) && !isSettled(IOUReportID);
-        const transactionID = (action.originalMessage as IOUMessage).IOUTransactionID ?? '0';
+        const transactionID = ReportActionsUtils.getReportActionOriginalMessage<IOUMessage>(action).IOUTransactionID ?? '0';
         const transaction = allTransactions?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${transactionID}`] ?? {};
         const isSplitBillError = ReportActionsUtils.isSplitBillAction(action) && TransactionUtils.hasMissingSmartscanFields(transaction as Transaction);
 
@@ -5787,7 +5792,7 @@ function getIndicatedMissingPaymentMethod(userWallet: OnyxEntry<UserWallet>, rep
     if (!isSubmitterOfUnsettledReport || reportAction.actionName !== CONST.REPORT.ACTIONS.TYPE.REIMBURSEMENTQUEUED) {
         return undefined;
     }
-    const paymentType = reportAction.originalMessage?.paymentType;
+    const paymentType = ReportActionsUtils.getReportActionOriginalMessage<OriginalMessageReimbursementQueued['originalMessage']>(reportAction)?.paymentType;
     if (paymentType === CONST.IOU.PAYMENT_TYPE.EXPENSIFY) {
         return isEmpty(userWallet) || userWallet.tierName === CONST.WALLET.TIER_NAME.SILVER ? 'wallet' : undefined;
     }

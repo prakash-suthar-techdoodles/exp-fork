@@ -74,7 +74,7 @@ function ReportActionsListItemRenderer({
                 pendingAction: reportAction.pendingAction,
                 actionName: reportAction.actionName,
                 errors: reportAction.errors,
-                originalMessage: reportAction.originalMessage,
+                originalMessage: ReportActionsUtils.getReportActionOriginalMessage(reportAction),
                 childCommenterCount: reportAction.childCommenterCount,
                 linkMetadata: reportAction.linkMetadata,
                 childReportID: reportAction.childReportID,
@@ -98,6 +98,7 @@ function ReportActionsListItemRenderer({
                 childManagerAccountID: reportAction.childManagerAccountID,
                 childMoneyRequestCount: reportAction.childMoneyRequestCount,
             } as ReportAction),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [
             reportAction.reportActionID,
             reportAction.message,

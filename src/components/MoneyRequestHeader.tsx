@@ -53,7 +53,7 @@ type MoneyRequestHeaderProps = MoneyRequestHeaderOnyxProps & {
 };
 
 function getIOUTransactionID(reportAction: OnyxEntry<ReportAction>) {
-    return (ReportActionsUtils.getReportActionOriginalMessage(reportAction) as IOUMessage)?.IOUTransactionID;
+    return ReportActionsUtils.getReportActionOriginalMessage<IOUMessage>(reportAction)?.IOUTransactionID;
 }
 
 function MoneyRequestHeader({session, parentReport, report, parentReportAction, transaction, shownHoldUseExplanation = false, policy}: MoneyRequestHeaderProps) {

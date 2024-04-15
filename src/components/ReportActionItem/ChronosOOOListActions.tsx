@@ -6,6 +6,7 @@ import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import DateUtils from '@libs/DateUtils';
+import {getReportActionOriginalMessage} from '@libs/ReportActionsUtils';
 import * as Chronos from '@userActions/Chronos';
 import type {OriginalMessageChronosOOOList} from '@src/types/onyx/OriginalMessage';
 import type {ReportActionBase} from '@src/types/onyx/ReportAction';
@@ -23,7 +24,7 @@ function ChronosOOOListActions({reportID, action}: ChronosOOOListActionsProps) {
 
     const {translate, preferredLocale} = useLocalize();
 
-    const events = action.originalMessage?.events ?? [];
+    const events = getReportActionOriginalMessage<OriginalMessageChronosOOOList[`originalMessage`]>(action)?.events ?? [];
 
     if (!events.length) {
         return (

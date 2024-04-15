@@ -348,4 +348,8 @@ export type {
     OriginalMessageClosed,
     DecisionName,
     PaymentMethodType,
+    OriginalMessageReportPreview,
+    OriginalMessageReimbursementQueued,
+    OriginalMessageRoomChangeLog,
+    OriginalMessageModifiedExpense,
 };
