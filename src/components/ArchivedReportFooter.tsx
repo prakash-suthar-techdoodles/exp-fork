@@ -12,6 +12,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {PersonalDetailsList, Report, ReportAction} from '@src/types/onyx';
 import Banner from './Banner';
+import { Closed, OriginalMessageClosed } from '@src/types/onyx/OriginalMessage';
 
 type ArchivedReportFooterOnyxProps = {
     /** The reason this report was archived */
@@ -30,7 +31,7 @@ function ArchivedReportFooter({report, reportClosedAction, personalDetails = {}}
     const styles = useThemeStyles();
     const {translate} = useLocalize();
 
-    const originalMessage = reportClosedAction?.actionName === CONST.REPORT.ACTIONS.TYPE.CLOSED ? reportClosedAction.originalMessage : null;
+    const originalMessage = reportClosedAction?.actionName === CONST.REPORT.ACTIONS.TYPE.CLOSED ? ReportActionsUtils.getReportActionOriginalMessage(reportClosedAction) as Closed : null;
     const archiveReason = originalMessage?.reason ?? CONST.REPORT.ARCHIVE_REASON.DEFAULT;
     const actorPersonalDetails = personalDetails?.[reportClosedAction?.actorAccountID ?? 0];
     let displayName = PersonalDetailsUtils.getDisplayNameOrDefault(actorPersonalDetails);

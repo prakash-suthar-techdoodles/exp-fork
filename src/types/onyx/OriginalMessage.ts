@@ -345,6 +345,7 @@ export type {
     OriginalMessageChronosOOOList,
     OriginalMessageSource,
     OriginalMessageReimbursementDequeued,
+    OriginalMessageClosed,
     DecisionName,
     PaymentMethodType,
 };

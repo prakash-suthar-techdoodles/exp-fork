@@ -933,7 +933,7 @@ function getReportActionText(reportAction: PartialReportAction): string {
 }
 
 function getReportActionOriginalMessage(reportAction: PartialReportAction) {
-    return (reportAction?.originalMessage ?? reportAction?.message?.[0] ?? reportAction?.message) as OriginalMessage;
+    return (reportAction?.originalMessage ?? reportAction?.message?.[0] ?? reportAction?.message) as unknown;
 }
 
 function getMemberChangeMessageFragment(reportAction: OnyxEntry<ReportAction>): Message {

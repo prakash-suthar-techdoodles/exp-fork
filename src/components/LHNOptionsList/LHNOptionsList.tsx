@@ -24,6 +24,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import OptionRowLHNData from './OptionRowLHNData';
 import type {LHNOptionsListOnyxProps, LHNOptionsListProps, RenderItemProps} from './types';
+import { IOUMessage } from '@src/types/onyx/OriginalMessage';
 
 const keyExtractor = (item: string) => `report_${item}`;
 
@@ -121,7 +122,7 @@ function LHNOptionsList({
             let lastReportActionTransactionID = '';
 
             if (lastReportAction?.actionName === CONST.REPORT.ACTIONS.TYPE.IOU) {
-                lastReportActionTransactionID = lastReportAction.originalMessage?.IOUTransactionID ?? '';
+                lastReportActionTransactionID = (ReportActionsUtils.getReportActionOriginalMessage(lastReportAction) as IOUMessage)?.IOUTransactionID ?? '';
             }
             const lastReportActionTransaction = transactions?.[`${ONYXKEYS.COLLECTION.TRANSACTION}${lastReportActionTransactionID}`] ?? {};
 
