@@ -255,6 +255,15 @@ function WorkspaceTagsPage({policyTags, route}: WorkspaceTagsPageProps) {
         );
     };
 
+    const getSmallWidthHeaderComponent = () => (
+        <>
+            <View style={[styles.pl5, styles.pr5]}>{getHeaderButtons()}</View>
+            <View style={[styles.ph5, styles.pb5, styles.pt3]}>
+                <Text style={[styles.textNormal, styles.colorMuted]}>{translate('workspace.tags.subtitle')}</Text>
+            </View>
+        </>
+    );
+
     return (
         <AdminPolicyAccessOrNotFoundWrapper policyID={route.params.policyID}>
             <PaidPolicyAccessOrNotFoundWrapper policyID={route.params.policyID}>
@@ -286,10 +295,11 @@ function WorkspaceTagsPage({policyTags, route}: WorkspaceTagsPageProps) {
                             cancelText={translate('common.cancel')}
                             danger
                         />
-                        {isSmallScreenWidth && <View style={[styles.pl5, styles.pr5]}>{getHeaderButtons()}</View>}
-                        <View style={[styles.ph5, styles.pb5, styles.pt3]}>
-                            <Text style={[styles.textNormal, styles.colorMuted]}>{translate('workspace.tags.subtitle')}</Text>
-                        </View>
+                        {!isSmallScreenWidth && (
+                            <View style={[styles.ph5, styles.pb5, styles.pt3]}>
+                                <Text style={[styles.textNormal, styles.colorMuted]}>{translate('workspace.tags.subtitle')}</Text>
+                            </View>
+                        )}
                         {isLoading && (
                             <ActivityIndicator
                                 size={CONST.ACTIVITY_INDICATOR_SIZE.LARGE}
@@ -314,6 +324,7 @@ function WorkspaceTagsPage({policyTags, route}: WorkspaceTagsPageProps) {
                                 showScrollIndicator
                                 ListItem={TableListItem}
                                 customListHeader={getCustomListHeader()}
+                                ListHeaderComponent={isSmallScreenWidth ? getSmallWidthHeaderComponent() : null}
                                 shouldPreventDefaultFocusOnSelectRow={!DeviceCapabilities.canUseTouchScreen()}
                                 listHeaderWrapperStyle={[styles.ph9, styles.pv3, styles.pb5]}
                                 onDismissError={(item) => Policy.clearPolicyTagErrors(route.params.policyID, item.value)}

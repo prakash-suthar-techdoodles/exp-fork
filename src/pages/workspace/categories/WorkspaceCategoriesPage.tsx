@@ -247,6 +247,15 @@ function WorkspaceCategoriesPage({policy, policyCategories, route}: WorkspaceCat
 
     const shouldShowEmptyState = !categoryList.some((category) => category.pendingAction !== CONST.RED_BRICK_ROAD_PENDING_ACTION.DELETE) && !isLoading;
 
+    const getSmallWidthHeaderComponent = () => (
+        <>
+            <View style={[styles.pl5, styles.pr5]}>{getHeaderButtons()}</View>
+            <View style={[styles.ph5, styles.pb5, styles.pt3]}>
+                <Text style={[styles.textNormal, styles.colorMuted]}>{translate('workspace.categories.subtitle')}</Text>
+            </View>
+        </>
+    );
+
     return (
         <AdminPolicyAccessOrNotFoundWrapper policyID={route.params.policyID}>
             <PaidPolicyAccessOrNotFoundWrapper policyID={route.params.policyID}>
@@ -278,10 +287,12 @@ function WorkspaceCategoriesPage({policy, policyCategories, route}: WorkspaceCat
                             cancelText={translate('common.cancel')}
                             danger
                         />
-                        {isSmallScreenWidth && <View style={[styles.pl5, styles.pr5]}>{getHeaderButtons()}</View>}
-                        <View style={[styles.ph5, styles.pb5, styles.pt3]}>
-                            <Text style={[styles.textNormal, styles.colorMuted]}>{translate('workspace.categories.subtitle')}</Text>
-                        </View>
+                        {/* {isSmallScreenWidth && <View style={[styles.pl5, styles.pr5]}>{getHeaderButtons()}</View>} */}
+                        {!isSmallScreenWidth && (
+                            <View style={[styles.ph5, styles.pb5, styles.pt3]}>
+                                <Text style={[styles.textNormal, styles.colorMuted]}>{translate('workspace.categories.subtitle')}</Text>
+                            </View>
+                        )}
                         {isLoading && (
                             <ActivityIndicator
                                 size={CONST.ACTIVITY_INDICATOR_SIZE.LARGE}
@@ -308,6 +319,7 @@ function WorkspaceCategoriesPage({policy, policyCategories, route}: WorkspaceCat
                                 ListItem={TableListItem}
                                 onDismissError={dismissError}
                                 customListHeader={getCustomListHeader()}
+                                ListHeaderComponent={isSmallScreenWidth ? getSmallWidthHeaderComponent() : null}
                                 listHeaderWrapperStyle={[styles.ph9, styles.pv3, styles.pb5]}
                             />
                         )}
