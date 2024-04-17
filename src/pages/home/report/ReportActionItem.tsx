@@ -66,10 +66,10 @@ import type * as OnyxTypes from '@src/types/onyx';
 import type {
     IOUMessage,
     OriginalMessageActionableMentionWhisper,
+    OriginalMessageActionableTrackedExpenseWhisper,
     OriginalMessageAddComment,
     OriginalMessageJoinPolicyChangeLog,
     OriginalMessageReimbursementQueued,
-    OriginalMessageActionableTrackedExpenseWhisper,
 } from '@src/types/onyx/OriginalMessage';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import AnimatedEmptyStateBackground from './AnimatedEmptyStateBackground';

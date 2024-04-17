@@ -8,7 +8,6 @@ import type ReportAction from '@src/types/onyx/ReportAction';
 import * as Localize from './Localize';
 import * as ReportActionsUtils from './ReportActionsUtils';
 
-
 let allReports: OnyxCollection<Report> = {};
 Onyx.connect({
     key: ONYXKEYS.COLLECTION.REPORT,
