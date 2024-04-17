@@ -110,7 +110,7 @@ function isDeletedAction(reportAction: OnyxEntry<ReportAction | OptimisticIOURep
     return isLegacyDeletedComment || !!message[0]?.deleted;
 }
 
-function getReportActionMessage(reportAction: PartialReportAction) {
+function getReportActionMessage(reportAction: PartialReportAction): Message {
     return (reportAction?.message?.[0] ?? reportAction?.message) as Message;
 }
 
