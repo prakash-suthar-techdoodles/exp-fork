@@ -2,7 +2,7 @@ import {rand} from '@ngneat/falso';
 import type {OnyxCollection} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import {measureFunction} from 'reassure';
-import {getReportActionMessage} from '@libs/ReportActionsUtils';
+import * as ReportActionsUtils from '@libs/ReportActionsUtils';
 import SidebarUtils from '@libs/SidebarUtils';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -61,7 +61,7 @@ const allReportActions = Object.fromEntries(
                 message: [
                     {
                         moderationDecision: {
-                            decision: getReportActionMessage(reportActions[key])?.moderationDecision?.decision,
+                            decision: ReportActionsUtils.getReportActionMessage(reportActions[key])?.moderationDecision?.decision,
                         },
                     },
                 ],

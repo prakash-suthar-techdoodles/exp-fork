@@ -16,7 +16,7 @@ import useNetwork from '@hooks/useNetwork';
 import usePrevious from '@hooks/usePrevious';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {getPolicyEmployeeListByIdWithoutCurrentUser} from '@libs/PolicyUtils';
-import {getReportActionMessage} from '@libs/ReportActionsUtils';
+import * as ReportActionsUtils from '@libs/ReportActionsUtils';
 import * as ReportUtils from '@libs/ReportUtils';
 import SidebarUtils from '@libs/SidebarUtils';
 import * as Policy from '@userActions/Policy';
@@ -224,7 +224,7 @@ const reportActionsSelector = (reportActions: OnyxEntry<OnyxTypes.ReportActions>
     (reportActions &&
         Object.values(reportActions).map((reportAction) => {
             const {reportActionID, actionName, errors = [], originalMessage} = reportAction;
-            const decision = getReportActionMessage(reportAction)?.moderationDecision?.decision;
+            const decision = ReportActionsUtils.getReportActionMessage(reportAction)?.moderationDecision?.decision;
 
             return {
                 reportActionID,

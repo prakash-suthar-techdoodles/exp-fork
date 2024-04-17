@@ -5,7 +5,7 @@ import {withOnyx} from 'react-native-onyx';
 import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
 import Navigation from '@libs/Navigation/Navigation';
 import type {SplitDetailsNavigatorParamList} from '@libs/Navigation/types';
-import {getReportActionOriginalMessage} from '@libs/ReportActionsUtils';
+import * as ReportActionsUtils from '@libs/ReportActionsUtils';
 import * as ReportUtils from '@libs/ReportUtils';
 import type {TransactionChanges} from '@libs/TransactionUtils';
 import * as IOU from '@userActions/IOU';
@@ -80,7 +80,7 @@ export default withOnyx<EditSplitBillProps, EditSplitBillOnyxProps>({
     transaction: {
         key: ({route, reportActions}: Partial<EditSplitBillProps>) => {
             const reportAction = reportActions?.[`${route?.params.reportActionID.toString()}`];
-            const originalMessage = getReportActionOriginalMessage<IOUMessage>(reportAction);
+            const originalMessage = ReportActionsUtils.getReportActionOriginalMessage<IOUMessage>(reportAction);
             const transactionID = originalMessage.IOUTransactionID ? originalMessage.IOUTransactionID : 0;
             return `${ONYXKEYS.COLLECTION.TRANSACTION}${transactionID}`;
         },
@@ -88,7 +88,7 @@ export default withOnyx<EditSplitBillProps, EditSplitBillOnyxProps>({
     draftTransaction: {
         key: ({route, reportActions}: Partial<EditSplitBillProps>) => {
             const reportAction = reportActions?.[`${route?.params.reportActionID.toString()}`];
-            const originalMessage = getReportActionOriginalMessage<IOUMessage>(reportAction);
+            const originalMessage = ReportActionsUtils.getReportActionOriginalMessage<IOUMessage>(reportAction);
             const transactionID = originalMessage.IOUTransactionID ? originalMessage.IOUTransactionID : 0;
             return `${ONYXKEYS.COLLECTION.SPLIT_TRANSACTION_DRAFT}${transactionID}`;
         },
