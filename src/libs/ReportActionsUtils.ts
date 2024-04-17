@@ -214,7 +214,7 @@ function getReportActionOriginalMessage<T>(reportAction: PartialReportAction) {
  *
  * @deprecated Use Onyx.connect() or withOnyx() instead
  */
-function getParentReportAction(report: OnyxEntry<Report> | EmptyObject): ReportAction | Record<string, never> {
+function getParentReportAction(report: OnyxEntry<Report> | EmptyObject): ReportAction | EmptyObject {
     if (!report?.parentReportID || !report.parentReportActionID) {
         return {};
     }
@@ -1104,6 +1104,10 @@ function isActionableJoinRequest(reportAction: OnyxEntry<ReportAction>): boolean
     return reportAction?.actionName === CONST.REPORT.ACTIONS.TYPE.ACTIONABLEJOINREQUEST;
 }
 
+function isActionableTrackExpense(reportAction: OnyxEntry<ReportAction>): boolean {
+    return reportAction?.actionName === CONST.REPORT.ACTIONS.TYPE.ACTIONABLETRACKEXPENSEWHISPER;
+}
+
 /**
  * Checks if any report actions correspond to a join request action that is still pending.
  * @param reportID
@@ -1192,6 +1196,7 @@ export {
     getReportActionHtml,
     getReportActionMessage,
     getReportActionOriginalMessage,
+    isActionableTrackExpense,
 };
 
 export type {LastVisibleMessage};
