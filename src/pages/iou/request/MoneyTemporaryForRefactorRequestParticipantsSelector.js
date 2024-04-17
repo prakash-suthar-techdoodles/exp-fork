@@ -89,21 +89,16 @@ function MoneyTemporaryForRefactorRequestParticipantsSelector({participants, onF
         Report.searchInServer(debouncedSearchTerm.trim());
     }, [debouncedSearchTerm]);
 
-    /**
-     * Returns the sections needed for the OptionsSelector
-     *
-     * @returns {Array}
-     */
-    const [sections, newChatOptions] = useMemo(() => {
-        const newSections = [];
+    const chatOptions = useMemo(() => {
         if (!areOptionsInitialized || !didScreenTransitionEnd) {
-            return [newSections, {}];
+            return {};
         }
-        const chatOptions = OptionsListUtils.getFilteredOptions(
+
+        const optionList = OptionsListUtils.getFilteredOptions(
             options.reports,
             options.personalDetails,
             betas,
-            debouncedSearchTerm,
+            '',
             participants,
             CONST.EXPENSIFY_EMAILS,
 
@@ -122,11 +117,38 @@ function MoneyTemporaryForRefactorRequestParticipantsSelector({participants, onF
             false,
         );
 
+        return optionList;
+    }, [action, areOptionsInitialized, betas, canUseP2PDistanceRequests, didScreenTransitionEnd, iouRequestType, iouType, options.personalDetails, options.reports, participants]);
+
+    const filteredOptions = useMemo(() => {
+        if (!areOptionsInitialized || debouncedSearchTerm.trim() === '') {
+            return {};
+        }
+
+        const newOptions = OptionsListUtils.filterOptions(chatOptions, debouncedSearchTerm, {
+            betas,
+            selectedOptions: participants,
+            excludeLogins: CONST.EXPENSIFY_EMAILS,
+        });
+        return newOptions;
+    }, [areOptionsInitialized, betas, chatOptions, debouncedSearchTerm, participants]);
+
+    /**
+     * Returns the sections needed for the OptionsSelector
+     * @returns {Array}
+     */
+    const [sections, header] = useMemo(() => {
+        const requestMoneyOptions = debouncedSearchTerm.trim() !== '' ? filteredOptions : chatOptions;
+        const newSections = [];
+        if (!areOptionsInitialized || !didScreenTransitionEnd) {
+            return [newSections, ''];
+        }
+
         const formatResults = OptionsListUtils.formatSectionsFromSearchTerm(
             debouncedSearchTerm,
             participants,
-            chatOptions.recentReports,
-            chatOptions.personalDetails,
+            requestMoneyOptions.recentReports,
+            requestMoneyOptions.personalDetails,
             maxParticipantsReached,
             personalDetails,
             true,
@@ -140,22 +162,22 @@ function MoneyTemporaryForRefactorRequestParticipantsSelector({participants, onF
 
         newSections.push({
             title: translate('common.recents'),
-            data: chatOptions.recentReports,
-            shouldShow: !_.isEmpty(chatOptions.recentReports),
+            data: requestMoneyOptions.recentReports,
+            shouldShow: !_.isEmpty(options.recentReports),
         });
 
         if (![CONST.IOU.ACTION.CATEGORIZE, CONST.IOU.ACTION.SHARE].includes(action)) {
             newSections.push({
                 title: translate('common.contacts'),
-                data: chatOptions.personalDetails,
+                data: requestMoneyOptions.personalDetails,
                 shouldShow: !_.isEmpty(chatOptions.personalDetails),
             });
         }
 
-        if (chatOptions.userToInvite && !OptionsListUtils.isCurrentUser(chatOptions.userToInvite)) {
+        if (requestMoneyOptions.userToInvite && !OptionsListUtils.isCurrentUser(requestMoneyOptions.userToInvite)) {
             newSections.push({
                 title: undefined,
-                data: _.map([chatOptions.userToInvite], (participant) => {
+                data: _.map([requestMoneyOptions.userToInvite], (participant) => {
                     const isPolicyExpenseChat = lodashGet(participant, 'isPolicyExpenseChat', false);
                     return isPolicyExpenseChat ? OptionsListUtils.getPolicyExpenseReportOption(participant) : OptionsListUtils.getParticipantsOption(participant, personalDetails);
                 }),
@@ -163,22 +185,27 @@ function MoneyTemporaryForRefactorRequestParticipantsSelector({participants, onF
             });
         }
 
-        return [newSections, chatOptions];
+        const headerMessage = OptionsListUtils.getHeaderMessage(
+            _.get(requestMoneyOptions, 'personalDetails', []).length + _.get(requestMoneyOptions, 'recentReports', []).length !== 0,
+            Boolean(requestMoneyOptions.userToInvite),
+            debouncedSearchTerm.trim(),
+            maxParticipantsReached,
+            _.some(participants, (participant) => participant.searchText.toLowerCase().includes(debouncedSearchTerm.trim().toLowerCase())),
+        );
+
+        return [newSections, headerMessage];
     }, [
-        areOptionsInitialized,
-        options.reports,
-        options.personalDetails,
-        betas,
         debouncedSearchTerm,
+        filteredOptions,
+        chatOptions,
+        areOptionsInitialized,
+        didScreenTransitionEnd,
         participants,
-        iouType,
         action,
-        canUseP2PDistanceRequests,
-        iouRequestType,
         maxParticipantsReached,
         personalDetails,
         translate,
-        didScreenTransitionEnd,
+        options.recentReports,
     ]);
 
     /**
@@ -242,18 +269,6 @@ function MoneyTemporaryForRefactorRequestParticipantsSelector({participants, onF
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps -- we don't want to trigger this callback when iouType changes
         [participants, onParticipantsAdded],
-    );
-
-    const headerMessage = useMemo(
-        () =>
-            OptionsListUtils.getHeaderMessage(
-                _.get(newChatOptions, 'personalDetails', []).length + _.get(newChatOptions, 'recentReports', []).length !== 0,
-                Boolean(newChatOptions.userToInvite),
-                debouncedSearchTerm.trim(),
-                maxParticipantsReached,
-                _.some(participants, (participant) => participant.searchText.toLowerCase().includes(debouncedSearchTerm.trim().toLowerCase())),
-            ),
-        [maxParticipantsReached, newChatOptions, participants, debouncedSearchTerm],
     );
 
     // Right now you can't split a request with a workspace and other additional participants
@@ -394,7 +409,7 @@ function MoneyTemporaryForRefactorRequestParticipantsSelector({participants, onF
             shouldPreventDefaultFocusOnSelectRow={!DeviceCapabilities.canUseTouchScreen()}
             onSelectRow={addSingleParticipant}
             footerContent={footerContent}
-            headerMessage={headerMessage}
+            headerMessage={header}
             showLoadingPlaceholder={!areOptionsInitialized || !didScreenTransitionEnd}
             rightHandSideComponent={itemRightSideComponent}
         />
