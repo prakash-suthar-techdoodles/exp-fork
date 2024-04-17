@@ -64,10 +64,6 @@ type CentralPaneNavigatorParamList = {
     [SCREENS.SETTINGS.SAVE_THE_WORLD]: undefined;
 };
 
-type WorkspaceSwitcherNavigatorParamList = {
-    [SCREENS.WORKSPACE_SWITCHER.ROOT]: undefined;
-};
-
 type BackToParams = {
     backTo?: Routes;
 };
@@ -298,10 +294,6 @@ type NewChatNavigatorParamList = {
     [SCREENS.NEW_CHAT.NEW_CHAT_EDIT_NAME]: {
         reportID?: string;
     };
-};
-
-type SearchNavigatorParamList = {
-    [SCREENS.SEARCH_ROOT]: undefined;
 };
 
 type DetailsNavigatorParamList = {
@@ -614,8 +606,8 @@ type PrivateNotesNavigatorParamList = {
 };
 
 type LeftModalNavigatorParamList = {
-    [SCREENS.LEFT_MODAL.SEARCH]: NavigatorScreenParams<SearchNavigatorParamList>;
-    [SCREENS.LEFT_MODAL.WORKSPACE_SWITCHER]: NavigatorScreenParams<WorkspaceSwitcherNavigatorParamList>;
+    [SCREENS.LEFT_MODAL.SEARCH]: undefined;
+    [SCREENS.LEFT_MODAL.WORKSPACE_SWITCHER]: undefined;
 };
 
 type RightModalNavigatorParamList = {
@@ -709,7 +701,61 @@ type FullScreenNavigatorParamList = {
     [SCREENS.WORKSPACE.INITIAL]: {
         policyID: string;
     };
-    [SCREENS.WORKSPACES_CENTRAL_PANE]: NavigatorScreenParams<WorkspacesCentralPaneNavigatorParamList>;
+    [SCREENS.WORKSPACE.PROFILE]: {
+        policyID: string;
+    };
+    [SCREENS.WORKSPACE.CARD]: {
+        policyID: string;
+    };
+    [SCREENS.WORKSPACE.WORKFLOWS]: {
+        policyID: string;
+    };
+    [SCREENS.WORKSPACE.WORKFLOWS_APPROVER]: {
+        policyID: string;
+    };
+    [SCREENS.WORKSPACE.WORKFLOWS_AUTO_REPORTING_FREQUENCY]: {
+        policyID: string;
+    };
+    [SCREENS.WORKSPACE.WORKFLOWS_AUTO_REPORTING_MONTHLY_OFFSET]: {
+        policyID: string;
+    };
+    [SCREENS.WORKSPACE.REIMBURSE]: {
+        policyID: string;
+    };
+    [SCREENS.WORKSPACE.BILLS]: {
+        policyID: string;
+    };
+    [SCREENS.WORKSPACE.INVOICES]: {
+        policyID: string;
+    };
+    [SCREENS.WORKSPACE.TRAVEL]: {
+        policyID: string;
+    };
+    [SCREENS.WORKSPACE.MEMBERS]: {
+        policyID: string;
+    };
+    [SCREENS.WORKSPACE.ACCOUNTING]: {
+        policyID: string;
+    };
+    [SCREENS.WORKSPACE.CATEGORIES]: {
+        policyID: string;
+    };
+    [SCREENS.WORKSPACE.MORE_FEATURES]: {
+        policyID: string;
+    };
+    [SCREENS.WORKSPACE.TAGS]: {
+        policyID: string;
+        tagName: string;
+    };
+    [SCREENS.WORKSPACE.TAXES]: {
+        policyID: string;
+    };
+    [SCREENS.WORKSPACE.DISTANCE_RATES]: {
+        policyID: string;
+    };
+    [SCREENS.WORKSPACE.ACCOUNTING]: {
+        policyID: string;
+    };
 };
 
 type OnboardingModalNavigatorParamList = {
@@ -790,7 +836,7 @@ type AuthScreensParamList = SharedScreensParamList & {
     };
 };
 
-type RootStackParamList = PublicScreensParamList & AuthScreensParamList & SearchNavigatorParamList;
+type RootStackParamList = PublicScreensParamList & AuthScreensParamList & LeftModalNavigatorParamList;
 
 type BottomTabName = keyof BottomTabNavigatorParamList;
 
@@ -834,7 +880,6 @@ export type {
     ParticipantsNavigatorParamList,
     RoomMembersNavigatorParamList,
     RoomInviteNavigatorParamList,
-    SearchNavigatorParamList,
     NewChatNavigatorParamList,
     NewTaskNavigatorParamList,
     TeachersUniteNavigatorParamList,
@@ -849,7 +894,6 @@ export type {
     ReferralDetailsNavigatorParamList,
     ReimbursementAccountNavigatorParamList,
     State,
-    WorkspaceSwitcherNavigatorParamList,
     OnboardEngagementNavigatorParamList,
     SwitchPolicyIDParams,
     FullScreenNavigatorParamList,
