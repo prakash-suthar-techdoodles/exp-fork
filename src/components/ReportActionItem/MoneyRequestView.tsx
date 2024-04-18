@@ -1,7 +1,7 @@
-import React, {useCallback, useMemo} from 'react';
-import {View} from 'react-native';
-import {withOnyx} from 'react-native-onyx';
-import type {OnyxEntry} from 'react-native-onyx';
+import React, { useCallback, useMemo } from 'react';
+import { View } from 'react-native';
+import { withOnyx } from 'react-native-onyx';
+import type { OnyxEntry } from 'react-native-onyx';
 import ConfirmedRoute from '@components/ConfirmedRoute';
 import * as Expensicons from '@components/Icon/Expensicons';
 import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
@@ -17,13 +17,13 @@ import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useViolations from '@hooks/useViolations';
-import type {ViolationField} from '@hooks/useViolations';
+import type { ViolationField } from '@hooks/useViolations';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import * as CardUtils from '@libs/CardUtils';
 import * as CurrencyUtils from '@libs/CurrencyUtils';
 import * as OptionsListUtils from '@libs/OptionsListUtils';
 import * as PolicyUtils from '@libs/PolicyUtils';
-import {isTaxTrackingEnabled} from '@libs/PolicyUtils';
+import { isTaxTrackingEnabled } from '@libs/PolicyUtils';
 import * as ReceiptUtils from '@libs/ReceiptUtils';
 import * as ReportUtils from '@libs/ReportUtils';
 import * as TransactionUtils from '@libs/TransactionUtils';
@@ -33,11 +33,11 @@ import AnimatedEmptyStateBackground from '@pages/home/report/AnimatedEmptyStateB
 import * as IOU from '@userActions/IOU';
 import * as Transaction from '@userActions/Transaction';
 import CONST from '@src/CONST';
-import type {TranslationPaths} from '@src/languages/types';
+import type { TranslationPaths } from '@src/languages/types';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type * as OnyxTypes from '@src/types/onyx';
-import type {TransactionPendingFieldsKey} from '@src/types/onyx/Transaction';
+import type { TransactionPendingFieldsKey } from '@src/types/onyx/Transaction';
 import ReportActionItemImage from './ReportActionItemImage';
 
 type MoneyRequestViewTransactionOnyxProps = {
@@ -93,9 +93,9 @@ function MoneyRequestView({
     const theme = useTheme();
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
-    const {isSmallScreenWidth} = useWindowDimensions();
-    const {translate} = useLocalize();
-    const {canUseViolations} = usePermissions();
+    const { isSmallScreenWidth } = useWindowDimensions();
+    const { translate } = useLocalize();
+    const { canUseViolations } = usePermissions();
     const parentReportAction = parentReportActions?.[report.parentReportActionID ?? ''] ?? null;
     const moneyRequestReport = parentReport;
     const {
@@ -162,7 +162,7 @@ function MoneyRequestView({
     // A flag for showing tax rate
     const shouldShowTax = isTaxTrackingEnabled(isPolicyExpenseChat, policy);
 
-    const {getViolationsForField} = useViolations(transactionViolations ?? []);
+    const { getViolationsForField } = useViolations(transactionViolations ?? []);
     const hasViolations = useCallback(
         (field: ViolationField, data?: OnyxTypes.TransactionViolation['data']): boolean => !!canUseViolations && getViolationsForField(field, data).length > 0,
         [canUseViolations, getViolationsForField],
@@ -222,7 +222,7 @@ function MoneyRequestView({
         (field: ViolationField, data?: OnyxTypes.TransactionViolation['data']) => {
             // Checks applied when creating a new expense
             // NOTE: receipt field can return multiple violations, so we need to handle it separately
-            const fieldChecks: Partial<Record<ViolationField, {isError: boolean; translationPath: TranslationPaths}>> = {
+            const fieldChecks: Partial<Record<ViolationField, { isError: boolean; translationPath: TranslationPaths }>> = {
                 amount: {
                     isError: transactionAmount === 0,
                     translationPath: 'common.error.enterAmount',
@@ -237,7 +237,7 @@ function MoneyRequestView({
                 },
             };
 
-            const {isError, translationPath} = fieldChecks[field] ?? {};
+            const { isError, translationPath } = fieldChecks[field] ?? {};
 
             // Return form errors if there are any
             if (hasErrors && isError && translationPath) {
@@ -255,15 +255,30 @@ function MoneyRequestView({
         [transactionAmount, isSettled, isCancelled, isPolicyExpenseChat, isEmptyMerchant, transactionDate, hasErrors, canUseViolations, hasViolations, translate, getViolationsForField],
     );
 
+    let errors = {};
+    if (transaction?.errors) {
+        errors = {
+            ...errors,
+            ...transaction?.errors
+        };
+    }
+
+    if (parentReportAction?.errors) {
+        errors = {
+            ...errors,
+            ...parentReportAction?.errors
+        };
+    }
+
     return (
         <View style={[StyleUtils.getReportWelcomeContainerStyle(isSmallScreenWidth, true, shouldShowAnimatedBackground)]}>
             {shouldShowAnimatedBackground && <AnimatedEmptyStateBackground />}
             <View style={shouldShowAnimatedBackground && [StyleUtils.getReportWelcomeTopMarginStyle(isSmallScreenWidth, true)]}>
                 {/* eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing */}
-                {(showMapAsImage || hasReceipt) && (
+                {(showMapAsImage || hasReceipt) || errors && (
                     <OfflineWithFeedback
                         pendingAction={pendingAction}
-                        errors={transaction?.errors}
+                        errors={errors}
                         errorRowStyles={[styles.ml4]}
                         onClose={() => {
                             if (!transaction?.transactionID) {
@@ -272,22 +287,25 @@ function MoneyRequestView({
                             Transaction.clearError(transaction.transactionID);
                         }}
                     >
-                        <View style={styles.moneyRequestViewImage}>
-                            {showMapAsImage ? (
-                                <ConfirmedRoute transaction={transaction} />
-                            ) : (
-                                <ReportActionItemImage
-                                    thumbnail={receiptURIs?.thumbnail}
-                                    fileExtension={receiptURIs?.fileExtension}
-                                    isThumbnail={receiptURIs?.isThumbnail}
-                                    image={receiptURIs?.image}
-                                    isLocalFile={receiptURIs?.isLocalFile}
-                                    filename={receiptURIs?.filename}
-                                    transaction={transaction}
-                                    enablePreviewModal
-                                />
-                            )}
-                        </View>
+                        {/* eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing */}
+                        {(showMapAsImage || hasReceipt) && (
+                            <View style={styles.moneyRequestViewImage}>
+                                {showMapAsImage ? (
+                                    <ConfirmedRoute transaction={transaction} />
+                                ) : (
+                                    <ReportActionItemImage
+                                        thumbnail={receiptURIs?.thumbnail}
+                                        fileExtension={receiptURIs?.fileExtension}
+                                        isThumbnail={receiptURIs?.isThumbnail}
+                                        image={receiptURIs?.image}
+                                        isLocalFile={receiptURIs?.isLocalFile}
+                                        filename={receiptURIs?.filename}
+                                        transaction={transaction}
+                                        enablePreviewModal
+                                    />
+                                )}
+                            </View>
+                        )}
                     </OfflineWithFeedback>
                 )}
                 {!hasReceipt && canEditReceipt && (
@@ -408,7 +426,7 @@ function MoneyRequestView({
                     </OfflineWithFeedback>
                 )}
                 {shouldShowTag &&
-                    policyTagLists.map(({name, orderWeight}, index) => (
+                    policyTagLists.map(({ name, orderWeight }, index) => (
                         <OfflineWithFeedback
                             key={name}
                             pendingAction={getPendingFieldAction('tag')}
@@ -424,8 +442,8 @@ function MoneyRequestView({
                                         ROUTES.MONEY_REQUEST_STEP_TAG.getRoute(CONST.IOU.ACTION.EDIT, CONST.IOU.TYPE.REQUEST, orderWeight, transaction?.transactionID ?? '', report.reportID),
                                     )
                                 }
-                                brickRoadIndicator={getErrorForField('tag', {tagListIndex: index, tagListName: name}) ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined}
-                                error={getErrorForField('tag', {tagListIndex: index, tagListName: name})}
+                                brickRoadIndicator={getErrorForField('tag', { tagListIndex: index, tagListName: name }) ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined}
+                                error={getErrorForField('tag', { tagListIndex: index, tagListName: name })}
                             />
                         </OfflineWithFeedback>
                     ))}
@@ -505,25 +523,25 @@ MoneyRequestView.displayName = 'MoneyRequestView';
 
 export default withOnyx<MoneyRequestViewPropsWithoutTransaction, MoneyRequestViewOnyxPropsWithoutTransaction>({
     policy: {
-        key: ({report}) => `${ONYXKEYS.COLLECTION.POLICY}${report.policyID}`,
+        key: ({ report }) => `${ONYXKEYS.COLLECTION.POLICY}${report.policyID}`,
     },
     policyCategories: {
-        key: ({report}) => `${ONYXKEYS.COLLECTION.POLICY_CATEGORIES}${report.policyID}`,
+        key: ({ report }) => `${ONYXKEYS.COLLECTION.POLICY_CATEGORIES}${report.policyID}`,
     },
     policyTagList: {
-        key: ({report}) => `${ONYXKEYS.COLLECTION.POLICY_TAGS}${report.policyID}`,
+        key: ({ report }) => `${ONYXKEYS.COLLECTION.POLICY_TAGS}${report.policyID}`,
     },
     parentReport: {
-        key: ({report}) => `${ONYXKEYS.COLLECTION.REPORT}${report.parentReportID}`,
+        key: ({ report }) => `${ONYXKEYS.COLLECTION.REPORT}${report.parentReportID}`,
     },
     parentReportActions: {
-        key: ({report}) => `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${report ? report.parentReportID : '0'}`,
+        key: ({ report }) => `${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${report ? report.parentReportID : '0'}`,
         canEvict: false,
     },
 })(
     withOnyx<MoneyRequestViewProps, MoneyRequestViewTransactionOnyxProps>({
         transaction: {
-            key: ({report, parentReportActions}) => {
+            key: ({ report, parentReportActions }) => {
                 const parentReportAction = parentReportActions?.[report.parentReportActionID ?? ''];
                 const originalMessage = parentReportAction?.actionName === CONST.REPORT.ACTIONS.TYPE.IOU ? parentReportAction.originalMessage : undefined;
                 const transactionID = originalMessage?.IOUTransactionID ?? 0;
@@ -531,7 +549,7 @@ export default withOnyx<MoneyRequestViewPropsWithoutTransaction, MoneyRequestVie
             },
         },
         transactionViolations: {
-            key: ({report, parentReportActions}) => {
+            key: ({ report, parentReportActions }) => {
                 const parentReportAction = parentReportActions?.[report.parentReportActionID ?? ''];
                 const originalMessage = parentReportAction?.actionName === CONST.REPORT.ACTIONS.TYPE.IOU ? parentReportAction.originalMessage : undefined;
                 const transactionID = originalMessage?.IOUTransactionID ?? 0;
