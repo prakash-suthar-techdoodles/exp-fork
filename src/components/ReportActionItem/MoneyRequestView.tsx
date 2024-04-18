@@ -256,17 +256,17 @@ function MoneyRequestView({
     );
 
     let errors = {};
-    if(transaction?.errors) {
+    if (transaction?.errors) {
         errors = {
             ...errors,
-            ...transaction?.errors
+            ...transaction?.errors,
         };
     }
 
-    if(parentReportAction?.errors) {
+    if (parentReportAction?.errors) {
         errors = {
             ...errors,
-            ...parentReportAction?.errors
+            ...parentReportAction?.errors,
         };
     }
 
@@ -275,40 +275,42 @@ function MoneyRequestView({
             {shouldShowAnimatedBackground && <AnimatedEmptyStateBackground />}
             <View style={shouldShowAnimatedBackground && [StyleUtils.getReportWelcomeTopMarginStyle(isSmallScreenWidth, true)]}>
                 {/* eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing */}
-                {(showMapAsImage || hasReceipt) || errors && (
-                    <OfflineWithFeedback
-                        pendingAction={pendingAction}
-                        errors={errors}
-                        errorRowStyles={[styles.ml4]}
-                        onClose={() => {
-                            if (!transaction?.transactionID) {
-                                return;
-                            }
-                            Transaction.clearError(transaction.transactionID);
-                        }}
-                    >
-                        {/* eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing */}
-                        {(showMapAsImage || hasReceipt) && (
-                        <View style={styles.moneyRequestViewImage}>
-                            {showMapAsImage ? (
-                                <ConfirmedRoute transaction={transaction} />
-                            ) : (
-                                <ReportActionItemImage
-                                    thumbnail={receiptURIs?.thumbnail}
-                                    fileExtension={receiptURIs?.fileExtension}
-                                    isThumbnail={receiptURIs?.isThumbnail}
-                                    image={receiptURIs?.image}
-                                    isLocalFile={receiptURIs?.isLocalFile}
-                                    filename={receiptURIs?.filename}
-                                    transaction={transaction}
-                                    enablePreviewModal
-                                />
+                {showMapAsImage ||
+                    hasReceipt ||
+                    (errors && (
+                        <OfflineWithFeedback
+                            pendingAction={pendingAction}
+                            errors={errors}
+                            errorRowStyles={[styles.ml4]}
+                            onClose={() => {
+                                if (!transaction?.transactionID) {
+                                    return;
+                                }
+                                Transaction.clearError(transaction.transactionID);
+                            }}
+                        >
+                            {/* eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing */}
+                            {(showMapAsImage || hasReceipt) && (
+                                <View style={styles.moneyRequestViewImage}>
+                                    {showMapAsImage ? (
+                                        <ConfirmedRoute transaction={transaction} />
+                                    ) : (
+                                        <ReportActionItemImage
+                                            thumbnail={receiptURIs?.thumbnail}
+                                            fileExtension={receiptURIs?.fileExtension}
+                                            isThumbnail={receiptURIs?.isThumbnail}
+                                            image={receiptURIs?.image}
+                                            isLocalFile={receiptURIs?.isLocalFile}
+                                            filename={receiptURIs?.filename}
+                                            transaction={transaction}
+                                            enablePreviewModal
+                                        />
+                                    )}
+                                </View>
                             )}
-                        </View>
-                        )}
-                    </OfflineWithFeedback>
-                )}
-                
+                        </OfflineWithFeedback>
+                    ))}
+
                 {!hasReceipt && canEditReceipt && (
                     <ReceiptEmptyState
                         hasError={hasErrors}
