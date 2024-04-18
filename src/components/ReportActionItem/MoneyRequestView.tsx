@@ -308,6 +308,7 @@ function MoneyRequestView({
                         )}
                     </OfflineWithFeedback>
                 )}
+                
                 {!hasReceipt && canEditReceipt && (
                     <ReceiptEmptyState
                         hasError={hasErrors}
