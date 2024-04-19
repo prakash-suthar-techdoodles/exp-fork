@@ -65,8 +65,14 @@ type ReportActionsListProps = WithCurrentUserPersonalDetailsProps & {
     /** Are we loading more report actions? */
     isLoadingOlderReportActions?: boolean;
 
+    /** Was there an error when loading older report actions? */
+    hasLoadingOlderReportActionsError?: boolean;
+
     /** Are we loading newer report actions? */
     isLoadingNewerReportActions?: boolean;
+
+    /** Was there an error when loading newer report actions? */
+    hasLoadingNewerReportActionsError?: boolean;
 
     /** Callback executed on list layout */
     onLayout: (event: LayoutChangeEvent) => void;
@@ -75,10 +81,10 @@ type ReportActionsListProps = WithCurrentUserPersonalDetailsProps & {
     onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
 
     /** Function to load more chats */
-    loadOlderChats: () => void;
+    loadOlderChats: (force?: boolean) => void;
 
     /** Function to load newer chats */
-    loadNewerChats: () => void;
+    loadNewerChats: (force?: boolean) => void;
 
     /** Whether the composer is in full size */
     isComposerFullSize?: boolean;
@@ -139,7 +145,9 @@ function ReportActionsList({
     parentReportAction,
     isLoadingInitialReportActions = false,
     isLoadingOlderReportActions = false,
+    hasLoadingOlderReportActionsError = false,
     isLoadingNewerReportActions = false,
+    hasLoadingNewerReportActionsError = false,
     sortedReportActions,
     onScroll,
     mostRecentIOUReportActionID = '',
@@ -589,7 +597,11 @@ function ReportActionsList({
 
     const lastReportAction: OnyxTypes.ReportAction | EmptyObject = useMemo(() => sortedReportActions.at(-1) ?? {}, [sortedReportActions]);
 
-    const listFooterComponent = useCallback(() => {
+    const retryLoadOlderChatsError = useCallback(() => {
+        loadOlderChats(true);
+    }, [loadOlderChats]);
+
+    const listFooterComponent = useMemo(() => {
         // Skip this hook on the first render (when online), as we are not sure if more actions are going to be loaded,
         // Therefore showing the skeleton on footer might be misleading.
         // When offline, there should be no second render, so we should show the skeleton if the corresponding loading prop is present
@@ -604,9 +616,11 @@ function ReportActionsList({
                 isLoadingOlderReportActions={isLoadingOlderReportActions}
                 isLoadingInitialReportActions={isLoadingInitialReportActions}
                 lastReportActionName={lastReportAction.actionName}
+                hasError={hasLoadingOlderReportActionsError}
+                onRetry={retryLoadOlderChatsError}
             />
         );
-    }, [isLoadingInitialReportActions, isLoadingOlderReportActions, lastReportAction.actionName, isOffline]);
+    }, [isLoadingInitialReportActions, isLoadingOlderReportActions, lastReportAction.actionName, isOffline, hasLoadingOlderReportActionsError, retryLoadOlderChatsError]);
 
     const onLayoutInner = useCallback(
         (event: LayoutChangeEvent) => {
@@ -621,7 +635,11 @@ function ReportActionsList({
         [onContentSizeChange],
     );
 
-    const listHeaderComponent = useCallback(() => {
+    const retryLoadNewerChatsError = useCallback(() => {
+        loadNewerChats(true);
+    }, [loadNewerChats]);
+
+    const listHeaderComponent = useMemo(() => {
         if (!canShowHeader) {
             hasHeaderRendered.current = true;
             return null;
@@ -631,9 +649,19 @@ function ReportActionsList({
             <ListBoundaryLoader
                 type={CONST.LIST_COMPONENTS.HEADER}
                 isLoadingNewerReportActions={isLoadingNewerReportActions}
+                hasError={hasLoadingNewerReportActionsError}
+                onRetry={retryLoadNewerChatsError}
             />
         );
-    }, [isLoadingNewerReportActions, canShowHeader]);
+    }, [isLoadingNewerReportActions, canShowHeader, hasLoadingNewerReportActionsError, retryLoadNewerChatsError]);
+
+    const onStartReached = useCallback(() => {
+        loadNewerChats(false);
+    }, [loadNewerChats]);
+
+    const onEndReached = useCallback(() => {
+        loadOlderChats(false);
+    }, [loadOlderChats]);
 
     // When performing comment linking, initially 25 items are added to the list. Subsequent fetches add 15 items from the cache or 50 items from the server.
     // This is to ensure that the user is able to see the 'scroll to newer comments' button when they do comment linking and have not reached the end of the list yet.
@@ -655,9 +683,9 @@ function ReportActionsList({
                     contentContainerStyle={contentContainerStyle}
                     keyExtractor={keyExtractor}
                     initialNumToRender={initialNumToRender}
-                    onEndReached={loadOlderChats}
+                    onEndReached={onEndReached}
                     onEndReachedThreshold={0.75}
-                    onStartReached={loadNewerChats}
+                    onStartReached={onStartReached}
                     onStartReachedThreshold={0.75}
                     ListFooterComponent={listFooterComponent}
                     ListHeaderComponent={listHeaderComponent}
