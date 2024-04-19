@@ -83,7 +83,7 @@ function useWorkletStateMachine<P>(stateMachine: StateMachine, initialState: Sta
         }
 
         // eslint-disable-next-line @typescript-eslint/unbound-method, @typescript-eslint/restrict-template-expressions
-        runOnJS(Log.client)(`[StateMachine] ${message}. Params: ${params}`);
+        runOnJS(Log.client)(`[StateMachine] ${message}. Params: ${JSON.stringify(params)}`);
     }, []);
 
     const transitionWorklet = useCallback(
