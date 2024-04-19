@@ -291,7 +291,7 @@ function ReportActionItem({
     // Removed messages should not be shown anyway and should not need this flow
     const latestDecision = ReportActionsUtils.getReportActionMessage(action)?.moderationDecision?.decision ?? '';
     useEffect(() => {
-        if (action.actionName !== CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT) {
+        if (action.actionName !== CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT) {
             return;
         }
 
@@ -405,10 +405,10 @@ function ReportActionItem({
             const transactionID = (action?.originalMessage as OriginalMessageActionableTrackedExpenseWhisper['originalMessage'])?.transactionID;
             return [
                 {
-                    text: 'actionableMentionTrackExpense.request',
-                    key: `${action.reportActionID}-actionableMentionTrackExpense-request`,
+                    text: 'actionableMentionTrackExpense.submit',
+                    key: `${action.reportActionID}-actionableMentionTrackExpense-submit`,
                     onPress: () => {
-                        ReportUtils.createDraftTransactionAndNavigateToParticipantSelector(transactionID, report.reportID, CONST.IOU.ACTION.MOVE, action.reportActionID);
+                        ReportUtils.createDraftTransactionAndNavigateToParticipantSelector(transactionID, report.reportID, CONST.IOU.ACTION.REQUEST, action.reportActionID);
                     },
                     isMediumSized: true,
                 },
@@ -479,7 +479,7 @@ function ReportActionItem({
     const renderItemContent = (hovered = false, isWhisper = false, hasErrors = false): React.JSX.Element => {
         let children;
 
-        // Show the MoneyRequestPreview for when request was created, bill was split or money was sent
+        // Show the MoneyRequestPreview for when expense is present
         if (
             isIOUReport(action) &&
             iouActionOriginalMessage &&
@@ -493,7 +493,7 @@ function ReportActionItem({
             const iouReportID = iouActionOriginalMessage.IOUReportID ? iouActionOriginalMessage.IOUReportID.toString() : '0';
             children = (
                 <MoneyRequestAction
-                    // If originalMessage.iouReportID is set, this is a 1:1 money request in a DM chat whose reportID is report.chatReportID
+                    // If originalMessage.iouReportID is set, this is a 1:1 IOU expense in a DM chat whose reportID is report.chatReportID
                     chatReportID={iouActionOriginalMessage.IOUReportID ? report.chatReportID ?? '' : report.reportID}
                     requestReportID={iouReportID}
                     reportID={report.reportID}
@@ -506,7 +506,7 @@ function ReportActionItem({
                     isWhisper={isWhisper}
                 />
             );
-        } else if (action.actionName === CONST.REPORT.ACTIONS.TYPE.REPORTPREVIEW) {
+        } else if (action.actionName === CONST.REPORT.ACTIONS.TYPE.REPORT_PREVIEW) {
             children = ReportUtils.isClosedExpenseReportWithNoExpenses(iouReport) ? (
                 <RenderHTML html={`<comment>${translate('parentReportAction.deletedReport')}</comment>`} />
             ) : (
@@ -529,7 +529,7 @@ function ReportActionItem({
                 <ShowContextMenuContext.Provider value={contextValue}>
                     <TaskPreview
                         taskReportID={
-                            action.actionName === CONST.REPORT.ACTIONS.TYPE.ADDCOMMENT
+                            action.actionName === CONST.REPORT.ACTIONS.TYPE.ADD_COMMENT
                                 ? ReportActionsUtils.getReportActionOriginalMessage<OriginalMessageAddComment['originalMessage']>(action).taskReportID?.toString() ?? ''
                                 : ''
                         }
@@ -542,7 +542,7 @@ function ReportActionItem({
                     />
                 </ShowContextMenuContext.Provider>
             );
-        } else if (action.actionName === CONST.REPORT.ACTIONS.TYPE.REIMBURSEMENTQUEUED) {
+        } else if (action.actionName === CONST.REPORT.ACTIONS.TYPE.REIMBURSEMENT_QUEUED) {
             const linkedReport = ReportUtils.isChatThread(report) ? ReportUtils.getReport(report.parentReportID) : report;
             const submitterDisplayName = PersonalDetailsUtils.getDisplayNameOrDefault(personalDetails[linkedReport?.ownerAccountID ?? -1]);
             const paymentType = ReportActionsUtils.getReportActionOriginalMessage<OriginalMessageReimbursementQueued['originalMessage']>(action).paymentType ?? '';
@@ -587,19 +587,19 @@ function ReportActionItem({
                     </>
                 </ReportActionItemBasicMessage>
             );
-        } else if (action.actionName === CONST.REPORT.ACTIONS.TYPE.REIMBURSEMENTDEQUEUED) {
+        } else if (action.actionName === CONST.REPORT.ACTIONS.TYPE.REIMBURSEMENT_DEQUEUED) {
             children = <ReportActionItemBasicMessage message={ReportUtils.getReimbursementDeQueuedActionMessage(action, report)} />;
-        } else if (action.actionName === CONST.REPORT.ACTIONS.TYPE.MODIFIEDEXPENSE) {
+        } else if (action.actionName === CONST.REPORT.ACTIONS.TYPE.MODIFIED_EXPENSE) {
             children = <ReportActionItemBasicMessage message={ModifiedExpenseMessage.getForReportAction(report.reportID, action)} />;
         } else if (ReportActionsUtils.isOldDotReportAction(action)) {
             // This handles all historical actions from OldDot that we just want to display the message text
             children = <ReportActionItemBasicMessage message={ReportActionsUtils.getMessageOfOldDotReportAction(action)} />;
         } else if (action.actionName === CONST.REPORT.ACTIONS.TYPE.HOLD) {
-            children = <ReportActionItemBasicMessage message={translate('iou.heldRequest')} />;
-        } else if (action.actionName === CONST.REPORT.ACTIONS.TYPE.HOLDCOMMENT) {
-            children = <ReportActionItemBasicMessage message={ReportActionsUtils.getReportActionText(action)} />;
+            children = <ReportActionItemBasicMessage message={translate('iou.heldExpense')} />;
+        } else if (action.actionName === CONST.REPORT.ACTIONS.TYPE.HOLD_COMMENT) {
+            children = <ReportActionItemBasicMessage message={action.message?.[0]?.text ?? ''} />;
         } else if (action.actionName === CONST.REPORT.ACTIONS.TYPE.UNHOLD) {
-            children = <ReportActionItemBasicMessage message={translate('iou.unheldRequest')} />;
+            children = <ReportActionItemBasicMessage message={translate('iou.unheldExpense')} />;
         } else {
             const hasBeenFlagged =
                 ![CONST.MODERATION.MODERATOR_DECISION_APPROVED, CONST.MODERATION.MODERATOR_DECISION_PENDING].some((item) => item === moderationDecision) &&
@@ -755,10 +755,8 @@ function ReportActionItem({
                 let message: TranslationPaths;
                 if (isReversedTransaction) {
                     message = 'parentReportAction.reversedTransaction';
-                } else if (ReportActionsUtils.isTrackExpenseAction(parentReportAction)) {
-                    message = 'parentReportAction.deletedExpense';
                 } else {
-                    message = 'parentReportAction.deletedRequest';
+                    message = 'parentReportAction.deletedExpense';
                 }
                 return (
                     <View>
@@ -861,7 +859,7 @@ function ReportActionItem({
     if (action.actionName === CONST.REPORT.ACTIONS.TYPE.RENAMED) {
         return <RenameAction action={action} />;
     }
-    if (action.actionName === CONST.REPORT.ACTIONS.TYPE.CHRONOSOOOLIST) {
+    if (action.actionName === CONST.REPORT.ACTIONS.TYPE.CHRONOS_OOO_LIST) {
         return (
             <ChronosOOOListActions
                 action={action}
@@ -870,7 +868,7 @@ function ReportActionItem({
         );
     }
 
-    // For the `pay` IOU action on non-send money flow, we don't want to render anything if `isWaitingOnBankAccount` is true
+    // For the `pay` IOU action on non-pay expense flow, we don't want to render anything if `isWaitingOnBankAccount` is true
     // Otherwise, we will see two system messages informing the payee needs to add a bank account or wallet
     if (isIOUReport(action) && !!report?.isWaitingOnBankAccount && iouActionOriginalMessage?.type === CONST.IOU.REPORT_ACTION_TYPE.PAY && !isSendingMoney) {
         return null;
