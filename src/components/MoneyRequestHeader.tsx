@@ -15,7 +15,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type {Policy, Report, ReportAction, ReportActions, Session, Transaction} from '@src/types/onyx';
-import type {OriginalMessageIOU} from '@src/types/onyx/OriginalMessage';
+import type {IOUMessage, OriginalMessageIOU} from '@src/types/onyx/OriginalMessage';
 import ConfirmModal from './ConfirmModal';
 import HeaderWithBackButton from './HeaderWithBackButton';
 import HoldBanner from './HoldBanner';
@@ -52,6 +52,10 @@ type MoneyRequestHeaderProps = MoneyRequestHeaderOnyxProps & {
     parentReportAction: OnyxEntry<ReportAction>;
 };
 
+function getIOUTransactionID(reportAction: OnyxEntry<ReportAction>) {
+    return ReportActionsUtils.getReportActionOriginalMessage<IOUMessage>(reportAction)?.IOUTransactionID;
+}
+
 function MoneyRequestHeader({session, parentReport, report, parentReportAction, transaction, shownHoldUseExplanation = false, policy}: MoneyRequestHeaderProps) {
     const styles = useThemeStyles();
     const {translate} = useLocalize();
@@ -70,7 +74,7 @@ function MoneyRequestHeader({session, parentReport, report, parentReportAction, 
 
     const deleteTransaction = useCallback(() => {
         if (parentReportAction) {
-            const iouTransactionID = parentReportAction.actionName === CONST.REPORT.ACTIONS.TYPE.IOU ? parentReportAction.originalMessage?.IOUTransactionID ?? '' : '';
+            const iouTransactionID = parentReportAction.actionName === CONST.REPORT.ACTIONS.TYPE.IOU ? getIOUTransactionID(parentReportAction) ?? '' : '';
             if (ReportActionsUtils.isTrackExpenseAction(parentReportAction)) {
                 IOU.deleteTrackExpense(parentReport?.reportID ?? '', iouTransactionID, parentReportAction, true);
                 return;
@@ -91,7 +95,7 @@ function MoneyRequestHeader({session, parentReport, report, parentReportAction, 
     const canDeleteRequest = isActionOwner && (ReportUtils.canAddOrDeleteTransactions(moneyRequestReport) || ReportUtils.isTrackExpenseReport(report)) && !isDeletedParentAction;
 
     const changeMoneyRequestStatus = () => {
-        const iouTransactionID = parentReportAction?.actionName === CONST.REPORT.ACTIONS.TYPE.IOU ? parentReportAction.originalMessage?.IOUTransactionID ?? '' : '';
+        const iouTransactionID = parentReportAction?.actionName === CONST.REPORT.ACTIONS.TYPE.IOU ? getIOUTransactionID(parentReportAction) ?? '' : '';
 
         if (isOnHold) {
             IOU.unholdRequest(iouTransactionID, report?.reportID);
@@ -226,7 +230,7 @@ const MoneyRequestHeaderWithTransaction = withOnyx<MoneyRequestHeaderProps, Pick
     transaction: {
         key: ({report, parentReportActions}) => {
             const parentReportAction = (report.parentReportActionID && parentReportActions ? parentReportActions[report.parentReportActionID] : {}) as ReportAction & OriginalMessageIOU;
-            return `${ONYXKEYS.COLLECTION.TRANSACTION}${parentReportAction?.originalMessage?.IOUTransactionID ?? 0}`;
+            return `${ONYXKEYS.COLLECTION.TRANSACTION}${getIOUTransactionID(parentReportAction) ?? 0}`;
         },
     },
     shownHoldUseExplanation: {

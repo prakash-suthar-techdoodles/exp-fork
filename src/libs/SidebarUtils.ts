@@ -7,6 +7,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {PersonalDetails, PersonalDetailsList, TransactionViolation} from '@src/types/onyx';
 import type Beta from '@src/types/onyx/Beta';
+import type {OriginalMessageRenamed, OriginalMessageRoomChangeLog} from '@src/types/onyx/OriginalMessage';
 import type Policy from '@src/types/onyx/Policy';
 import type Report from '@src/types/onyx/Report';
 import type {ReportActions} from '@src/types/onyx/ReportAction';
@@ -325,7 +326,7 @@ function getOptionData({
 
     if ((result.isChatRoom || result.isPolicyExpenseChat || result.isThread || result.isTaskReport || isThreadMessage) && !result.isArchivedRoom) {
         if (lastAction?.actionName === CONST.REPORT.ACTIONS.TYPE.RENAMED) {
-            const newName = lastAction?.originalMessage?.newName ?? '';
+            const newName = ReportActionsUtils.getReportActionOriginalMessage<OriginalMessageRenamed['originalMessage']>(lastAction)?.newName ?? '';
             result.alternateText = Localize.translate(preferredLocale, 'newRoomPage.roomRenamedTo', {newName});
         } else if (ReportActionsUtils.isTaskAction(lastAction)) {
             result.alternateText = ReportUtils.formatReportLastMessageText(TaskUtils.getTaskReportActionMessage(lastAction).text);
@@ -335,7 +336,7 @@ function getOptionData({
             lastAction?.actionName === CONST.REPORT.ACTIONS.TYPE.POLICY_CHANGE_LOG.INVITE_TO_ROOM ||
             lastAction?.actionName === CONST.REPORT.ACTIONS.TYPE.POLICY_CHANGE_LOG.REMOVE_FROM_ROOM
         ) {
-            const targetAccountIDs = lastAction?.originalMessage?.targetAccountIDs ?? [];
+            const targetAccountIDs = ReportActionsUtils.getReportActionOriginalMessage<OriginalMessageRoomChangeLog['originalMessage']>(lastAction)?.targetAccountIDs ?? [];
             const verb =
                 lastAction.actionName === CONST.REPORT.ACTIONS.TYPE.ROOM_CHANGE_LOG.INVITE_TO_ROOM || lastAction.actionName === CONST.REPORT.ACTIONS.TYPE.POLICY_CHANGE_LOG.INVITE_TO_ROOM
                     ? Localize.translate(preferredLocale, 'workspace.invite.invited')
@@ -343,7 +344,7 @@ function getOptionData({
             const users = Localize.translate(preferredLocale, targetAccountIDs.length > 1 ? 'workspace.invite.users' : 'workspace.invite.user');
             result.alternateText = `${lastActorDisplayName} ${verb} ${targetAccountIDs.length} ${users}`.trim();
 
-            const roomName = lastAction?.originalMessage?.roomName ?? '';
+            const roomName = ReportActionsUtils.getReportActionOriginalMessage<OriginalMessageRoomChangeLog['originalMessage']>(lastAction)?.roomName ?? '';
             if (roomName) {
                 const preposition =
                     lastAction.actionName === CONST.REPORT.ACTIONS.TYPE.ROOM_CHANGE_LOG.INVITE_TO_ROOM || lastAction.actionName === CONST.REPORT.ACTIONS.TYPE.POLICY_CHANGE_LOG.INVITE_TO_ROOM

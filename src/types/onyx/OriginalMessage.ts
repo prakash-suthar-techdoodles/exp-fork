@@ -356,7 +356,12 @@ export type {
     OriginalMessageChronosOOOList,
     OriginalMessageSource,
     OriginalMessageReimbursementDequeued,
+    OriginalMessageClosed,
     DecisionName,
     PaymentMethodType,
+    OriginalMessageReportPreview,
+    OriginalMessageReimbursementQueued,
+    OriginalMessageRoomChangeLog,
+    OriginalMessageModifiedExpense,
     OriginalMessageActionableTrackedExpenseWhisper,
 };

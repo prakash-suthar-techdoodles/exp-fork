@@ -5,6 +5,7 @@ import {withOnyx} from 'react-native-onyx';
 import FullPageNotFoundView from '@components/BlockingViews/FullPageNotFoundView';
 import Navigation from '@libs/Navigation/Navigation';
 import type {SplitDetailsNavigatorParamList} from '@libs/Navigation/types';
+import * as ReportActionsUtils from '@libs/ReportActionsUtils';
 import * as ReportUtils from '@libs/ReportUtils';
 import type {TransactionChanges} from '@libs/TransactionUtils';
 import * as IOU from '@userActions/IOU';
@@ -13,7 +14,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 import type {Report, ReportActions, Transaction} from '@src/types/onyx';
-import type {OriginalMessageIOU} from '@src/types/onyx/OriginalMessage';
+import type {IOUMessage} from '@src/types/onyx/OriginalMessage';
 import EditRequestTagPage from './EditRequestTagPage';
 
 type EditSplitBillOnyxProps = {
@@ -79,14 +80,16 @@ export default withOnyx<EditSplitBillProps, EditSplitBillOnyxProps>({
     transaction: {
         key: ({route, reportActions}: Partial<EditSplitBillProps>) => {
             const reportAction = reportActions?.[`${route?.params.reportActionID.toString()}`];
-            const transactionID = (reportAction as OriginalMessageIOU)?.originalMessage.IOUTransactionID ? (reportAction as OriginalMessageIOU).originalMessage.IOUTransactionID : 0;
+            const originalMessage = ReportActionsUtils.getReportActionOriginalMessage<IOUMessage>(reportAction);
+            const transactionID = originalMessage.IOUTransactionID ? originalMessage.IOUTransactionID : 0;
             return `${ONYXKEYS.COLLECTION.TRANSACTION}${transactionID}`;
         },
     },
     draftTransaction: {
         key: ({route, reportActions}: Partial<EditSplitBillProps>) => {
             const reportAction = reportActions?.[`${route?.params.reportActionID.toString()}`];
-            const transactionID = (reportAction as OriginalMessageIOU)?.originalMessage.IOUTransactionID ? (reportAction as OriginalMessageIOU).originalMessage.IOUTransactionID : 0;
+            const originalMessage = ReportActionsUtils.getReportActionOriginalMessage<IOUMessage>(reportAction);
+            const transactionID = originalMessage.IOUTransactionID ? originalMessage.IOUTransactionID : 0;
             return `${ONYXKEYS.COLLECTION.SPLIT_TRANSACTION_DRAFT}${transactionID}`;
         },
     },
