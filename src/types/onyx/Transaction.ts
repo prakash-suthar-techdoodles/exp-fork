@@ -155,6 +155,9 @@ type Transaction = OnyxCommon.OnyxValueWithOfflineFeedback<
         /** The edited waypoints for the distance expense */
         modifiedWaypoints?: WaypointCollection;
 
+        /** The edited distance rate for the distance request */
+        modifiedCustomUnitRateID?: string;
+
         /**
          * Used during the creation flow before the transaction is saved to the server and helps dictate where
          * the user is navigated to when pressing the back button on the confirmation step
@@ -234,6 +237,7 @@ type TransactionPendingFieldsKey = KeysOfUnion<Transaction['pendingFields']>;
 type AdditionalTransactionChanges = {
     comment?: string;
     waypoints?: WaypointCollection;
+    customUnitRateID?: string;
     oldAmount?: number;
     oldCurrency?: string;
 };

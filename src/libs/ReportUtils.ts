@@ -13,6 +13,7 @@ import type {FileObject} from '@components/AttachmentModal';
 import * as Expensicons from '@components/Icon/Expensicons';
 import * as defaultGroupAvatars from '@components/Icon/GroupDefaultAvatars';
 import * as defaultWorkspaceAvatars from '@components/Icon/WorkspaceDefaultAvatars';
+import DistanceRequestUtils from '@libs/DistanceRequestUtils';
 import type {IOUAction, IOUType} from '@src/CONST';
 import CONST from '@src/CONST';
 import type {ParentNavigationSummaryParams, TranslationPaths} from '@src/languages/types';
@@ -105,6 +106,8 @@ type ExpenseOriginalMessage = {
     taxAmount?: number;
     taxRate?: string;
     oldTaxRate?: string;
+    customUnitRate?: string;
+    oldCustomUnitRate?: string;
 };
 
 type SpendBreakdown = {
@@ -358,6 +361,7 @@ type TransactionDetails = {
     currency: string;
     merchant: string;
     waypoints?: WaypointCollection | string;
+    customUnitRateID?: string;
     comment: string;
     category: string;
     billable: boolean;
@@ -2405,6 +2409,7 @@ function getTransactionDetails(transaction: OnyxEntry<Transaction>, createdDateF
         comment: TransactionUtils.getDescription(transaction),
         merchant: TransactionUtils.getMerchant(transaction),
         waypoints: TransactionUtils.getWaypoints(transaction),
+        customUnitRateID: TransactionUtils.getRateID(transaction),
         category: TransactionUtils.getCategory(transaction),
         billable: TransactionUtils.getBillable(transaction),
         tag: TransactionUtils.getTag(transaction),
@@ -2873,6 +2878,14 @@ function getModifiedExpenseOriginalMessage(
         const oldBillable = TransactionUtils.getBillable(oldTransaction);
         originalMessage.oldBillable = oldBillable ? Localize.translateLocal('common.billable').toLowerCase() : Localize.translateLocal('common.nonBillable').toLowerCase();
         originalMessage.billable = transactionChanges?.billable ? Localize.translateLocal('common.billable').toLowerCase() : Localize.translateLocal('common.nonBillable').toLowerCase();
+    }
+
+    if ('customUnitRateID' in transactionChanges) {
+        const mileageRates = DistanceRequestUtils.getMileageRates(policy);
+        const oldRate = mileageRates[TransactionUtils.getRateID(oldTransaction) ?? ''];
+        const newRate = mileageRates[transactionChanges?.customUnitRateID ?? ''];
+        originalMessage.oldCustomUnitRate = oldRate.name ?? 'TODO';
+        originalMessage.customUnitRate = newRate.name ?? 'TODO';
     }
 
     return originalMessage;

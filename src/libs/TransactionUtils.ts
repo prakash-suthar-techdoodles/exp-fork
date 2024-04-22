@@ -212,6 +212,11 @@ function getUpdatedTransaction(transaction: Transaction, transactionChanges: Tra
         shouldStopSmartscan = true;
     }
 
+    if (Object.hasOwn(transactionChanges, 'customUnitRateID')) {
+        updatedTransaction.modifiedCustomUnitRateID = transactionChanges.customUnitRateID;
+        shouldStopSmartscan = true;
+    }
+
     if (Object.hasOwn(transactionChanges, 'taxAmount') && typeof transactionChanges.taxAmount === 'number') {
         updatedTransaction.taxAmount = isFromExpenseReport ? -transactionChanges.taxAmount : transactionChanges.taxAmount;
     }
@@ -625,7 +630,7 @@ function isCustomUnitRateIDForP2P(transaction: OnyxEntry<Transaction>): boolean 
  * Get rate ID from the transaction object
  */
 function getRateID(transaction: OnyxEntry<Transaction>): string | undefined {
-    return transaction?.comment?.customUnit?.customUnitRateID?.toString();
+    return transaction?.modifiedCustomUnitRateID ?? transaction?.comment?.customUnit?.customUnitRateID?.toString();
 }
 
 /**

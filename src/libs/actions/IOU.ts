@@ -406,10 +406,9 @@ function setCustomUnitRateID(transactionID: string, customUnitRateID: string) {
     Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${transactionID}`, {comment: {customUnit: {customUnitRateID}}});
 }
 
-/** Update transaction distance rate */
-function updateDistanceRequestRate(transactionID: string, rateID: string, policyID: string) {
+function setMoneyRequestDistanceRate(transactionID: string, rateID: string, policyID: string, isDraft: boolean) {
     Onyx.merge(ONYXKEYS.NVP_LAST_SELECTED_DISTANCE_RATES, {[policyID]: rateID});
-    Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${transactionID}`, {comment: {customUnit: {customUnitRateID: rateID}}});
+    Onyx.merge(`${isDraft ? ONYXKEYS.COLLECTION.TRANSACTION_DRAFT : ONYXKEYS.COLLECTION.TRANSACTION}${transactionID}`, {comment: {customUnit: {customUnitRateID: rateID}}});
 }
 
 /** Reset expense info from the store with its initial value */
@@ -2469,6 +2468,29 @@ function updateMoneyRequestDescription(
     }
     const {params, onyxData} = data;
     API.write(WRITE_COMMANDS.UPDATE_MONEY_REQUEST_DESCRIPTION, params, onyxData);
+}
+
+function updateMoneyRequestDistanceRate(
+    transactionID: string,
+    transactionThreadReportID: string,
+    rateID: string,
+    policy: OnyxEntry<OnyxTypes.Policy>,
+    policyTagList: OnyxEntry<OnyxTypes.PolicyTagList>,
+    policyCategories: OnyxEntry<OnyxTypes.PolicyCategories>,
+) {
+    const transactionChanges: TransactionChanges = {
+        customUnitRateID: rateID,
+    };
+    const transactionThreadReport = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${transactionThreadReportID}`] ?? null;
+
+    let data: UpdateMoneyRequestData;
+    if (ReportUtils.isTrackExpenseReport(transactionThreadReport)) {
+        data = getUpdateTrackExpenseParams(transactionID, transactionThreadReportID, transactionChanges, true, policy);
+    } else {
+        data = getUpdateMoneyRequestParams(transactionID, transactionThreadReportID, transactionChanges, policy, policyTagList, policyCategories, true);
+    }
+    const {params, onyxData} = data;
+    API.write(WRITE_COMMANDS.UPDATE_MONEY_REQUEST_RATE, params, onyxData);
 }
 
 /** Edits an existing distance expense */
@@ -6046,6 +6068,7 @@ export {
     setMoneyRequestTag,
     setMoneyRequestTaxAmount,
     setMoneyRequestTaxRate,
+    setMoneyRequestDistanceRate,
     setShownHoldUseExplanation,
     splitBill,
     splitBillAndOpenReport,
@@ -6061,6 +6084,7 @@ export {
     updateMoneyRequestDate,
     updateMoneyRequestDescription,
     updateMoneyRequestDistance,
+    updateMoneyRequestDistanceRate,
     updateMoneyRequestMerchant,
     updateMoneyRequestTag,
     updateMoneyRequestTaxAmount,
