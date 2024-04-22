@@ -3,10 +3,13 @@ import type {OnyxEntry} from 'react-native-onyx';
 import {withOnyx} from 'react-native-onyx';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useWindowDimensions from '@hooks/useWindowDimensions';
 import * as ApiUtils from '@libs/ApiUtils';
 import compose from '@libs/compose';
 import Navigation from '@libs/Navigation/Navigation';
+import variables from '@styles/variables';
 import * as Network from '@userActions/Network';
+import * as Report from '@userActions/Report';
 import * as Session from '@userActions/Session';
 import * as User from '@userActions/User';
 import CONFIG from '@src/CONFIG';
@@ -34,6 +37,7 @@ const USER_DEFAULT: UserOnyx = {shouldUseStagingServer: undefined, isSubscribedT
 function TestToolMenu({user = USER_DEFAULT, network}: TestToolMenuProps) {
     const shouldUseStagingServer = user?.shouldUseStagingServer ?? ApiUtils.isUsingStagingApi();
     const styles = useThemeStyles();
+    const {isSmallScreenWidth} = useWindowDimensions();
     const {translate} = useLocalize();
 
     return (
@@ -111,6 +115,24 @@ function TestToolMenu({user = USER_DEFAULT, network}: TestToolMenuProps) {
                     text="Navigate"
                     onPress={() => {
                         Navigation.navigate(ROUTES.SEARCH.getRoute(CONST.TAB_SEARCH.ALL));
+                    }}
+                />
+            </TestToolRow>
+            {/* Navigate to the Explanation Modal. This button is temporary to test Explanation Modal flow without HybridApp native module. */}
+            <TestToolRow title="Explanation modal">
+                <Button
+                    small
+                    text="Navigate"
+                    onPress={() => {
+                        Navigation.dismissModal();
+                        if (isSmallScreenWidth) {
+                            Navigation.navigate(ROUTES.HOME);
+                        } else {
+                            Report.navigateToConciergeChat();
+                        }
+                        setTimeout(() => {
+                            Navigation.navigate(ROUTES.EXPLANATION_MODAL_ROOT);
+                        }, variables.welcomeVideoDelay);
                     }}
                 />
             </TestToolRow>
