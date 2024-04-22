@@ -1,5 +1,6 @@
 import type {RefObject} from 'react';
 import React, {useEffect, useRef, useState} from 'react';
+import type {LayoutChangeEvent} from 'react-native';
 import {View} from 'react-native';
 import type {ModalProps} from 'react-native-modal';
 import useArrowKeyFocusManager from '@hooks/useArrowKeyFocusManager';
@@ -35,6 +36,9 @@ type PopoverModalProps = Pick<ModalProps, 'animationIn' | 'animationOut' | 'anim
 type PopoverMenuProps = Partial<PopoverModalProps> & {
     /** Callback method fired when the user requests to close the modal */
     onClose: () => void;
+
+    /** Optional callback passed to popover's children container */
+    onLayout?: (e: LayoutChangeEvent) => void;
 
     /** State that determines whether to display the modal or not */
     isVisible: boolean;
@@ -77,6 +81,7 @@ function PopoverMenu({
     anchorPosition,
     anchorRef,
     onClose,
+    onLayout,
     headerText,
     fromSidebarMediumScreen,
     anchorAlignment = {
@@ -190,7 +195,10 @@ function PopoverMenu({
             withoutOverlay={withoutOverlay}
             shouldSetModalVisibility={shouldSetModalVisibility}
         >
-            <View style={isSmallScreenWidth ? {} : styles.createMenuContainer}>
+            <View
+                onLayout={onLayout}
+                style={isSmallScreenWidth ? {} : styles.createMenuContainer}
+            >
                 {!!headerText && <Text style={[styles.createMenuHeaderText, styles.ml3]}>{headerText}</Text>}
                 {enteredSubMenuIndexes.length > 0 && renderBackButtonItem()}
                 {currentMenuItems.map((item, menuIndex) => (
