@@ -217,6 +217,9 @@ type Transaction = OnyxCommon.OnyxValueWithOfflineFeedback<
         /** Indicates transaction loading */
         isLoading?: boolean;
 
+        /** Whether the user input should be kept */
+        shouldShowOriginalAmount?: boolean;
+
         /** The actionable report action ID associated with the transaction */
         actionableWhisperReportActionID?: string;
 

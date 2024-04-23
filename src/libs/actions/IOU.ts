@@ -347,8 +347,8 @@ function startMoneyRequest(iouType: ValueOf<typeof CONST.IOU.TYPE>, reportID: st
 }
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-function setMoneyRequestAmount(transactionID: string, amount: number, currency: string) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${transactionID}`, {amount, currency});
+function setMoneyRequestAmount(transactionID: string, amount: number, currency: string, shouldShowOriginalAmount = false) {
+    Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${transactionID}`, {amount, currency, shouldShowOriginalAmount});
 }
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
