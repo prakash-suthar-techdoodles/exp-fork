@@ -1,3 +1,5 @@
+import type {ParsedPhoneNumber} from 'awesome-phonenumber';
+
 /* eslint-disable no-continue */
 import Str from 'expensify-common/lib/str';
 // eslint-disable-next-line you-dont-need-lodash-underscore/get
@@ -193,6 +195,11 @@ type Options = {
 };
 
 type PreviewConfig = {showChatPreviewLine?: boolean; forcePolicyNamePreview?: boolean; showPersonalDetails?: boolean};
+
+type FilterOptionsConfig = Pick<
+    GetOptionsConfig,
+    'sortByReportTypeInSearch' | 'canInviteUser' | 'betas' | 'selectedOptions' | 'excludeUnknownUsers' | 'excludeLogins' | 'maxRecentReportsToShow'
+>;
 
 /**
  * OptionsListUtils is used to build a list options passed to the OptionsList component. Several different UI views can
@@ -1542,6 +1549,81 @@ function orderOptions(options: ReportUtils.OptionData[], searchValue: string | u
     );
 }
 
+function canCreateOptimisticPersonalDetailOption({
+    searchValue,
+    recentReportOptions,
+    personalDetailsOptions,
+    currentUserOption,
+    selectedOptions,
+    excludeUnknownUsers,
+    betas,
+    optionsToExclude,
+    parsedPhoneNumber,
+}: {
+    searchValue: string;
+    recentReportOptions: ReportUtils.OptionData[];
+    personalDetailsOptions: ReportUtils.OptionData[];
+    currentUserOption?: ReportUtils.OptionData | null;
+    selectedOptions: Array<Partial<ReportUtils.OptionData>>;
+    excludeUnknownUsers: boolean;
+    betas: OnyxEntry<Beta[]>;
+    optionsToExclude: string[];
+    parsedPhoneNumber: ParsedPhoneNumber;
+}) {
+    const noOptions = recentReportOptions.length + personalDetailsOptions.length === 0 && !currentUserOption;
+    const noOptionsMatchExactly = !personalDetailsOptions
+        .concat(recentReportOptions)
+        .find((option) => option.login === PhoneNumber.addSMSDomainIfPhoneNumber(searchValue ?? '').toLowerCase() || option.login === searchValue?.toLowerCase());
+
+    return (
+        searchValue &&
+        (noOptions || noOptionsMatchExactly) &&
+        !isCurrentUser({login: searchValue} as PersonalDetails) &&
+        selectedOptions.every((option) => 'login' in option && option.login !== searchValue) &&
+        ((Str.isValidEmail(searchValue) && !Str.isDomainEmail(searchValue) && !Str.endsWith(searchValue, CONST.SMS.DOMAIN)) ||
+            (parsedPhoneNumber.possible && Str.isValidE164Phone(LoginUtils.getPhoneNumberWithoutSpecialChars(parsedPhoneNumber.number?.input ?? '')))) &&
+        !optionsToExclude.find((optionToExclude) => optionToExclude === PhoneNumber.addSMSDomainIfPhoneNumber(searchValue).toLowerCase()) &&
+        (searchValue !== CONST.EMAIL.CHRONOS || Permissions.canUseChronos(betas)) &&
+        !excludeUnknownUsers
+    );
+}
+
+/**
+ * Builds the option with optimistic personal details
+ */
+function createOptimisticPersonalDetailOption(searchValue: string, {reportActions = {}, showChatPreviewLine = false}) {
+    const optimisticAccountID = UserUtils.generateAccountID(searchValue);
+    const personalDetailsExtended = {
+        ...allPersonalDetails,
+        [optimisticAccountID]: {
+            accountID: optimisticAccountID,
+            login: searchValue,
+            avatar: UserUtils.getDefaultAvatar(optimisticAccountID),
+        },
+    };
+    const optimisticUser = createOption([optimisticAccountID], personalDetailsExtended, null, reportActions, {
+        showChatPreviewLine,
+    });
+
+    optimisticUser.isOptimisticAccount = true;
+    optimisticUser.login = searchValue;
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+    optimisticUser.text = optimisticUser.text || searchValue;
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+    optimisticUser.alternateText = optimisticUser.alternateText || searchValue;
+
+    // If user doesn't exist, use a default avatar
+    optimisticUser.icons = [
+        {
+            source: UserUtils.getAvatar('', optimisticAccountID),
+            name: searchValue,
+            type: CONST.ICON_TYPE_AVATAR,
+        },
+    ];
+
+    return optimisticUser;
+}
+
 /**
  * filter options based on specific conditions
  */
@@ -1840,51 +1922,22 @@ function getOptions(
         currentUserOption = undefined;
     }
 
+    // TODO: creating user to invite can be removed once we implement filtering in all search pages. This logic will be handled in filtering instead.
     let userToInvite: ReportUtils.OptionData | null = null;
-    const noOptions = recentReportOptions.length + personalDetailsOptions.length === 0 && !currentUserOption;
-    const noOptionsMatchExactly = !personalDetailsOptions
-        .concat(recentReportOptions)
-        .find((option) => option.login === PhoneNumber.addSMSDomainIfPhoneNumber(searchValue ?? '').toLowerCase() || option.login === searchValue?.toLowerCase());
-
     if (
-        searchValue &&
-        (noOptions || noOptionsMatchExactly) &&
-        !isCurrentUser({login: searchValue} as PersonalDetails) &&
-        selectedOptions.every((option) => 'login' in option && option.login !== searchValue) &&
-        ((Str.isValidEmail(searchValue) && !Str.isDomainEmail(searchValue) && !Str.endsWith(searchValue, CONST.SMS.DOMAIN)) ||
-            (parsedPhoneNumber.possible && Str.isValidE164Phone(LoginUtils.getPhoneNumberWithoutSpecialChars(parsedPhoneNumber.number?.input ?? '')))) &&
-        !optionsToExclude.find((optionToExclude) => 'login' in optionToExclude && optionToExclude.login === PhoneNumber.addSMSDomainIfPhoneNumber(searchValue).toLowerCase()) &&
-        (searchValue !== CONST.EMAIL.CHRONOS || Permissions.canUseChronos(betas)) &&
-        !excludeUnknownUsers
+        canCreateOptimisticPersonalDetailOption({
+            searchValue,
+            recentReportOptions,
+            personalDetailsOptions,
+            currentUserOption,
+            selectedOptions,
+            excludeUnknownUsers,
+            betas,
+            optionsToExclude: optionsToExclude.map(({login}) => login ?? ''),
+            parsedPhoneNumber,
+        })
     ) {
-        // Generates an optimistic account ID for new users not yet saved in Onyx
-        const optimisticAccountID = UserUtils.generateAccountID(searchValue);
-        const personalDetailsExtended = {
-            ...allPersonalDetails,
-            [optimisticAccountID]: {
-                accountID: optimisticAccountID,
-                login: searchValue,
-                avatar: UserUtils.getDefaultAvatar(optimisticAccountID),
-            },
-        };
-        userToInvite = createOption([optimisticAccountID], personalDetailsExtended, null, reportActions, {
-            showChatPreviewLine,
-        });
-        userToInvite.isOptimisticAccount = true;
-        userToInvite.login = searchValue;
-        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-        userToInvite.text = userToInvite.text || searchValue;
-        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-        userToInvite.alternateText = userToInvite.alternateText || searchValue;
-
-        // If user doesn't exist, use a default avatar
-        userToInvite.icons = [
-            {
-                source: UserUtils.getAvatar('', optimisticAccountID),
-                name: searchValue,
-                type: CONST.ICON_TYPE_AVATAR,
-            },
-        ];
+        userToInvite = createOptimisticPersonalDetailOption(searchValue, {reportActions, showChatPreviewLine});
     }
 
     // If we are prioritizing 1:1 chats in search, do it only once we started searching
@@ -2003,6 +2056,7 @@ function getFilteredOptions(
     canInviteUser = true,
     includeSelectedOptions = false,
     includeTaxRates = false,
+    maxRecentReportsToShow = 5,
     taxRates: TaxRatesWithDefault = {} as TaxRatesWithDefault,
     includeSelfDM = false,
     includePolicyReportFieldOptions = false,
@@ -2017,7 +2071,7 @@ function getFilteredOptions(
             selectedOptions,
             includeRecentReports: true,
             includePersonalDetails: true,
-            maxRecentReportsToShow: 5,
+            maxRecentReportsToShow,
             excludeLogins,
             includeOwnedWorkspaceChats,
             includeP2P,
@@ -2248,8 +2302,22 @@ function getFirstKeyForList(data?: Option[] | null) {
 /**
  * Filters options based on the search input value
  */
-function filterOptions(options: Options, searchInputValue: string): Options {
-    const searchValue = getSearchValueForPhoneOrEmail(searchInputValue);
+function filterOptions(options: Options, searchInputValue: string, config?: FilterOptionsConfig): Options {
+    const {
+        sortByReportTypeInSearch = false,
+        canInviteUser = true,
+        betas = [],
+        selectedOptions = [],
+        excludeUnknownUsers = false,
+        excludeLogins = [],
+        maxRecentReportsToShow = 0,
+    } = config ?? {};
+    if (searchInputValue.trim() === '' && maxRecentReportsToShow > 0) {
+        return {...options, recentReports: options.recentReports.slice(0, maxRecentReportsToShow)};
+    }
+
+    const parsedPhoneNumber = PhoneNumber.parsePhoneNumber(LoginUtils.appendCountryCode(Str.removeSMSDomain(searchInputValue)));
+    const searchValue = parsedPhoneNumber.possible && parsedPhoneNumber.number?.e164 ? parsedPhoneNumber.number.e164 : searchInputValue.toLowerCase();
     const searchTerms = searchValue ? searchValue.split(' ') : [];
 
     // The regex below is used to remove dots only from the local part of the user email (local-part@domain)
@@ -2276,7 +2344,7 @@ function filterOptions(options: Options, searchInputValue: string): Options {
 
         return keys;
     };
-    const matchResults = searchTerms.reduceRight((items, term) => {
+    const matchResults = searchTerms.reduce((items, term) => {
         const recentReports = filterArrayByMatch(items.recentReports, term, (item) => {
             let values: string[] = [];
             if (item.text) {
@@ -2288,22 +2356,33 @@ function filterOptions(options: Options, searchInputValue: string): Options {
                 values.push(item.login.replace(emailRegex, ''));
             }
 
+            if (!item.isChatRoom) {
+                const participantNames = getParticipantNames(item.participantsList ?? []);
+                values = values.concat(Array.from(participantNames));
+            }
+
             if (item.isThread) {
                 if (item.alternateText) {
                     values.push(item.alternateText);
                 }
+                values = values.concat(getParticipantsLoginsArray(item));
             } else if (!!item.isChatRoom || !!item.isPolicyExpenseChat) {
                 if (item.subtitle) {
                     values.push(item.subtitle);
                 }
+            } else {
+                values = values.concat(getParticipantsLoginsArray(item));
             }
-            values = values.concat(getParticipantsLoginsArray(item));
 
             return uniqFast(values);
         });
         const personalDetails = filterArrayByMatch(items.personalDetails, term, (item) =>
             uniqFast([item.participantsList?.[0]?.displayName ?? '', item.login ?? '', item.login?.replace(emailRegex, '') ?? '']),
         );
+
+        if (maxRecentReportsToShow > 0 && recentReports.length > maxRecentReportsToShow) {
+            recentReports.splice(maxRecentReportsToShow);
+        }
 
         return {
             recentReports: recentReports ?? [],
@@ -2316,12 +2395,38 @@ function filterOptions(options: Options, searchInputValue: string): Options {
         };
     }, options);
 
-    const recentReports = matchResults.recentReports.concat(matchResults.personalDetails);
+    let {recentReports, personalDetails} = matchResults;
+    const {currentUserOption} = matchResults;
+
+    if (sortByReportTypeInSearch) {
+        recentReports = recentReports.concat(personalDetails);
+        personalDetails = [];
+        recentReports = orderOptions(recentReports, searchValue);
+    }
+
+    let userToInvite = null;
+    if (canInviteUser) {
+        if (
+            canCreateOptimisticPersonalDetailOption({
+                searchValue,
+                recentReportOptions: recentReports,
+                personalDetailsOptions: personalDetails,
+                currentUserOption,
+                selectedOptions,
+                excludeUnknownUsers,
+                betas,
+                optionsToExclude: excludeLogins,
+                parsedPhoneNumber,
+            })
+        ) {
+            userToInvite = createOptimisticPersonalDetailOption(searchValue, {});
+        }
+    }
 
     return {
-        personalDetails: [],
-        recentReports: orderOptions(recentReports, searchValue),
-        userToInvite: null,
+        personalDetails,
+        recentReports,
+        userToInvite,
         currentUserOption: null,
         categoryOptions: [],
         tagOptions: [],
