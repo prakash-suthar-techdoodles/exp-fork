@@ -2610,14 +2610,14 @@ describe('OptionsListUtils', () => {
             const options = OptionsListUtils.getSearchOptions(OPTIONS, '', [CONST.BETAS.ALL]);
             const filteredOptions = OptionsListUtils.filterOptions(options, '');
 
-            expect(options.recentReports.length + options.personalDetails.length).toBe(filteredOptions.recentReports.length);
+            expect(options.recentReports.length + options.personalDetails.length).toBe(filteredOptions.recentReports.length + filteredOptions.personalDetails.length);
         });
 
         it('should return filtered options in correct order', () => {
             const searchText = 'man';
             const options = OptionsListUtils.getSearchOptions(OPTIONS, '', [CONST.BETAS.ALL]);
 
-            const filteredOptions = OptionsListUtils.filterOptions(options, searchText);
+            const filteredOptions = OptionsListUtils.filterOptions(options, searchText, {sortByReportTypeInSearch: true});
             expect(filteredOptions.recentReports.length).toBe(5);
             expect(filteredOptions.recentReports[0].text).toBe('Invisible Woman');
             expect(filteredOptions.recentReports[1].text).toBe('Spider-Man');
@@ -2650,7 +2650,7 @@ describe('OptionsListUtils', () => {
             const OPTIONS_WITH_PERIODS = OptionsListUtils.createOptionList(PERSONAL_DETAILS_WITH_PERIODS, REPORTS);
             const options = OptionsListUtils.getSearchOptions(OPTIONS_WITH_PERIODS, '', [CONST.BETAS.ALL]);
 
-            const filteredOptions = OptionsListUtils.filterOptions(options, searchText);
+            const filteredOptions = OptionsListUtils.filterOptions(options, searchText, {sortByReportTypeInSearch: true});
 
             expect(filteredOptions.recentReports.length).toBe(1);
             expect(filteredOptions.recentReports[0].login).toBe('barry.allen@expensify.com');
