@@ -52,7 +52,7 @@ function useMarkdownStyle(inputContainsOnlyEmojis?: boolean): MarkdownStyle {
                 backgroundColor: theme.mentionBG,
             },
         }),
-        [theme, containsEmojisOnly],
+        [theme, inputContainsOnlyEmojis],
     );
 
     return markdownStyle;
