@@ -4,7 +4,7 @@ import FontUtils from '@styles/utils/FontUtils';
 import variables from '@styles/variables';
 import useTheme from './useTheme';
 
-function useMarkdownStyle(containsEmojisOnly?: boolean): MarkdownStyle {
+function useMarkdownStyle(inputContainsOnlyEmojis?: boolean): MarkdownStyle {
     const theme = useTheme();
 
     const markdownStyle = useMemo(
@@ -19,7 +19,7 @@ function useMarkdownStyle(containsEmojisOnly?: boolean): MarkdownStyle {
                 fontSize: variables.fontSizeLarge,
             },
             emoji: {
-                fontSize: containsEmojisOnly ? 27 : 19,
+                fontSize: inputContainsOnlyEmojis ? 27 : 19,
             },
             blockquote: {
                 borderColor: theme.border,
