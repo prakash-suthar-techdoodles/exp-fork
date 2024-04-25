@@ -11,6 +11,7 @@ import LocationErrorMessage from '@components/LocationErrorMessage';
 import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
 import TextInput from '@components/TextInput';
+import useArrowKeyFocusManager from '@hooks/useArrowKeyFocusManager';
 import useKeyboardShortcut from '@hooks/useKeyboardShortcut';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
@@ -83,7 +84,11 @@ function AddressSearch(
     const [maxIndex, setMaxIndex] = useState(0);
     const resultRef = useRef();
     const currentLocationButtonRef = useRef<CurrentLocationButtonHandle>(null);
-    const [focusedIndex, setFocusedIndex] = useState(-1);
+    const [focusedIndex, setFocusedIndex] = useArrowKeyFocusManager({
+        initialFocusedIndex: -1,
+        maxIndex: maxIndex - 1,
+        isActive: true,
+    });
     const query = useMemo(
         () => ({
             language: preferredLocale,
@@ -260,6 +265,47 @@ function AddressSearch(
         setLocationErrorCode(null);
     }, [focusedIndex, saveLocationDetails, shouldShowCurrentLocationButton]);
     useKeyboardShortcut(CONST.KEYBOARD_SHORTCUTS.ENTER, selectFocusedOption);
+    useKeyboardShortcut(CONST.KEYBOARD_SHORTCUTS.ARROW_UP, () => {
+        if (focusedIndex === 0 && !currentLocationButtonRef?.current?.isFocused() && shouldShowCurrentLocationButton) {
+            setFocusedIndex(-1);
+            currentLocationButtonRef?.current?.focus();
+        } else if (focusedIndex === -1 && !currentLocationButtonRef?.current?.isFocused() && shouldShowCurrentLocationButton) {
+            currentLocationButtonRef?.current?.focus();
+        } else if (focusedIndex > 0) {
+            if (currentLocationButtonRef?.current?.isFocused()) {
+                currentLocationButtonRef?.current?.blur();
+            }
+            setFocusedIndex(focusedIndex - 1);
+        } else if (currentLocationButtonRef?.current?.isFocused()) {
+            currentLocationButtonRef?.current?.blur();
+            if (maxIndex > 0) {
+                setFocusedIndex(maxIndex - 1);
+            }
+        } else {
+            setFocusedIndex(maxIndex - 1);
+        }
+    });
+    useKeyboardShortcut(CONST.KEYBOARD_SHORTCUTS.ARROW_DOWN, () => {
+        if (focusedIndex === maxIndex - 1 && !currentLocationButtonRef?.current?.isFocused() && shouldShowCurrentLocationButton) {
+            setFocusedIndex(-1);
+            currentLocationButtonRef?.current?.focus();
+        } else if (focusedIndex === -1 && !currentLocationButtonRef?.current?.isFocused() && shouldShowCurrentLocationButton) {
+            if (maxIndex > 0) {
+                setFocusedIndex(maxIndex - 1);
+            } else {
+                currentLocationButtonRef?.current?.focus();
+            }
+        } else if (focusedIndex < maxIndex - 1) {
+            if (currentLocationButtonRef?.current?.isFocused()) {
+                currentLocationButtonRef?.current?.blur();
+            }
+            setFocusedIndex(focusedIndex + 1);
+        } else if (currentLocationButtonRef?.current?.isFocused()) {
+            currentLocationButtonRef?.current?.blur();
+        } else {
+            setFocusedIndex(0);
+        }
+    });
     /** Gets the user's current location and registers success/error callbacks */
     const getCurrentLocation = () => {
         if (isFetchingCurrentLocation) {
@@ -445,52 +491,6 @@ function AddressSearch(
                                 if (!text && !predefinedPlaces?.length) {
                                     setMaxIndex(0);
                                     setDisplayListViewBorder(false);
-                                }
-                            },
-                            onKeyPress: (e: KeyboardEvent) => {
-                                if (!e) {
-                                    return;
-                                }
-                                if (e.code === 'ArrowUp') {
-                                    if (focusedIndex === 0 && !currentLocationButtonRef?.current?.isFocused() && shouldShowCurrentLocationButton) {
-                                        setFocusedIndex(-1);
-                                        currentLocationButtonRef?.current?.focus();
-                                    } else if (focusedIndex === -1 && !currentLocationButtonRef?.current?.isFocused() && shouldShowCurrentLocationButton) {
-                                        currentLocationButtonRef?.current?.focus();
-                                    } else if (focusedIndex > 0) {
-                                        if (currentLocationButtonRef?.current?.isFocused()) {
-                                            currentLocationButtonRef?.current?.blur();
-                                        }
-                                        setFocusedIndex(focusedIndex - 1);
-                                    } else if (currentLocationButtonRef?.current?.isFocused()) {
-                                        currentLocationButtonRef?.current?.blur();
-                                        if (maxIndex > 0) {
-                                            setFocusedIndex(maxIndex - 1);
-                                        }
-                                    } else {
-                                        setFocusedIndex(maxIndex - 1);
-                                    }
-                                }
-                                if (e.code === 'ArrowDown') {
-                                    if (focusedIndex === maxIndex - 1 && !currentLocationButtonRef?.current?.isFocused() && shouldShowCurrentLocationButton) {
-                                        setFocusedIndex(-1);
-                                        currentLocationButtonRef?.current?.focus();
-                                    } else if (focusedIndex === -1 && !currentLocationButtonRef?.current?.isFocused() && shouldShowCurrentLocationButton) {
-                                        if (maxIndex > 0) {
-                                            setFocusedIndex(maxIndex - 1);
-                                        } else {
-                                            currentLocationButtonRef?.current?.focus();
-                                        }
-                                    } else if (focusedIndex < maxIndex - 1) {
-                                        if (currentLocationButtonRef?.current?.isFocused()) {
-                                            currentLocationButtonRef?.current?.blur();
-                                        }
-                                        setFocusedIndex(focusedIndex + 1);
-                                    } else if (currentLocationButtonRef?.current?.isFocused()) {
-                                        currentLocationButtonRef?.current?.blur();
-                                    } else {
-                                        setFocusedIndex(0);
-                                    }
                                 }
                             },
                             maxLength: maxInputLength,
