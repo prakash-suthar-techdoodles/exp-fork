@@ -75,6 +75,7 @@ function BaseSelectionList<TItem extends ListItem>(
         textInputIconLeft,
         sectionTitleStyles,
         textInputAutoFocus = true,
+        searchFocusIndex = 0,
     }: BaseSelectionListProps<TItem>,
     ref: ForwardedRef<SelectionListHandle>,
 ) {
@@ -422,14 +423,19 @@ function BaseSelectionList<TItem extends ListItem>(
 
     const prevTextInputValue = usePrevious(textInputValue);
     const prevSelectedOptionsLength = usePrevious(flattenedSections.selectedOptions.length);
+    const prevAllOptionsLength = usePrevious(flattenedSections.allOptions.length);
+    const prevSearchFocusIndex = usePrevious(searchFocusIndex);
 
     useEffect(() => {
         // Avoid changing focus if the textInputValue remains unchanged.
-        if ((prevTextInputValue === textInputValue && flattenedSections.selectedOptions.length === prevSelectedOptionsLength) || flattenedSections.allOptions.length === 0) {
+        if (
+            (prevTextInputValue === textInputValue && flattenedSections.selectedOptions.length === prevSelectedOptionsLength && searchFocusIndex === prevSearchFocusIndex) ||
+            flattenedSections.allOptions.length === 0
+        ) {
             return;
         }
         // Remove the focus if the search input is empty or selected options length is changed else focus on the first non disabled item
-        const newSelectedIndex = textInputValue === '' || flattenedSections.selectedOptions.length !== prevSelectedOptionsLength ? -1 : 0;
+        const newSelectedIndex = textInputValue === '' || (flattenedSections.selectedOptions.length !== prevSelectedOptionsLength && canSelectMultiple) ? -1 : searchFocusIndex;
 
         // reseting the currrent page to 1 when the user types something
         setCurrentPage(1);
@@ -443,6 +449,9 @@ function BaseSelectionList<TItem extends ListItem>(
         textInputValue,
         updateAndScrollToFocusedIndex,
         prevSelectedOptionsLength,
+        prevAllOptionsLength,
+        searchFocusIndex,
+        prevSearchFocusIndex,
     ]);
 
     useEffect(
