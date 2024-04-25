@@ -121,6 +121,9 @@ type OptionRowLHNProps = {
     /** The ID of the report that the option is for */
     reportID: string;
 
+    /** Data of the report that the option is for */
+    report: OnyxEntry<Report>;
+
     /** Whether this option is currently in focus so we can modify its style */
     isFocused?: boolean;
 

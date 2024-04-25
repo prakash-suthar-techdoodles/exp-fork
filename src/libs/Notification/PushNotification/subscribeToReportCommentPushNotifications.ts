@@ -1,3 +1,4 @@
+import type {OnyxCollection} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import applyOnyxUpdatesReliably from '@libs/actions/applyOnyxUpdatesReliably';
 import * as ActiveClientManager from '@libs/ActiveClientManager';
@@ -5,13 +6,13 @@ import Log from '@libs/Log';
 import Navigation from '@libs/Navigation/Navigation';
 import getPolicyEmployeeAccountIDs from '@libs/PolicyEmployeeListUtils';
 import {extractPolicyIDFromPath} from '@libs/PolicyUtils';
-import {doesReportBelongToWorkspace, getReport} from '@libs/ReportUtils';
+import {doesReportBelongToWorkspace} from '@libs/ReportUtils';
 import Visibility from '@libs/Visibility';
 import * as Modal from '@userActions/Modal';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import type {OnyxUpdatesFromServer} from '@src/types/onyx';
+import type {Report as OnyxReport, OnyxUpdatesFromServer} from '@src/types/onyx';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import PushNotification from './index';
 
@@ -24,6 +25,13 @@ Onyx.connect({
         }
         lastVisitedPath = value;
     },
+});
+
+let allReports: OnyxCollection<OnyxReport>;
+Onyx.connect({
+    key: ONYXKEYS.COLLECTION.REPORT,
+    waitForCollectionCallback: true,
+    callback: (value) => (allReports = value),
 });
 
 function getLastUpdateIDAppliedToClient(): Promise<number> {
@@ -80,7 +88,7 @@ export default function subscribeToReportCommentPushNotifications() {
         }
 
         const policyID = lastVisitedPath && extractPolicyIDFromPath(lastVisitedPath);
-        const report = getReport(reportID.toString());
+        const report = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID.toString()}`] ?? null;
         const policyEmployeeAccountIDs = policyID ? getPolicyEmployeeAccountIDs(policyID) : [];
 
         const reportBelongsToWorkspace = policyID && !isEmptyObject(report) && doesReportBelongToWorkspace(report, policyEmployeeAccountIDs, policyID);

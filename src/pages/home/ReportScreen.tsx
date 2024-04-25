@@ -82,6 +82,8 @@ type ReportScreenOnyxPropsWithoutParentReportAction = {
 
     /** The report metadata loading states */
     reportMetadata: OnyxEntry<OnyxTypes.ReportMetadata>;
+
+    parentReport: OnyxEntry<OnyxTypes.Report>;
 };
 
 type OnyxHOCProps = {
@@ -132,6 +134,7 @@ function ReportScreen({
     betas = [],
     route,
     report: reportProp,
+    parentReport: parentReportProp,
     sortedAllReportActions,
     reportMetadata = {
         isLoadingInitialReportActions: true,
@@ -249,9 +252,20 @@ function ReportScreen({
         ],
     );
 
+    const parentReport = useMemo(
+        (): OnyxTypes.Report => ({
+            type: parentReportProp?.type,
+            reportID: parentReportProp?.reportID ?? '',
+            parentReportID: parentReportProp?.parentReportID,
+            parentReportActionID: parentReportProp?.parentReportActionID,
+        }),
+        [parentReportProp?.type, parentReportProp?.reportID, parentReportProp?.parentReportID, parentReportProp?.parentReportActionID],
+    );
+
     const parentReportAction = useMemo(() => getParentReportAction(parentReportActions, report?.parentReportActionID), [parentReportActions, report.parentReportActionID]);
 
     const prevReport = usePrevious(report);
+    const prevParentReport = usePrevious(parentReport);
     const prevUserLeavingStatus = usePrevious(userLeavingStatus);
     const [isLinkingToMessage, setIsLinkingToMessage] = useState(!!reportActionIDFromRoute);
     const reportActions = useMemo(() => {
@@ -516,8 +530,7 @@ function ReportScreen({
             }
             if (prevReport.parentReportID) {
                 // Prevent navigation to the IOU/Expense Report if it is pending deletion.
-                const parentReport = ReportUtils.getReport(prevReport.parentReportID);
-                if (ReportUtils.isMoneyRequestReportPendingDeletion(parentReport)) {
+                if (ReportUtils.isMoneyRequestReportPendingDeletion(prevParentReport)) {
                     return;
                 }
                 Navigation.navigate(ROUTES.REPORT_WITH_ID.getRoute(prevReport.parentReportID));
@@ -549,6 +562,7 @@ function ReportScreen({
         prevReport.parentReportID,
         prevReport.chatType,
         prevReport,
+        prevParentReport,
         reportIDFromRoute,
     ]);
 
@@ -690,6 +704,7 @@ function ReportScreen({
                                     <ReportActionsView
                                         reportActions={reportActions}
                                         report={report}
+                                        parentReport={parentReport}
                                         parentReportAction={parentReportAction}
                                         isLoadingInitialReportActions={reportMetadata?.isLoadingInitialReportActions}
                                         isLoadingNewerReportActions={reportMetadata?.isLoadingNewerReportActions}
@@ -745,6 +760,9 @@ export default withCurrentReportID(
                 key: ({route}) => `${ONYXKEYS.COLLECTION.REPORT}${getReportID(route)}`,
                 allowStaleData: true,
             },
+            parentReport: {
+                key: ({report}) => `${ONYXKEYS.COLLECTION.REPORT}${report?.parentReportID}`,
+            },
             reportMetadata: {
                 key: ({route}) => `${ONYXKEYS.COLLECTION.REPORT_METADATA}${getReportID(route)}`,
                 initialValue: {
@@ -797,6 +815,7 @@ export default withCurrentReportID(
                     lodashIsEqual(prevProps.modal, nextProps.modal) &&
                     lodashIsEqual(prevParentReportAction, nextParentReportAction) &&
                     lodashIsEqual(prevProps.route, nextProps.route) &&
+                    lodashIsEqual(prevProps.parentReport, nextProps.parentReport) &&
                     lodashIsEqual(prevProps.report, nextProps.report)
                 );
             }),

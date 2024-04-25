@@ -454,6 +454,7 @@ type OnyxDataTaskAssigneeChat = {
 
 type Ancestor = {
     report: Report;
+    parentReport: Report;
     reportAction: ReportAction;
     shouldDisplayNewMarker: boolean;
 };
@@ -5909,6 +5910,7 @@ function getAllAncestorReportActions(report: Report | null | undefined): Ancesto
         const isParentReportActionUnread = ReportActionsUtils.isCurrentActionUnread(parentReport, parentReportAction);
         allAncestors.push({
             report: currentReport,
+            parentReport,
             reportAction: parentReportAction,
             shouldDisplayNewMarker: isParentReportActionUnread,
         });
@@ -6290,7 +6292,6 @@ export {
     getPolicyType,
     getReimbursementDeQueuedActionMessage,
     getReimbursementQueuedActionMessage,
-    getReport,
     getReportActionActorAccountID,
     getReportDescriptionText,
     getReportFieldKey,

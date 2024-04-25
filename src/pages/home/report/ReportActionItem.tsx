@@ -44,6 +44,7 @@ import * as ErrorUtils from '@libs/ErrorUtils';
 import focusTextInputAfterAnimation from '@libs/focusTextInputAfterAnimation';
 import ModifiedExpenseMessage from '@libs/ModifiedExpenseMessage';
 import Navigation from '@libs/Navigation/Navigation';
+import onyxSubscribe from '@libs/onyxSubscribe';
 import Permissions from '@libs/Permissions';
 import * as PersonalDetailsUtils from '@libs/PersonalDetailsUtils';
 import * as ReportActionsUtils from '@libs/ReportActionsUtils';
@@ -110,6 +111,9 @@ type ReportActionItemProps = {
     /** Report for this action */
     report: OnyxTypes.Report;
 
+    /** Parent report for this action */
+    parentReport: OnyxEntry<OnyxTypes.Report>;
+
     /** The transaction thread report associated with the report for this action, if any */
     transactionThreadReport: OnyxEntry<OnyxTypes.Report>;
 
@@ -158,6 +162,7 @@ const isIOUReport = (actionObj: OnyxEntry<OnyxTypes.ReportAction>): actionObj is
 function ReportActionItem({
     action,
     report,
+    parentReport,
     transactionThreadReport,
     linkedReportActionID,
     displayAsGroup,
@@ -196,10 +201,24 @@ function ReportActionItem({
     const downloadedPreviews = useRef<string[]>([]);
     const prevDraftMessage = usePrevious(draftMessage);
     const originalReportID = ReportUtils.getOriginalReportID(report.reportID, action);
-    const originalReport = report.reportID === originalReportID ? report : ReportUtils.getReport(originalReportID);
     const isReportActionLinked = linkedReportActionID && action.reportActionID && linkedReportActionID === action.reportActionID;
     const transactionCurrency = TransactionUtils.getCurrency(transaction);
     const reportScrollManager = useReportScrollManager();
+
+    // A performance improvement. Put this in withOnyx would increase rerender count massively.
+    const [originalReport, setOriginalReport] = useState<OnyxEntry<OnyxTypes.Report>>(report);
+    useEffect(() => {
+        if (!originalReportID || originalReportID === report.reportID) {
+            return;
+        }
+        const unsubscribeOnyx = onyxSubscribe({
+            key: `${ONYXKEYS.COLLECTION.REPORT}${originalReportID}`,
+            callback: (val) => {
+                setOriginalReport(val);
+            },
+        });
+        return unsubscribeOnyx;
+    }, [originalReportID, report.reportID]);
 
     const highlightedBackgroundColorIfNeeded = useMemo(
         () => (isReportActionLinked ? StyleUtils.getBackgroundColorStyle(theme.messageHighlightBG) : {}),
@@ -529,7 +548,7 @@ function ReportActionItem({
                 </ShowContextMenuContext.Provider>
             );
         } else if (action.actionName === CONST.REPORT.ACTIONS.TYPE.REIMBURSEMENT_QUEUED) {
-            const linkedReport = ReportUtils.isChatThread(report) ? ReportUtils.getReport(report.parentReportID) : report;
+            const linkedReport = ReportUtils.isChatThread(report) ? parentReport : report;
             const submitterDisplayName = PersonalDetailsUtils.getDisplayNameOrDefault(personalDetails[linkedReport?.ownerAccountID ?? -1]);
             const paymentType = action.originalMessage.paymentType ?? '';
 
@@ -1035,6 +1054,7 @@ export default withOnyx<ReportActionItemProps, ReportActionItemOnyxProps>({
             lodashIsEqual(prevProps.transactionThreadReport, nextProps.transactionThreadReport) &&
             lodashIsEqual(prevProps.reportActions, nextProps.reportActions) &&
             lodashIsEqual(prevProps.transaction, nextProps.transaction) &&
+            lodashIsEqual(prevProps.parentReport, nextProps.parentReport) &&
             lodashIsEqual(prevParentReportAction, nextParentReportAction)
         );
     }),
