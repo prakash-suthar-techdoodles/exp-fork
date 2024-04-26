@@ -3,13 +3,14 @@ import 'core-js/features/array/at';
 import type {CSSProperties} from 'react';
 import React, {memo, useCallback, useEffect, useState} from 'react';
 import {PDFPreviewer} from 'react-fast-pdf';
-import {View} from 'react-native';
+import {ActivityIndicator, View} from 'react-native';
 import {withOnyx} from 'react-native-onyx';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import PressableWithoutFeedback from '@components/Pressable/PressableWithoutFeedback';
-import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import usePrevious from '@hooks/usePrevious';
+import useStyleUtils from '@hooks/useStyleUtils';
+import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import variables from '@styles/variables';
@@ -19,9 +20,14 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import PDFPasswordForm from './PDFPasswordForm';
 import type {PDFViewOnyxProps, PDFViewProps} from './types';
 
-function PDFView({onToggleKeyboard, fileName, onPress, isFocused, sourceURL, errorLabelStyles, maxCanvasArea, maxCanvasHeight, maxCanvasWidth, style}: PDFViewProps) {
+const LOADING_THUMBNAIL_HEIGHT = 250;
+const LOADING_THUMBNAIL_WIDTH = 250;
+
+function PDFView({onToggleKeyboard, fileName, onPress, isFocused, sourceURL, maxCanvasArea, maxCanvasHeight, maxCanvasWidth, style, isUsedAsChatAttachment, onLoadError}: PDFViewProps) {
     const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
     const styles = useThemeStyles();
+    const StyleUtils = useStyleUtils();
+    const theme = useTheme();
     const {windowHeight, isSmallScreenWidth} = useWindowDimensions();
     const prevWindowHeight = usePrevious(windowHeight);
     const {translate} = useLocalize();
@@ -79,6 +85,26 @@ function PDFView({onToggleKeyboard, fileName, onPress, isFocused, sourceURL, err
         }
     }, [isKeyboardOpen, prevWindowHeight, toggleKeyboardOnSmallScreens, windowHeight]);
 
+    const renderLoadingIndicator = () => {
+        if (isUsedAsChatAttachment) {
+            return (
+                <View
+                    style={[
+                        styles.chatItemPDFAttachmentLoading,
+                        StyleUtils.getWidthAndHeightStyle(LOADING_THUMBNAIL_WIDTH, LOADING_THUMBNAIL_HEIGHT),
+                    ]}
+                >
+                    <ActivityIndicator
+                        color={theme.spinner}
+                        size="large"
+                    />
+                </View>
+            );
+        }
+
+        return <FullScreenLoadingIndicator />;
+    };
+
     const renderPDFView = () => {
         const outerContainerStyle = [styles.w100, styles.h100, styles.justifyContentCenter, styles.alignItemsCenter];
 
@@ -95,8 +121,9 @@ function PDFView({onToggleKeyboard, fileName, onPress, isFocused, sourceURL, err
                     maxCanvasWidth={maxCanvasWidth}
                     maxCanvasHeight={maxCanvasHeight}
                     maxCanvasArea={maxCanvasArea}
-                    LoadingComponent={<FullScreenLoadingIndicator />}
-                    ErrorComponent={<Text style={errorLabelStyles}>{translate('attachmentView.failedToLoadPDF')}</Text>}
+                    LoadingComponent={renderLoadingIndicator()}
+                    shouldShowErrorComponent={false}
+                    onLoadError={onLoadError}
                     renderPasswordForm={({isPasswordInvalid, onSubmit, onPasswordChange}) => (
                         <PDFPasswordForm
                             isFocused={!!isFocused}
