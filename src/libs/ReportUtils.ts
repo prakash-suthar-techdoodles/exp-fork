@@ -3135,6 +3135,35 @@ function goBackToDetailsPage(report: OnyxEntry<Report>) {
 }
 
 /**
+ * Go back to the previous page from the edit private page of a given report
+ */
+function goBackFromPrivateNotes(report: OnyxEntry<Report>, session: OnyxEntry<Session>) {
+    if (isEmpty(report) || isEmpty(session) || !session.accountID) {
+        return;
+    }
+    const currentUserPrivateNote = report.privateNotes?.[session.accountID]?.note ?? '';
+    if (isEmpty(currentUserPrivateNote)) {
+        const participantAccountIDs = report?.participantAccountIDs ?? [];
+
+        if (isSelfDM(report)) {
+            Navigation.goBack(ROUTES.PROFILE.getRoute(currentUserAccountID ?? 0));
+            return;
+        }
+    
+        if (isOneOnOneChat(report)) {
+            Navigation.goBack(ROUTES.PROFILE.getRoute(participantAccountIDs[0]));
+            return;
+        }
+
+        if (report?.reportID) {
+            Navigation.goBack(ROUTES.REPORT_WITH_ID_DETAILS.getRoute(report?.reportID));
+            return;
+        }
+    }
+    Navigation.goBack(ROUTES.PRIVATE_NOTES_LIST.getRoute(report.reportID));
+}
+
+/**
  * Generate a random reportID up to 53 bits aka 9,007,199,254,740,991 (Number.MAX_SAFE_INTEGER).
  * There were approximately 98,000,000 reports with sequential IDs generated before we started using this approach, those make up roughly one billionth of the space for these numbers,
  * so we live with the 1 in a billion chance of a collision with an older ID until we can switch to 64-bit IDs.
@@ -6316,6 +6345,7 @@ export {
     getWorkspaceChats,
     getWorkspaceIcon,
     goBackToDetailsPage,
+    goBackFromPrivateNotes,
     hasActionsWithErrors,
     hasAutomatedExpensifyAccountIDs,
     hasExpensifyGuidesEmails,
