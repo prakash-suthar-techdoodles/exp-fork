@@ -134,6 +134,10 @@ function RightModalNavigator({navigation}: RightModalNavigatorProps) {
                         component={ModalStackNavigators.ProcessMoneyRequestHoldStackNavigator}
                     />
                     <Stack.Screen
+                        name={SCREENS.RIGHT_MODAL.TRANSACTION_DUPLICATE}
+                        component={ModalStackNavigators.TransactionDuplicateStackNavigator}
+                    />
+                    <Stack.Screen
                         name={SCREENS.RIGHT_MODAL.SEARCH_REPORT}
                         component={ModalStackNavigators.SearchReportModalStackNavigator}
                     />
