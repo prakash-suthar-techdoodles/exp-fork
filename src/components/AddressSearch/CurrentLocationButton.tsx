@@ -13,7 +13,7 @@ import colors from '@styles/theme/colors';
 import type {CurrentLocationButtonProps} from './types';
 
 type CurrentLocationButtonHandle = {
-    isFocused: () => void;
+    isFocused: () => boolean;
     focus: () => void;
     blur: () => void;
     press: () => void;
@@ -25,23 +25,26 @@ function CurrentLocationButton({onPress, isDisabled = false, innerRef = () => {}
     const {translate} = useLocalize();
     const [isFocused, setIsFocused] = useState(false);
     const buttonRef = useRef<View | HTMLDivElement>(null);
-    useImperativeHandle(innerRef, () => ({
-        isFocused() {
-            return isFocused;
-        },
-        focus() {
-            if (!buttonRef.current) {
-                return;
-            }
-            setIsFocused(true);
-        },
-        blur() {
-            setIsFocused(false);
-        },
-        press() {
-            onPress?.();
-        },
-    }));
+    useImperativeHandle(
+        innerRef,
+        (): CurrentLocationButtonHandle => ({
+            isFocused() {
+                return isFocused;
+            },
+            focus() {
+                if (!buttonRef.current) {
+                    return;
+                }
+                setIsFocused(true);
+            },
+            blur() {
+                setIsFocused(false);
+            },
+            press() {
+                onPress?.();
+            },
+        }),
+    );
     return (
         <PressableWithFeedback
             style={[styles.flexRow, styles.pv4, styles.ph3, isDisabled && styles.buttonOpacityDisabled, StyleUtils.getBackgroundAndBorderStyle(isFocused ? theme.border : theme.appBG)]}
