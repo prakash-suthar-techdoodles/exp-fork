@@ -1,5 +1,9 @@
-**/node_modules/*
-**/dist/*
-android/**/build/*
-.github/actions/**/index.js"
+.*
+*.config.js
+**/node_modules/**
+**/dist/**
+android/**/build/**
+.github/actions/**/index.js
 docs/vendor/**
+docs/assets/**
+web/gtm.js
