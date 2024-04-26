@@ -6066,6 +6066,11 @@ function shouldCreateNewMoneyRequestReport(existingIOUReport: OnyxEntry<Report> 
     return !existingIOUReport || hasIOUWaitingOnCurrentUserBankAccount(chatReport) || !canAddOrDeleteTransactions(existingIOUReport);
 }
 
+function getTripTransactions(expenseReportID: string | undefined): Transaction[] {
+    const transactions = TransactionUtils.getAllReportTransactions(expenseReportID);
+    return transactions.filter((transaction) => TransactionUtils.hasReservationList(transaction));
+}
+
 /**
  * Checks if report contains actions with errors
  */
@@ -6424,6 +6429,7 @@ export {
     updateOptimisticParentReportAction,
     updateReportPreview,
     temporary_getMoneyRequestOptions,
+    getTripTransactions,
 };
 
 export type {
