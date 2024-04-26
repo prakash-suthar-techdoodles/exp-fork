@@ -490,7 +490,7 @@ Onyx.connect({
     },
 });
 
-let allPersonalDetails: OnyxCollection<PersonalDetails>;
+let allPersonalDetails: OnyxEntry<PersonalDetailsList>;
 let allPersonalDetailLogins: string[];
 let currentUserPersonalDetails: OnyxEntry<PersonalDetails>;
 Onyx.connect({
