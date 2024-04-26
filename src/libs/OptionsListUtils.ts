@@ -166,6 +166,16 @@ type GetOptionsConfig = {
     transactionViolations?: OnyxCollection<TransactionViolation[]>;
 };
 
+type GetUserToInviteConfig = {
+    searchValue: string;
+    excludeUnknownUsers?: boolean;
+    optionsToExclude?: Array<Partial<ReportUtils.OptionData>>;
+    selectedOptions?: Array<Partial<ReportUtils.OptionData>>;
+    betas: OnyxEntry<Beta[]>;
+    reportActions?: ReportActions;
+    showChatPreviewLine?: boolean;
+};
+
 type MemberForList = {
     text: string;
     alternateText: string;
@@ -1521,6 +1531,60 @@ function orderOptions(options: ReportUtils.OptionData[], searchValue: string | u
     );
 }
 
+function getUserToInviteOption({
+    searchValue,
+    excludeUnknownUsers = false,
+    optionsToExclude = [],
+    selectedOptions = [],
+    betas,
+    reportActions = {},
+    showChatPreviewLine = false,
+}: GetUserToInviteConfig): ReportUtils.OptionData | null {
+    let userToInvite: ReportUtils.OptionData | null = null;
+    const parsedPhoneNumber = PhoneNumber.parsePhoneNumber(LoginUtils.appendCountryCode(Str.removeSMSDomain(searchValue)));
+
+    if (
+        searchValue &&
+        !isCurrentUser({login: searchValue} as PersonalDetails) &&
+        selectedOptions.every((option) => 'login' in option && option.login !== searchValue) &&
+        ((Str.isValidEmail(searchValue) && !Str.isDomainEmail(searchValue) && !Str.endsWith(searchValue, CONST.SMS.DOMAIN)) ||
+            (parsedPhoneNumber.possible && Str.isValidE164Phone(LoginUtils.getPhoneNumberWithoutSpecialChars(parsedPhoneNumber.number?.input ?? '')))) &&
+        !optionsToExclude.find((optionToExclude) => 'login' in optionToExclude && optionToExclude.login === PhoneNumber.addSMSDomainIfPhoneNumber(searchValue).toLowerCase()) &&
+        (searchValue !== CONST.EMAIL.CHRONOS || Permissions.canUseChronos(betas)) &&
+        !excludeUnknownUsers
+    ) {
+        // Generates an optimistic account ID for new users not yet saved in Onyx
+        const optimisticAccountID = UserUtils.generateAccountID(searchValue);
+        const personalDetailsExtended = {
+            ...allPersonalDetails,
+            [optimisticAccountID]: {
+                accountID: optimisticAccountID,
+                login: searchValue,
+            },
+        };
+        userToInvite = createOption([optimisticAccountID], personalDetailsExtended, null, reportActions, {
+            showChatPreviewLine,
+        });
+        userToInvite.isOptimisticAccount = true;
+        userToInvite.login = searchValue;
+        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+        userToInvite.text = userToInvite.text || searchValue;
+        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+        userToInvite.alternateText = userToInvite.alternateText || searchValue;
+
+        // If user doesn't exist, use a fallback avatar
+        userToInvite.icons = [
+            {
+                source: FallbackAvatar,
+                name: searchValue,
+                type: CONST.ICON_TYPE_AVATAR,
+            },
+        ];
+    }
+
+    return userToInvite;
+}
+
 /**
  * filter options based on specific conditions
  */
@@ -1825,44 +1889,16 @@ function getOptions(
         .concat(recentReportOptions)
         .find((option) => option.login === PhoneNumber.addSMSDomainIfPhoneNumber(searchValue ?? '').toLowerCase() || option.login === searchValue?.toLowerCase());
 
-    if (
-        searchValue &&
-        (noOptions || noOptionsMatchExactly) &&
-        !isCurrentUser({login: searchValue} as PersonalDetails) &&
-        selectedOptions.every((option) => 'login' in option && option.login !== searchValue) &&
-        ((Str.isValidEmail(searchValue) && !Str.isDomainEmail(searchValue) && !Str.endsWith(searchValue, CONST.SMS.DOMAIN)) ||
-            (parsedPhoneNumber.possible && Str.isValidE164Phone(LoginUtils.getPhoneNumberWithoutSpecialChars(parsedPhoneNumber.number?.input ?? '')))) &&
-        !optionsToExclude.find((optionToExclude) => 'login' in optionToExclude && optionToExclude.login === PhoneNumber.addSMSDomainIfPhoneNumber(searchValue).toLowerCase()) &&
-        (searchValue !== CONST.EMAIL.CHRONOS || Permissions.canUseChronos(betas)) &&
-        !excludeUnknownUsers
-    ) {
-        // Generates an optimistic account ID for new users not yet saved in Onyx
-        const optimisticAccountID = UserUtils.generateAccountID(searchValue);
-        const personalDetailsExtended = {
-            ...allPersonalDetails,
-            [optimisticAccountID]: {
-                accountID: optimisticAccountID,
-                login: searchValue,
-            },
-        };
-        userToInvite = createOption([optimisticAccountID], personalDetailsExtended, null, reportActions, {
+    if (noOptions || noOptionsMatchExactly) {
+        userToInvite = getUserToInviteOption({
+            searchValue,
+            excludeUnknownUsers,
+            optionsToExclude,
+            selectedOptions,
+            betas,
+            reportActions,
             showChatPreviewLine,
         });
-        userToInvite.isOptimisticAccount = true;
-        userToInvite.login = searchValue;
-        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-        userToInvite.text = userToInvite.text || searchValue;
-        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-        userToInvite.alternateText = userToInvite.alternateText || searchValue;
-
-        // If user doesn't exist, use a fallback avatar
-        userToInvite.icons = [
-            {
-                source: FallbackAvatar,
-                name: searchValue,
-                type: CONST.ICON_TYPE_AVATAR,
-            },
-        ];
     }
 
     // If we are prioritizing 1:1 chats in search, do it only once we started searching
@@ -2223,7 +2259,7 @@ function getFirstKeyForList(data?: Option[] | null) {
 /**
  * Filters options based on the search input value
  */
-function filterOptions(options: Options, searchInputValue: string): Options {
+function filterOptions(options: Options, searchInputValue: string, betas: OnyxEntry<Beta[]> = []): Options {
     const searchValue = getSearchValueForPhoneOrEmail(searchInputValue);
     const searchTerms = searchValue ? searchValue.split(' ') : [];
 
@@ -2293,10 +2329,26 @@ function filterOptions(options: Options, searchInputValue: string): Options {
 
     const recentReports = matchResults.recentReports.concat(matchResults.personalDetails);
 
+    let userToInvite: ReportUtils.OptionData | null = null;
+
+    /**
+     * We create a new user option if the following conditions are satisfied:
+     * - there's no match recent report and personal detail option
+     * - The searchValue is a valid email or phone number
+     * - The searchValue isn't the current personal detail login
+     * - We can use chronos or the search value is not the chronos email
+     */
+    if (recentReports.length === 0) {
+        userToInvite = getUserToInviteOption({
+            searchValue,
+            betas,
+        });
+    }
+
     return {
         personalDetails: [],
         recentReports: orderOptions(recentReports, searchValue),
-        userToInvite: null,
+        userToInvite,
         currentUserOption: null,
         categoryOptions: [],
         tagOptions: [],
