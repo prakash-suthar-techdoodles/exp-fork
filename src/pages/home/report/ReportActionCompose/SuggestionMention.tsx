@@ -171,7 +171,7 @@ function SuggestionMention(
 
             if (((!event.shiftKey && event.key === CONST.KEYBOARD_SHORTCUTS.ENTER.shortcutKey) || event.key === CONST.KEYBOARD_SHORTCUTS.TAB.shortcutKey) && suggestionsExist) {
                 event.preventDefault();
-                if (suggestionValues.suggestedMentions.length > 0) {
+                if (suggestionsExist) {
                     insertSelectedMention(highlightedMentionIndex);
                     return true;
                 }
@@ -182,9 +182,8 @@ function SuggestionMention(
 
                 if (suggestionsExist) {
                     resetSuggestions();
+                    return true;
                 }
-
-                return true;
             }
         },
         [highlightedMentionIndex, insertSelectedMention, resetSuggestions, suggestionValues.suggestedMentions.length],

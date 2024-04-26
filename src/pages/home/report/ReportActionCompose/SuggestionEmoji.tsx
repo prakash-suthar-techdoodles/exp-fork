@@ -131,10 +131,10 @@ function SuggestionEmoji(
 
             if (((!e.shiftKey && e.key === CONST.KEYBOARD_SHORTCUTS.ENTER.shortcutKey) || e.key === CONST.KEYBOARD_SHORTCUTS.TAB.shortcutKey) && suggestionsExist) {
                 e.preventDefault();
-                if (suggestionValues.suggestedEmojis.length > 0) {
+                if (suggestionsExist) {
                     insertSelectedEmoji(highlightedEmojiIndex);
+                    return true;
                 }
-                return true;
             }
 
             if (e.key === CONST.KEYBOARD_SHORTCUTS.ESCAPE.shortcutKey) {
@@ -142,9 +142,8 @@ function SuggestionEmoji(
 
                 if (suggestionsExist) {
                     resetSuggestions();
+                    return true;
                 }
-
-                return true;
             }
         },
         [highlightedEmojiIndex, insertSelectedEmoji, resetSuggestions, suggestionValues.suggestedEmojis.length],

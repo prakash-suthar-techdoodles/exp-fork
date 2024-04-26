@@ -7,7 +7,6 @@ import {DeviceEventEmitter, findNodeHandle, Keyboard, NativeModules, View} from 
 import type {MeasureInWindowOnSuccessCallback, NativeSyntheticEvent, TextInput, TextInputFocusEventData, TextInputKeyPressEventData} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import type {Emoji} from '@assets/emojis/types';
-import Composer from '@components/Composer';
 import EmojiPickerButton from '@components/EmojiPicker/EmojiPickerButton';
 import ExceededCommentLength from '@components/ExceededCommentLength';
 import Icon from '@components/Icon';
@@ -510,8 +509,8 @@ function ReportActionItemMessageEdit(
                             }}
                             onBlur={(event: NativeSyntheticEvent<TextInputFocusEventData>) => {
                                 setIsFocused(false);
-                                suggestionsRef.current?.resetSuggestions();
-                                clearActiveSuggestionsRef();
+                                // suggestionsRef.current?.resetSuggestions();
+                                // clearActiveSuggestionsRef();
                                 // @ts-expect-error TODO: TextInputFocusEventData doesn't contain relatedTarget.
                                 const relatedTargetId = event.nativeEvent?.relatedTarget?.id;
                                 if (relatedTargetId && [messageEditInput, emojiButtonID].includes(relatedTargetId)) {
