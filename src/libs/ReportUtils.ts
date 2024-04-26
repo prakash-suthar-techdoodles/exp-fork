@@ -5885,7 +5885,6 @@ function shouldDisableThread(reportAction: OnyxEntry<ReportAction>, reportID: st
         (isWhisperAction && !isReportPreviewAction && !isIOUAction) ||
         isThreadFirstChat(reportAction, reportID)
     );
-    
 }
 
 function getAllAncestorReportActions(report: Report | null | undefined): Ancestor[] {

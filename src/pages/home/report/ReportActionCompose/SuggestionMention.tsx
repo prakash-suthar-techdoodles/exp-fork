@@ -352,6 +352,10 @@ function SuggestionMention(
         debouncedSearchInServer();
     }, [suggestionValues.suggestedMentions.length, suggestionValues.prefixType, policyID, value, debouncedSearchInServer]);
 
+    const updateShouldShowSuggestionMenuAfterScrolling = useCallback(() => {
+        setSuggestionValues((prevState) => ({...prevState, shouldShowSuggestionMenu: !!prevState.suggestedMentions.length}));
+    }, []);
+
     const updateShouldShowSuggestionMenuToFalse = useCallback(() => {
         setSuggestionValues((prevState) => {
             if (prevState.shouldShowSuggestionMenu) {
@@ -378,8 +382,9 @@ function SuggestionMention(
             setShouldBlockSuggestionCalc,
             updateShouldShowSuggestionMenuToFalse,
             getSuggestions,
+            updateShouldShowSuggestionMenuAfterScrolling,
         }),
-        [resetSuggestions, setShouldBlockSuggestionCalc, triggerHotkeyActions, updateShouldShowSuggestionMenuToFalse, getSuggestions],
+        [resetSuggestions, setShouldBlockSuggestionCalc, triggerHotkeyActions, updateShouldShowSuggestionMenuToFalse, getSuggestions, updateShouldShowSuggestionMenuAfterScrolling],
     );
 
     if (!isMentionSuggestionsMenuVisible) {
