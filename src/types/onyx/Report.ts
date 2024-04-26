@@ -187,6 +187,11 @@ type Report = OnyxCommon.OnyxValueWithOfflineFeedback<
         transactionThreadReportID?: string;
 
         fieldList?: Record<string, PolicyReportField>;
+
+        /** The reports name value pairs */
+        reportNameValuePairs?: {
+            isArchived: boolean;
+        };
     },
     PolicyReportField['fieldID']
 >;
