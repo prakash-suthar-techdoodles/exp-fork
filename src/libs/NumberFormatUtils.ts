@@ -1,12 +1,21 @@
+import moize from 'moize';
 import type {ValueOf} from 'type-fest';
 import type CONST from '@src/CONST';
 
+moize.collectStats();
+
+const numberFormatter = moize(Intl.NumberFormat, {
+    isDeepEqual: true,
+    maxSize: Infinity,
+    profileName: 'Intl.NumberFormat',
+});
+
 function format(locale: ValueOf<typeof CONST.LOCALES>, number: number, options?: Intl.NumberFormatOptions): string {
-    return new Intl.NumberFormat(locale, options).format(number);
+    return numberFormatter(locale, options).format(number);
 }
 
 function formatToParts(locale: ValueOf<typeof CONST.LOCALES>, number: number, options?: Intl.NumberFormatOptions): Intl.NumberFormatPart[] {
-    return new Intl.NumberFormat(locale, options).formatToParts(number);
+    return numberFormatter(locale, options).formatToParts(number);
 }
 
 export {format, formatToParts};
