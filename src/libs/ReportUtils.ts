@@ -977,6 +977,10 @@ function isGroupChat(report: OnyxEntry<Report> | Partial<Report>): boolean {
     return getChatType(report) === CONST.REPORT.CHAT_TYPE.GROUP;
 }
 
+function isSystemChat(report: OnyxEntry<Report> | Partial<Report>): boolean {
+    return getChatType(report) === CONST.REPORT.CHAT_TYPE.SYSTEM;
+}
+
 /**
  * Only returns true if this is our main 1:1 DM report with Concierge
  */
@@ -4805,7 +4809,6 @@ function shouldReportBeInOptionList({
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
         report?.isHidden ||
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-        report?.participantAccountIDs?.includes(CONST.ACCOUNT_ID.NOTIFICATIONS) ||
         (report?.participantAccountIDs?.length === 0 &&
             !isChatThread(report) &&
             !isPublicRoom(report) &&
@@ -4814,7 +4817,9 @@ function shouldReportBeInOptionList({
             !isMoneyRequestReport(report) &&
             !isTaskReport(report) &&
             !isSelfDM(report) &&
-            !isGroupChat(report))
+            !isGroupChat(report) &&
+            // TODO: this shouldn't be necessary if the system report has participants list filled
+            !isSystemChat(report))
     ) {
         return false;
     }
@@ -4889,6 +4894,18 @@ function shouldReportBeInOptionList({
     }
 
     return true;
+}
+
+/**
+ * Returns the system report from the list of reports.
+ * TODO: this method may not be necessary if the participants list of the system report is filled correctly
+ */
+function getSystemChat(): OnyxEntry<Report> {
+    if (!allReports) {
+        return null;
+    }
+
+    return Object.values(allReports ?? {}).find((report) => report?.chatType === CONST.REPORT.CHAT_TYPE.SYSTEM) ?? null;
 }
 
 /**
@@ -6319,6 +6336,7 @@ export {
     getRoomWelcomeMessage,
     getRootParentReport,
     getRouteFromLink,
+    getSystemChat,
     getTaskAssigneeChatOnyxData,
     getTransactionDetails,
     getTransactionReportName,
