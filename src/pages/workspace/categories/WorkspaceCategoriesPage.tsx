@@ -1,5 +1,5 @@
 import {useFocusEffect, useIsFocused} from '@react-navigation/native';
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {ActivityIndicator, View} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import type {OnyxEntry} from 'react-native-onyx';
@@ -59,7 +59,6 @@ function WorkspaceCategoriesPage({policy, route}: WorkspaceCategoriesPageProps) 
     const theme = useTheme();
     const {translate} = useLocalize();
     const [selectedCategories, setSelectedCategories] = useState<Record<string, boolean>>({});
-    const dropdownButtonRef = useRef(null);
     const [deleteCategoriesConfirmModalVisible, setDeleteCategoriesConfirmModalVisible] = useState(false);
     const isFocused = useIsFocused();
     const {environmentURL} = useEnvironment();
@@ -209,7 +208,6 @@ function WorkspaceCategoriesPage({policy, route}: WorkspaceCategoriesPageProps) 
 
             return (
                 <ButtonWithDropdownMenu
-                    buttonRef={dropdownButtonRef}
                     onPress={() => null}
                     shouldAlwaysShowDropdownMenu
                     pressOnEnter
