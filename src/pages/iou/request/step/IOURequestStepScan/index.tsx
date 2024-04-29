@@ -22,6 +22,7 @@ import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import * as Browser from '@libs/Browser';
+import checkPDFDocument from '@libs/CheckPDFDocument';
 import * as FileUtils from '@libs/fileDownload/FileUtils';
 import Navigation from '@libs/Navigation/Navigation';
 import * as OptionsListUtils from '@libs/OptionsListUtils';
@@ -207,6 +208,13 @@ function IOURequestStepScan({
                     return false;
                 }
 
+                return checkPDFDocument.isValidPDF(file.uri ?? '');
+            })
+            .then((isValid) => {
+                if (!isValid) {
+                    setUploadReceiptError(true, 'attachmentPicker.attachmentError', 'attachmentPicker.errorWhileSelectingCorruptedImage');
+                    return false;
+                }
                 return true;
             })
             .catch(() => {
