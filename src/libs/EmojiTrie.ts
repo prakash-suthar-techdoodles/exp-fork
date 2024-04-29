@@ -2,6 +2,7 @@ import emojis, {localeEmojis} from '@assets/emojis';
 import type {Emoji, HeaderEmoji, PickerEmoji} from '@assets/emojis/types';
 import CONST from '@src/CONST';
 import Timing from './actions/Timing';
+import StringUtils from './StringUtils';
 import Trie from './Trie';
 
 type EmojiMetaData = {
@@ -33,6 +34,10 @@ function addKeywordsToTrie(trie: Trie<EmojiMetaData>, keywords: string[], item: 
     keywords.forEach((keyword) => {
         const keywordNode = trie.search(keyword);
         if (!keywordNode) {
+            const keywordWithoutAccents = StringUtils.normalizeAccents(keyword);
+            if (keywordWithoutAccents !== keyword) {
+                trie.add(keywordWithoutAccents, {suggestions: [{code: item.code, types: item.types, name}]});
+            }
             trie.add(keyword, {suggestions: [{code: item.code, types: item.types, name}]});
         } else {
             const suggestion = {code: item.code, types: item.types, name};
