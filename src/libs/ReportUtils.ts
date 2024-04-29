@@ -6323,6 +6323,10 @@ function canReportBeMentionedWithinPolicy(report: OnyxEntry<Report>, policyID: s
     return isChatRoom(report) && !isThread(report);
 }
 
+function shouldShowMerchantColumn(transactions: Transaction[]) {
+    return transactions.some((transaction) => isExpenseReport(allReports?.[transaction.reportID] ?? {}));
+}
+
 export {
     addDomainToShortMention,
     areAllRequestsBeingSmartScanned,
@@ -6570,6 +6574,7 @@ export {
     updateOptimisticParentReportAction,
     updateReportPreview,
     temporary_getMoneyRequestOptions,
+    shouldShowMerchantColumn,
 };
 
 export type {
