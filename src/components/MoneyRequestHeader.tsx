@@ -1,8 +1,9 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import {View} from 'react-native';
 import {withOnyx} from 'react-native-onyx';
-import type {OnyxEntry} from 'react-native-onyx';
+import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
 import useLocalize from '@hooks/useLocalize';
+import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import * as HeaderUtils from '@libs/HeaderUtils';
@@ -10,16 +11,19 @@ import Navigation from '@libs/Navigation/Navigation';
 import * as ReportActionsUtils from '@libs/ReportActionsUtils';
 import * as ReportUtils from '@libs/ReportUtils';
 import * as TransactionUtils from '@libs/TransactionUtils';
+import variables from '@styles/variables';
 import * as IOU from '@userActions/IOU';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import type {Policy, Report, ReportAction, ReportActions, Session, Transaction} from '@src/types/onyx';
+import type {Policy, Report, ReportAction, ReportActions, Session, Transaction, TransactionViolations} from '@src/types/onyx';
 import type {OriginalMessageIOU} from '@src/types/onyx/OriginalMessage';
 import ConfirmModal from './ConfirmModal';
 import HeaderWithBackButton from './HeaderWithBackButton';
 import HoldBanner from './HoldBanner';
+import Icon from './Icon';
 import * as Expensicons from './Icon/Expensicons';
+import {ReceiptScan} from './Icon/Expensicons';
 import MoneyRequestHeaderStatusBar from './MoneyRequestHeaderStatusBar';
 import ProcessMoneyRequestHoldMenu from './ProcessMoneyRequestHoldMenu';
 
@@ -32,6 +36,9 @@ type MoneyRequestHeaderOnyxProps = {
 
     /** All the data for the transaction */
     transaction: OnyxEntry<Transaction>;
+
+    /** The violations of the transaction */
+    transactionViolations: OnyxCollection<TransactionViolations>;
 
     /** All report actions */
     // eslint-disable-next-line react/no-unused-prop-types
@@ -54,18 +61,19 @@ type MoneyRequestHeaderProps = MoneyRequestHeaderOnyxProps & {
     /** Whether we should display the header as in narrow layout */
     shouldUseNarrowLayout?: boolean;
 };
-
 function MoneyRequestHeader({
     session,
     parentReport,
     report,
     parentReportAction,
+    transactionViolations,
     transaction,
     shownHoldUseExplanation = false,
     policy,
     shouldUseNarrowLayout = false,
 }: MoneyRequestHeaderProps) {
     const styles = useThemeStyles();
+    const theme = useTheme();
     const {translate} = useLocalize();
     const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
     const [shouldShowHoldMenu, setShouldShowHoldMenu] = useState(false);
@@ -93,9 +101,6 @@ function MoneyRequestHeader({
         setIsDeleteModalVisible(false);
     }, [parentReport?.reportID, parentReportAction, setIsDeleteModalVisible]);
 
-    const isScanning = TransactionUtils.hasReceipt(transaction) && TransactionUtils.isReceiptBeingScanned(transaction);
-    const isPending = TransactionUtils.isExpensifyCardTransaction(transaction) && TransactionUtils.isPending(transaction);
-
     const isDeletedParentAction = ReportActionsUtils.isDeletedAction(parentReportAction);
     const canHoldOrUnholdRequest = !isSettled && !isApproved && !isDeletedParentAction;
 
@@ -112,6 +117,21 @@ function MoneyRequestHeader({
             Navigation.navigate(ROUTES.MONEY_REQUEST_HOLD_REASON.getRoute(policy?.type ?? CONST.POLICY.TYPE.PERSONAL, iouTransactionID, report?.reportID, activeRoute));
         }
     };
+
+    const getPendingType = () => {
+        if (TransactionUtils.isExpensifyCardTransaction(transaction) && TransactionUtils.isPending(transaction)) {
+            return {pendingType: 'PENDING', pendingTitle: translate('iou.pending'), pendingDescription: translate('iou.transactionPendingText')};
+        }
+        if (TransactionUtils.hasReceipt(transaction) && TransactionUtils.isReceiptBeingScanned(transaction)) {
+            return {pendingType: 'SCANNING', pendingTitle: ReceiptScan, pendingDescription: translate('iou.receiptScanInProgressDescription')};
+        }
+        if (TransactionUtils.hasPendingRTERViolation(TransactionUtils.getTransactionViolations(transaction?.transactionID ?? '', transactionViolations))) {
+            return {pendingType: 'RTER', pendingTitle: Expensicons.Hourglass, pendingDescription: translate('iou.pendingMatchWithCreditCardDescription')};
+        }
+        return {};
+    };
+
+    const {pendingType, pendingTitle, pendingDescription} = getPendingType();
 
     useEffect(() => {
         if (canDeleteRequest) {
@@ -177,7 +197,7 @@ function MoneyRequestHeader({
         <>
             <View style={[styles.pl0]}>
                 <HeaderWithBackButton
-                    shouldShowBorderBottom={!isScanning && !isPending && !isOnHold}
+                    shouldShowBorderBottom={!pendingType && !isOnHold}
                     shouldShowReportAvatarWithDisplay
                     shouldShowPinButton={false}
                     shouldShowThreeDotsButton
@@ -191,17 +211,21 @@ function MoneyRequestHeader({
                     shouldShowBackButton={shouldUseNarrowLayout}
                     onBackButtonPress={() => Navigation.goBack(undefined, false, true)}
                 />
-                {isPending && (
+                {pendingType && (
                     <MoneyRequestHeaderStatusBar
-                        title={translate('iou.pending')}
-                        description={translate('iou.transactionPendingText')}
-                        shouldShowBorderBottom={!isScanning}
-                    />
-                )}
-                {isScanning && (
-                    <MoneyRequestHeaderStatusBar
-                        title={translate('iou.receiptStatusTitle')}
-                        description={translate('iou.receiptStatusText')}
+                        title={
+                            typeof pendingTitle === 'string' ? (
+                                pendingTitle
+                            ) : (
+                                <Icon
+                                    src={pendingTitle}
+                                    height={variables.iconSizeExtraSmall}
+                                    width={variables.iconSizeExtraSmall}
+                                    fill={theme.textSupporting}
+                                />
+                            )
+                        }
+                        description={pendingDescription}
                         shouldShowBorderBottom
                     />
                 )}
@@ -230,7 +254,7 @@ function MoneyRequestHeader({
 
 MoneyRequestHeader.displayName = 'MoneyRequestHeader';
 
-const MoneyRequestHeaderWithTransaction = withOnyx<MoneyRequestHeaderProps, Pick<MoneyRequestHeaderOnyxProps, 'transaction' | 'shownHoldUseExplanation'>>({
+const MoneyRequestHeaderWithTransaction = withOnyx<MoneyRequestHeaderProps, Pick<MoneyRequestHeaderOnyxProps, 'transactionViolations' | 'transaction' | 'shownHoldUseExplanation'>>({
     transaction: {
         key: ({report, parentReportActions}) => {
             const parentReportAction = (report.parentReportActionID && parentReportActions ? parentReportActions[report.parentReportActionID] : {}) as ReportAction & OriginalMessageIOU;
@@ -241,9 +265,15 @@ const MoneyRequestHeaderWithTransaction = withOnyx<MoneyRequestHeaderProps, Pick
         key: ONYXKEYS.NVP_HOLD_USE_EXPLAINED,
         initWithStoredValues: true,
     },
+    transactionViolations: {
+        key: ONYXKEYS.COLLECTION.TRANSACTION_VIOLATIONS,
+    },
 })(MoneyRequestHeader);
 
-export default withOnyx<Omit<MoneyRequestHeaderProps, 'transaction' | 'shownHoldUseExplanation'>, Omit<MoneyRequestHeaderOnyxProps, 'transaction' | 'shownHoldUseExplanation'>>({
+export default withOnyx<
+    Omit<MoneyRequestHeaderProps, 'transactionViolations' | 'transaction' | 'shownHoldUseExplanation'>,
+    Omit<MoneyRequestHeaderOnyxProps, 'transactionViolations' | 'transaction' | 'shownHoldUseExplanation'>
+>({
     session: {
         key: ONYXKEYS.SESSION,
     },
