@@ -49,6 +49,9 @@ type AvatarProps = {
 
     /** Owner of the avatar. If user, displayName. If workspace, policy name */
     name?: string;
+
+    /** Icon should be displayed in its own color */
+    displayInDefaultIconColor?: boolean;
 };
 
 function Avatar({
@@ -62,6 +65,7 @@ function Avatar({
     fallbackIconTestID = '',
     type = CONST.ICON_TYPE_AVATAR,
     name = '',
+    displayInDefaultIconColor = false,
 }: AvatarProps) {
     const theme = useTheme();
     const styles = useThemeStyles();
@@ -95,6 +99,8 @@ function Avatar({
         iconColors = null;
     }
 
+    const iconFillColor = imageError ? iconColors?.fill ?? theme.offline : iconColors?.fill ?? fill;
+
     return (
         <View style={[containerStyles, styles.pointerEventsNone]}>
             {typeof avatarSource === 'string' ? (
@@ -112,7 +118,7 @@ function Avatar({
                         src={avatarSource}
                         height={iconSize}
                         width={iconSize}
-                        fill={imageError ? iconColors?.fill ?? theme.offline : iconColors?.fill ?? fill}
+                        fill={displayInDefaultIconColor ? undefined : iconFillColor}
                         additionalStyles={[StyleUtils.getAvatarBorderStyle(size, type), iconColors, iconAdditionalStyles]}
                     />
                 </View>
