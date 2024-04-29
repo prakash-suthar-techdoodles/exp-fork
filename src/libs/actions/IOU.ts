@@ -6329,6 +6329,7 @@ function setShownHoldUseExplanation() {
  * Put expense on HOLD
  */
 function putOnHold(transactionID: string, comment: string, reportID: string) {
+    const parsedComment = ReportUtils.getParsedComment(comment);
     const currentTime = DateUtils.getDBTime();
     const createdReportAction = ReportUtils.buildOptimisticHoldReportAction(currentTime);
     const createdReportActionComment = ReportUtils.buildOptimisticHoldReportActionComment(comment, DateUtils.addMillisecondsFromDateTime(currentTime, 1));
@@ -6381,7 +6382,7 @@ function putOnHold(transactionID: string, comment: string, reportID: string) {
         'HoldRequest',
         {
             transactionID,
-            comment,
+            comment: parsedComment,
             reportActionID: createdReportAction.reportActionID,
             commentReportActionID: createdReportActionComment.reportActionID,
         },
