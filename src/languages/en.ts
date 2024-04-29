@@ -608,6 +608,10 @@ export default {
         trackManual: 'Track expense',
         trackScan: 'Track receipt',
         trackDistance: 'Track distance',
+        tooltip: {
+            title: 'Quick action! ',
+            subtitle: 'Just a tap away.',
+        },
     },
     iou: {
         amount: 'Amount',

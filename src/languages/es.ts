@@ -601,6 +601,10 @@ export default {
         trackManual: 'Crear gasto',
         trackScan: 'Crear gasto por recibo',
         trackDistance: 'Crear gasto por desplazamiento',
+        tooltip: {
+            title: '¡Acción rápida! ',
+            subtitle: 'A un click.',
+        },
     },
     iou: {
         amount: 'Importe',
