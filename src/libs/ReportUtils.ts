@@ -277,8 +277,6 @@ type OptimisticChatReport = Pick<
     | 'parentReportActionID'
     | 'parentReportID'
     | 'participants'
-    | 'participantAccountIDs'
-    | 'visibleChatMemberAccountIDs'
     | 'policyID'
     | 'reportID'
     | 'reportName'
@@ -339,8 +337,7 @@ type OptimisticTaskReport = Pick<
     | 'reportName'
     | 'description'
     | 'ownerAccountID'
-    | 'participantAccountIDs'
-    | 'visibleChatMemberAccountIDs'
+    | 'participants'
     | 'managerID'
     | 'type'
     | 'parentReportID'
@@ -379,8 +376,7 @@ type OptimisticIOUReport = Pick<
     | 'managerID'
     | 'policyID'
     | 'ownerAccountID'
-    | 'participantAccountIDs'
-    | 'visibleChatMemberAccountIDs'
+    | 'participants'
     | 'reportID'
     | 'stateNum'
     | 'statusNum'
@@ -997,7 +993,8 @@ function isGroupChat(report: OnyxEntry<Report> | Partial<Report>): boolean {
  * Only returns true if this is our main 1:1 DM report with Concierge
  */
 function isConciergeChatReport(report: OnyxEntry<Report>): boolean {
-    return report?.participantAccountIDs?.length === 1 && Number(report.participantAccountIDs?.[0]) === CONST.ACCOUNT_ID.CONCIERGE && !isChatThread(report);
+    const participantAccountIDs = Object.keys(report?.participants ?? {}).map(Number);
+    return participantAccountIDs.length === 1 && participantAccountIDs[0] === CONST.ACCOUNT_ID.CONCIERGE && !isChatThread(report);
 }
 
 function findSelfDMReportID(): string | undefined {
@@ -1053,7 +1050,7 @@ function isProcessingReport(report: OnyxEntry<Report> | EmptyObject): boolean {
  * and personal detail of participant is optimistic data
  */
 function shouldDisableDetailPage(report: OnyxEntry<Report>): boolean {
-    const participantAccountIDs = report?.participantAccountIDs ?? [];
+    const participantAccountIDs = Object.keys(report?.participants ?? {}).map(Number);
 
     if (isChatRoom(report) || isPolicyExpenseChat(report) || isChatThread(report) || isTaskReport(report)) {
         return false;
@@ -1068,8 +1065,10 @@ function shouldDisableDetailPage(report: OnyxEntry<Report>): boolean {
  * Returns true if this report has only one participant and it's an Expensify account.
  */
 function isExpensifyOnlyParticipantInReport(report: OnyxEntry<Report>): boolean {
-    const reportParticipants = report?.participantAccountIDs?.filter((accountID) => accountID !== currentUserAccountID) ?? [];
-    return reportParticipants.length === 1 && reportParticipants.some((accountID) => CONST.EXPENSIFY_ACCOUNT_IDS.includes(accountID));
+    const otherParticipants = Object.keys(report?.participants ?? {})
+        .map(Number)
+        .filter((accountID) => accountID !== currentUserAccountID);
+    return otherParticipants.length === 1 && otherParticipants.some((accountID) => CONST.EXPENSIFY_ACCOUNT_IDS.includes(accountID));
 }
 
 /**
@@ -1078,8 +1077,10 @@ function isExpensifyOnlyParticipantInReport(report: OnyxEntry<Report>): boolean 
  *
  */
 function canCreateTaskInReport(report: OnyxEntry<Report>): boolean {
-    const otherReportParticipants = report?.participantAccountIDs?.filter((accountID) => accountID !== currentUserAccountID) ?? [];
-    const areExpensifyAccountsOnlyOtherParticipants = otherReportParticipants?.length >= 1 && otherReportParticipants?.every((accountID) => CONST.EXPENSIFY_ACCOUNT_IDS.includes(accountID));
+    const otherParticipants = Object.keys(report?.participants ?? {})
+        .map(Number)
+        .filter((accountID) => accountID !== currentUserAccountID);
+    const areExpensifyAccountsOnlyOtherParticipants = otherParticipants.length >= 1 && otherParticipants.every((accountID) => CONST.EXPENSIFY_ACCOUNT_IDS.includes(accountID));
     if (areExpensifyAccountsOnlyOtherParticipants && isDM(report)) {
         return false;
     }
@@ -1133,7 +1134,7 @@ function findLastAccessedReport(
         // Check where ReportUtils.findLastAccessedReport is called in MainDrawerNavigator.js for more context.
         // Domain rooms are now the only type of default room that are on the defaultRooms beta.
         sortedReports = sortedReports.filter(
-            (report) => !isDomainRoom(report) || getPolicyType(report, policies) === CONST.POLICY.TYPE.FREE || hasExpensifyGuidesEmails(report?.participantAccountIDs ?? []),
+            (report) => !isDomainRoom(report) || getPolicyType(report, policies) === CONST.POLICY.TYPE.FREE || hasExpensifyGuidesEmails(Object.keys(report?.participants ?? {}).map(Number)),
         );
     }
 
@@ -1251,7 +1252,7 @@ function isPolicyAdmin(policyID: string, policies: OnyxCollection<Policy>): bool
  * Returns true if report has a single participant.
  */
 function hasSingleParticipant(report: OnyxEntry<Report>): boolean {
-    return report?.participantAccountIDs?.length === 1;
+    return Object.keys(report?.participants ?? {}).length === 1;
 }
 
 /**
@@ -1366,7 +1367,7 @@ function isOneTransactionThread(reportID: string, parentReportID: string): boole
  *
  */
 function isOneOnOneChat(report: OnyxEntry<Report>): boolean {
-    const participantAccountIDs = report?.participantAccountIDs ?? [];
+    const participantAccountIDs = Object.keys(report?.participants ?? {});
     return (
         !isChatRoom(report) &&
         !isExpenseRequest(report) &&
@@ -1531,7 +1532,8 @@ function getRoomWelcomeMessage(report: OnyxEntry<Report>, isUserPolicyAdmin: boo
  * Returns true if Concierge is one of the chat participants (1:1 as well as group chats)
  */
 function chatIncludesConcierge(report: Partial<OnyxEntry<Report>>): boolean {
-    return Boolean(report?.participantAccountIDs?.length && report?.participantAccountIDs?.includes(CONST.ACCOUNT_ID.CONCIERGE));
+    const participantAccountIDs = Object.keys(report?.participants ?? {}).map(Number);
+    return participantAccountIDs.includes(CONST.ACCOUNT_ID.CONCIERGE);
 }
 
 /**
@@ -1552,24 +1554,32 @@ function getReportRecipientAccountIDs(report: OnyxEntry<Report>, currentLoginAcc
         }
     }
 
-    let finalParticipantAccountIDs: number[] | undefined = [];
+    let finalParticipantAccountIDs: number[] = [];
     if (isMoneyRequestReport(report)) {
-        // For money requests i.e the IOU (1:1 person) and Expense (1:* person) reports, use the full `initialParticipantAccountIDs` array
-        // and add the `ownerAccountId`. Money request reports don't add `ownerAccountId` in `participantAccountIDs` array
-        const defaultParticipantAccountIDs = finalReport?.participantAccountIDs ?? [];
+        // For money requests i.e the IOU (1:1 person) and Expense (1:* person) reports, use the full `participants`
+        // and add the `ownerAccountId`. Money request reports don't add `ownerAccountId` in `participants` array
+        const defaultParticipantAccountIDs = Object.keys(finalReport?.participants ?? {}).map(Number);
         const setOfParticipantAccountIDs = new Set<number>(report?.ownerAccountID ? [...defaultParticipantAccountIDs, report.ownerAccountID] : defaultParticipantAccountIDs);
         finalParticipantAccountIDs = [...setOfParticipantAccountIDs];
     } else if (isTaskReport(report)) {
-        // Task reports `managerID` will change when assignee is changed, in that case the old `managerID` is still present in `participantAccountIDs`
-        // array along with the new one. We only need the `managerID` as a participant here.
+        // Task reports `managerID` will change when assignee is changed, in that case the old `managerID` is still present in `participants`
+        // along with the new one. We only need the `managerID` as a participant here.
         finalParticipantAccountIDs = report?.managerID ? [report?.managerID] : [];
     } else {
-        finalParticipantAccountIDs = finalReport?.participantAccountIDs;
+        finalParticipantAccountIDs = Object.keys(finalReport?.participants ?? {}).map(Number);
     }
 
-    const reportParticipants = finalParticipantAccountIDs?.filter((accountID) => accountID !== currentLoginAccountID) ?? [];
-    const participantsWithoutExpensifyAccountIDs = reportParticipants.filter((participant) => !CONST.EXPENSIFY_ACCOUNT_IDS.includes(participant ?? 0));
-    return participantsWithoutExpensifyAccountIDs;
+    const otherParticipantsWithoutExpensifyAccountIDs = finalParticipantAccountIDs.filter((accountID) => {
+        if (accountID === currentLoginAccountID) {
+            return false;
+        }
+        if (CONST.EXPENSIFY_ACCOUNT_IDS.includes(accountID)) {
+            return false;
+        }
+        return true;
+    });
+
+    return otherParticipantsWithoutExpensifyAccountIDs;
 }
 
 /**
@@ -1993,7 +2003,8 @@ function getIcons(
         return icons;
     }
 
-    return getIconsForParticipants(report?.participantAccountIDs ?? [], personalDetails);
+    const participantAccountIDs = Object.keys(report.participants ?? {}).map(Number);
+    return getIconsForParticipants(participantAccountIDs, personalDetails);
 }
 
 function getDisplayNamesWithTooltips(
@@ -3125,12 +3136,11 @@ function getReportName(report: OnyxEntry<Report>, policy: OnyxEntry<Policy> = nu
     }
 
     // Not a room or PolicyExpenseChat, generate title from first 5 other participants
-    const participantAccountIDs = report?.participantAccountIDs?.slice(0, 6) ?? [];
-    const participantsWithoutCurrentUser = participantAccountIDs.filter((accountID) => accountID !== currentUserAccountID);
+    const participantsWithoutCurrentUser = Object.keys(report?.participants ?? {})
+        .map(Number)
+        .filter((accountID) => accountID !== currentUserAccountID)
+        .slice(0, 5);
     const isMultipleParticipantReport = participantsWithoutCurrentUser.length > 1;
-    if (participantsWithoutCurrentUser.length > 5) {
-        participantsWithoutCurrentUser.pop();
-    }
     return participantsWithoutCurrentUser.map((accountID) => getDisplayNameForParticipant(accountID, isMultipleParticipantReport)).join(', ');
 }
 
@@ -3142,8 +3152,10 @@ function getPayeeName(report: OnyxEntry<Report>): string | undefined {
         return undefined;
     }
 
-    const participantAccountIDs = report?.participantAccountIDs ?? [];
-    const participantsWithoutCurrentUser = participantAccountIDs.filter((accountID) => accountID !== currentUserAccountID);
+    const participantsWithoutCurrentUser = Object.keys(report?.participants ?? {})
+        .map(Number)
+        .filter((accountID) => accountID !== currentUserAccountID);
+
     if (participantsWithoutCurrentUser.length === 0) {
         return undefined;
     }
@@ -3213,15 +3225,14 @@ function getParentNavigationSubtitle(report: OnyxEntry<Report>): ParentNavigatio
  * Navigate to the details page of a given report
  */
 function navigateToDetailsPage(report: OnyxEntry<Report>) {
-    const participantAccountIDs = report?.participantAccountIDs ?? [];
-
     if (isSelfDM(report)) {
         Navigation.navigate(ROUTES.PROFILE.getRoute(currentUserAccountID ?? 0));
         return;
     }
 
     if (isOneOnOneChat(report)) {
-        Navigation.navigate(ROUTES.PROFILE.getRoute(participantAccountIDs[0]));
+        const participantAccountID = Object.keys(report?.participants ?? {})[0];
+        Navigation.navigate(ROUTES.PROFILE.getRoute(participantAccountID));
         return;
     }
     if (report?.reportID) {
@@ -3234,7 +3245,8 @@ function navigateToDetailsPage(report: OnyxEntry<Report>) {
  */
 function goBackToDetailsPage(report: OnyxEntry<Report>) {
     if (isOneOnOneChat(report)) {
-        Navigation.goBack(ROUTES.PROFILE.getRoute(report?.participantAccountIDs?.[0] ?? ''));
+        const participantAccountID = Object.keys(report?.participants ?? {})[0];
+        Navigation.goBack(ROUTES.PROFILE.getRoute(participantAccountID));
         return;
     }
     Navigation.goBack(ROUTES.REPORT_SETTINGS.getRoute(report?.reportID ?? ''));
@@ -3492,8 +3504,10 @@ function buildOptimisticIOUReport(payeeAccountID: number, payerAccountID: number
     const personalDetails = getPersonalDetailsForAccountID(payerAccountID);
     const payerEmail = 'login' in personalDetails ? personalDetails.login : '';
 
-    // When creating a report the participantsAccountIDs and visibleChatMemberAccountIDs are the same
-    const participantsAccountIDs = [payeeAccountID, payerAccountID];
+    const participants: Participants = {
+        [payeeAccountID]: {hidden: false},
+        [payerAccountID]: {hidden: false},
+    };
 
     return {
         type: CONST.REPORT.TYPE.IOU,
@@ -3502,8 +3516,7 @@ function buildOptimisticIOUReport(payeeAccountID: number, payerAccountID: number
         currency,
         managerID: payerAccountID,
         ownerAccountID: payeeAccountID,
-        participantAccountIDs: participantsAccountIDs,
-        visibleChatMemberAccountIDs: participantsAccountIDs,
+        participants,
         reportID: generateReportID(),
         stateNum: isSendingMoney ? CONST.REPORT.STATE_NUM.APPROVED : CONST.REPORT.STATE_NUM.SUBMITTED,
         statusNum: isSendingMoney ? CONST.REPORT.STATUS_NUM.REIMBURSED : CONST.REPORT.STATE_NUM.SUBMITTED,
@@ -4203,10 +4216,6 @@ function buildOptimisticChatReport(
         ownerAccountID: ownerAccountID || CONST.REPORT.OWNER_ACCOUNT_ID_FAKE,
         parentReportActionID,
         parentReportID,
-        // When creating a report the participantsAccountIDs and visibleChatMemberAccountIDs are the same
-        participantAccountIDs: participantList,
-        visibleChatMemberAccountIDs: participantList,
-        // For group chats we need to have participants object as we are migrating away from `participantAccountIDs` and `visibleChatMemberAccountIDs`. See https://github.com/Expensify/App/issues/34692
         participants,
         policyID,
         reportID: optimisticReportID || generateReportID(),
@@ -4606,16 +4615,21 @@ function buildOptimisticTaskReport(
     policyID: string = CONST.POLICY.OWNER_EMAIL_FAKE,
     notificationPreference: NotificationPreference = CONST.REPORT.NOTIFICATION_PREFERENCE.ALWAYS,
 ): OptimisticTaskReport {
-    // When creating a report the participantsAccountIDs and visibleChatMemberAccountIDs are the same
-    const participantsAccountIDs = assigneeAccountID && assigneeAccountID !== ownerAccountID ? [assigneeAccountID] : [];
+    const participants: Participants =
+        assigneeAccountID && assigneeAccountID !== ownerAccountID
+            ? {
+                  [assigneeAccountID]: {
+                      hidden: false,
+                  },
+              }
+            : {};
 
     return {
         reportID: generateReportID(),
         reportName: title,
         description,
         ownerAccountID,
-        participantAccountIDs: participantsAccountIDs,
-        visibleChatMemberAccountIDs: participantsAccountIDs,
+        participants,
         managerID: assigneeAccountID,
         type: CONST.REPORT.TYPE.TASK,
         parentReportID,
@@ -4777,7 +4791,7 @@ function canSeeDefaultRoom(report: OnyxEntry<Report>, policies: OnyxCollection<P
     }
 
     // If the room has an assigned guide, it can be seen.
-    if (hasExpensifyGuidesEmails(report?.participantAccountIDs ?? [])) {
+    if (hasExpensifyGuidesEmails(Object.keys(report?.participants ?? {}).map(Number))) {
         return true;
     }
 
@@ -4889,6 +4903,8 @@ function shouldReportBeInOptionList({
     // This can also happen for anyone accessing a public room or archived room for which they don't have access to the underlying policy.
     // Optionally exclude reports that do not belong to currently active workspace
 
+    const participantAccountIDs = Object.keys(report?.participants ?? {}).map(Number);
+
     if (
         !report?.reportID ||
         !report?.type ||
@@ -4896,8 +4912,8 @@ function shouldReportBeInOptionList({
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
         report?.isHidden ||
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-        report?.participantAccountIDs?.includes(CONST.ACCOUNT_ID.NOTIFICATIONS) ||
-        (report?.participantAccountIDs?.length === 0 &&
+        participantAccountIDs.includes(CONST.ACCOUNT_ID.NOTIFICATIONS) ||
+        (participantAccountIDs.length === 0 &&
             !isChatThread(report) &&
             !isPublicRoom(report) &&
             !isUserCreatedPolicyRoom(report) &&
@@ -4990,10 +5006,11 @@ function getChatByParticipants(newParticipantList: number[], reports: OnyxCollec
     const sortedNewParticipantList = newParticipantList.sort();
     return (
         Object.values(reports ?? {}).find((report) => {
+            const participantAccountIDs = Object.keys(report?.participants ?? {});
+
             // If the report has been deleted, or there are no participants (like an empty #admins room) then skip it
             if (
-                !report ||
-                report.participantAccountIDs?.length === 0 ||
+                participantAccountIDs.length === 0 ||
                 isChatThread(report) ||
                 isTaskReport(report) ||
                 isMoneyRequestReport(report) ||
@@ -5004,8 +5021,10 @@ function getChatByParticipants(newParticipantList: number[], reports: OnyxCollec
                 return false;
             }
 
+            const sortedParticipantsAccountIDs = participantAccountIDs.map(Number).sort();
+
             // Only return the chat if it has all the participants
-            return lodashIsEqual(sortedNewParticipantList, report.participantAccountIDs?.sort());
+            return lodashIsEqual(sortedNewParticipantList, sortedParticipantsAccountIDs);
         }) ?? null
     );
 }
@@ -5017,11 +5036,15 @@ function getChatByParticipantsAndPolicy(newParticipantList: number[], policyID: 
     newParticipantList.sort();
     return (
         Object.values(allReports ?? {}).find((report) => {
+            const participantAccountIDs = Object.keys(report?.participants ?? {});
+
             // If the report has been deleted, or there are no participants (like an empty #admins room) then skip it
-            if (!report?.participantAccountIDs) {
+            if (!report || participantAccountIDs.length === 0) {
                 return false;
             }
-            const sortedParticipantsAccountIDs = report.participantAccountIDs?.sort();
+
+            const sortedParticipantsAccountIDs = participantAccountIDs.map(Number).sort();
+
             // Only return the room if it has all the participants and is not a policy room
             return report.policyID === policyID && newParticipantList.every((newParticipant) => sortedParticipantsAccountIDs.includes(newParticipant));
         }) ?? null
@@ -5036,7 +5059,8 @@ function getAllPolicyReports(policyID: string): Array<OnyxEntry<Report>> {
  * Returns true if Chronos is one of the chat participants (1:1)
  */
 function chatIncludesChronos(report: OnyxEntry<Report> | EmptyObject): boolean {
-    return Boolean(report?.participantAccountIDs?.includes(CONST.ACCOUNT_ID.CHRONOS));
+    const participantAccountIDs = Object.keys(report?.participants ?? {}).map(Number);
+    return participantAccountIDs.includes(CONST.ACCOUNT_ID.CHRONOS);
 }
 
 /**
@@ -5552,7 +5576,7 @@ function getReportOfflinePendingActionAndErrors(report: OnyxEntry<Report>): Repo
  * Check if the report can create the expense with type is iouType
  */
 function canCreateRequest(report: OnyxEntry<Report>, policy: OnyxEntry<Policy>, iouType: (typeof CONST.IOU.TYPE)[keyof typeof CONST.IOU.TYPE]): boolean {
-    const participantAccountIDs = report?.participantAccountIDs ?? [];
+    const participantAccountIDs = Object.keys(report?.participants ?? {}).map(Number);
     if (!canUserPerformWriteAction(report)) {
         return false;
     }
@@ -5810,7 +5834,7 @@ function isDeprecatedGroupDM(report: OnyxEntry<Report>): boolean {
             !isMoneyRequestReport(report) &&
             !isArchivedRoom(report) &&
             !Object.values(CONST.REPORT.CHAT_TYPE).some((chatType) => chatType === getChatType(report)) &&
-            (report.participantAccountIDs?.length ?? 0) > 1,
+            Object.keys(report.participants ?? {}).length > 1,
     );
 }
 
@@ -5834,7 +5858,7 @@ function isReportParticipant(accountID: number, report: OnyxEntry<Report>): bool
         return true;
     }
 
-    const possibleAccountIDs = report?.participantAccountIDs ?? [];
+    const possibleAccountIDs = Object.keys(report?.participants ?? {}).map(Number);
     if (report?.ownerAccountID) {
         possibleAccountIDs.push(report?.ownerAccountID);
     }
