@@ -22,6 +22,10 @@ const SCREENS = {
     VALIDATE_LOGIN: 'ValidateLogin',
     UNLINK_LOGIN: 'UnlinkLogin',
     SETTINGS_CENTRAL_PANE: 'SettingsCentralPane',
+    TRAVEL: {
+        MY_TRIPS: 'Travel_MyTrips',
+        TCS: 'Travel_TCS',
+    },
     WORKSPACES_CENTRAL_PANE: 'WorkspacesCentralPane',
     SEARCH: {
         CENTRAL_PANE: 'Search_Central_Pane',
@@ -131,6 +135,7 @@ const SCREENS = {
         ROOM_INVITE: 'RoomInvite',
         REFERRAL: 'Referral',
         PROCESS_MONEY_REQUEST_HOLD: 'ProcessMoneyRequestHold',
+        TRAVEL: 'Travel',
         SEARCH_REPORT: 'SearchReport',
     },
     ONBOARDING_MODAL: {
