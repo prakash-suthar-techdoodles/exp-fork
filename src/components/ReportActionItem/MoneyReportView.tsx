@@ -10,10 +10,10 @@ import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import SpacerView from '@components/SpacerView';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
+import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-import useWindowDimensions from '@hooks/useWindowDimensions';
 import * as CurrencyUtils from '@libs/CurrencyUtils';
 import Navigation from '@libs/Navigation/Navigation';
 import * as ReportUtils from '@libs/ReportUtils';
@@ -39,7 +39,7 @@ function MoneyReportView({report, policy, shouldShowHorizontalRule}: MoneyReport
     const styles = useThemeStyles();
     const StyleUtils = useStyleUtils();
     const {translate} = useLocalize();
-    const {isSmallScreenWidth} = useWindowDimensions();
+    const {shouldUseNarrowLayout} = useResponsiveLayout();
     const isSettled = ReportUtils.isSettled(report.reportID);
     const isTotalUpdated = ReportUtils.hasUpdatedTotal(report, policy);
 
@@ -64,9 +64,9 @@ function MoneyReportView({report, policy, shouldShowHorizontalRule}: MoneyReport
     }, [policy, report]);
 
     return (
-        <View style={[StyleUtils.getReportWelcomeContainerStyle(isSmallScreenWidth, true), styles.overflowHidden]}>
+        <View style={[StyleUtils.getReportWelcomeContainerStyle(shouldUseNarrowLayout, true), styles.overflowHidden]}>
             <AnimatedEmptyStateBackground />
-            <View style={[StyleUtils.getReportWelcomeTopMarginStyle(isSmallScreenWidth, true)]}>
+            <View style={[StyleUtils.getReportWelcomeTopMarginStyle(shouldUseNarrowLayout, true)]}>
                 {!ReportUtils.isClosedExpenseReportWithNoExpenses(report) && (
                     <>
                         {ReportUtils.reportFieldsEnabled(report) &&
