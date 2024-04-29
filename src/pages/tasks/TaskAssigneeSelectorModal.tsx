@@ -30,7 +30,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
-import type {Report, Task} from '@src/types/onyx';
+import type {Report, Task, TaxRatesWithDefault} from '@src/types/onyx';
 
 type TaskAssigneeSelectorModalOnyxProps = {
     /** All reports shared with the user */
@@ -65,6 +65,16 @@ function useOptions() {
             {},
             [],
             true,
+            false,
+            false,
+            {} as TaxRatesWithDefault,
+            false,
+            false,
+            [],
+            [],
+            true,
+            5,
+            CONST.REPORT.TYPE.TASK,
         );
 
         const headerMessage = OptionsListUtils.getHeaderMessage(

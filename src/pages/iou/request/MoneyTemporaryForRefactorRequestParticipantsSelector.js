@@ -81,6 +81,7 @@ function MoneyTemporaryForRefactorRequestParticipantsSelector({participants, onF
     const offlineMessage = isOffline ? [`${translate('common.youAppearToBeOffline')} ${translate('search.resultsAreLimited')}`, {isTranslated: true}] : '';
 
     const maxParticipantsReached = participants.length === CONST.REPORT.MAXIMUM_PARTICIPANTS;
+    const actionTypeForParticipants = iouType === CONST.IOU.TYPE.SPLIT ? CONST.IOU.TYPE.SPLIT : iouRequestType;
 
     const isIOUSplit = iouType === CONST.IOU.TYPE.SPLIT;
     const isCategorizeOrShareAction = [CONST.IOU.ACTION.CATEGORIZE, CONST.IOU.ACTION.SHARE].includes(action);
@@ -130,6 +131,7 @@ function MoneyTemporaryForRefactorRequestParticipantsSelector({participants, onF
             undefined,
             !isCategorizeOrShareAction,
             isCategorizeOrShareAction ? 0 : undefined,
+            actionTypeForParticipants,
         );
 
         const formatResults = OptionsListUtils.formatSectionsFromSearchTerm(
@@ -186,6 +188,7 @@ function MoneyTemporaryForRefactorRequestParticipantsSelector({participants, onF
         maxParticipantsReached,
         personalDetails,
         translate,
+        actionTypeForParticipants,
         didScreenTransitionEnd,
         isCategorizeOrShareAction,
     ]);

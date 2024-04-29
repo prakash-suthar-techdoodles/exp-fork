@@ -241,6 +241,7 @@ type AdditionalTransactionChanges = {
 type TransactionChanges = Partial<Transaction> & AdditionalTransactionChanges;
 
 type TransactionCollectionDataSet = CollectionDataSet<typeof ONYXKEYS.COLLECTION.TRANSACTION>;
+type IOUActionType = ValueOf<typeof CONST.IOU.REQUEST_TYPE> | ValueOf<Pick<typeof CONST.IOU.TYPE, 'SPLIT'>>;
 
 export default Transaction;
 export type {
@@ -255,4 +256,5 @@ export type {
     TaxRate,
     ReceiptSource,
     TransactionCollectionDataSet,
+    IOUActionType,
 };
