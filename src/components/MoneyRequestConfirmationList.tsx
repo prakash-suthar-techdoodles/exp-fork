@@ -3,7 +3,6 @@ import {format} from 'date-fns';
 import Str from 'expensify-common/lib/str';
 import React, {useCallback, useEffect, useMemo, useReducer, useState} from 'react';
 import {View} from 'react-native';
-import type {StyleProp, ViewStyle} from 'react-native';
 import {withOnyx} from 'react-native-onyx';
 import type {OnyxCollection, OnyxEntry} from 'react-native-onyx';
 import useCurrentUserPersonalDetails from '@hooks/useCurrentUserPersonalDetails';
@@ -45,10 +44,11 @@ import ConfirmModal from './ConfirmModal';
 import FormHelpMessage from './FormHelpMessage';
 import MenuItem from './MenuItem';
 import MenuItemWithTopDescription from './MenuItemWithTopDescription';
-import OptionsSelector from './OptionsSelector';
 import PDFThumbnail from './PDFThumbnail';
 import ReceiptEmptyState from './ReceiptEmptyState';
 import ReceiptImage from './ReceiptImage';
+import SelectionList from './SelectionList';
+import InviteMemberListItem from './SelectionList/InviteMemberListItem';
 import SettlementButton from './SettlementButton';
 import ShowMoreButton from './ShowMoreButton';
 import Switch from './Switch';
@@ -147,9 +147,6 @@ type MoneyRequestConfirmationListProps = MoneyRequestConfirmationListOnyxProps &
     /** File name of the receipt */
     receiptFilename?: string;
 
-    /** List styles for OptionsSelector */
-    listStyles?: StyleProp<ViewStyle>;
-
     /** Transaction that represents the expense */
     transaction?: OnyxEntry<OnyxTypes.Transaction>;
 
@@ -214,7 +211,6 @@ function MoneyRequestConfirmationList({
     receiptPath = '',
     iouComment,
     receiptFilename = '',
-    listStyles,
     iouCreated,
     iouIsBillable = false,
     onToggleBillable,
@@ -417,11 +413,14 @@ function MoneyRequestConfirmationList({
     const payeePersonalDetails = useMemo(() => payeePersonalDetailsProp ?? currentUserPersonalDetails, [payeePersonalDetailsProp, currentUserPersonalDetails]);
     const canModifyParticipants = !isReadOnly && canModifyParticipantsProp && hasMultipleParticipants;
     const shouldDisablePaidBySection = canModifyParticipants;
-    const optionSelectorSections = useMemo(() => {
+    const selectionListSections = useMemo(() => {
         const sections = [];
         const unselectedParticipants = selectedParticipantsProp.filter((participant) => !participant.selected);
         if (hasMultipleParticipants) {
-            const formattedSelectedParticipants = getParticipantsWithAmount(selectedParticipants);
+            const formattedSelectedParticipants = getParticipantsWithAmount(selectedParticipants).map((participant) => ({
+                ...participant,
+                rightElement: 'descriptiveText' in participant && <Text>{participant.descriptiveText}</Text>,
+            }));
             let formattedParticipantsList = [...new Set([...formattedSelectedParticipants, ...unselectedParticipants])];
 
             if (!canModifyParticipants) {
@@ -440,7 +439,7 @@ function MoneyRequestConfirmationList({
             sections.push(
                 {
                     title: translate('moneyRequestConfirmationList.paidBy'),
-                    data: [formattedPayeeOption],
+                    data: [{...formattedPayeeOption, isSelected: true, rightElement: <Text>{formattedPayeeOption.descriptiveText}</Text>}],
                     shouldShow: true,
                     isDisabled: shouldDisablePaidBySection,
                 },
@@ -448,6 +447,7 @@ function MoneyRequestConfirmationList({
                     title: translate('moneyRequestConfirmationList.splitWith'),
                     data: formattedParticipantsList,
                     shouldShow: true,
+                    isDisabled: !canModifyParticipants,
                 },
             );
         } else {
@@ -459,6 +459,7 @@ function MoneyRequestConfirmationList({
                 title: translate('common.to'),
                 data: formattedSelectedParticipants,
                 shouldShow: true,
+                isDisabled: false,
             });
         }
         return sections;
@@ -474,13 +475,6 @@ function MoneyRequestConfirmationList({
         shouldDisablePaidBySection,
         canModifyParticipants,
     ]);
-
-    const selectedOptions = useMemo(() => {
-        if (!hasMultipleParticipants) {
-            return [];
-        }
-        return [...selectedParticipants, OptionsListUtils.getIOUConfirmationOptionsFromPayeePersonalDetail(payeePersonalDetails)];
-    }, [selectedParticipants, hasMultipleParticipants, payeePersonalDetails]);
 
     useEffect(() => {
         if (!isDistanceRequest || isMovingTransactionFromTrackExpense) {
@@ -554,7 +548,7 @@ function MoneyRequestConfirmationList({
     /**
      * Navigate to report details or profile of selected user
      */
-    const navigateToReportOrUserDetail = (option: ReportUtils.OptionData) => {
+    const navigateToReportOrUserDetail = (option: Participant) => {
         const activeRoute = Navigation.getActiveRouteWithoutParams();
 
         if (option.isSelfDM) {
@@ -976,84 +970,78 @@ function MoneyRequestConfirmationList({
     );
 
     return (
-        // @ts-expect-error This component is deprecated and will not be migrated to TypeScript (context: https://expensify.slack.com/archives/C01GTK53T8Q/p1709232289899589?thread_ts=1709156803.359359&cid=C01GTK53T8Q)
-        <OptionsSelector
-            sections={optionSelectorSections}
+        <SelectionList
+            canSelectMultiple={canModifyParticipants}
+            sections={selectionListSections}
+            ListItem={InviteMemberListItem}
             onSelectRow={canModifyParticipants ? selectParticipant : navigateToReportOrUserDetail}
-            onAddToSelection={selectParticipant}
-            onConfirmSelection={confirm}
-            selectedOptions={selectedOptions}
-            canSelectMultipleOptions={canModifyParticipants}
-            disableArrowKeysActions={!canModifyParticipants}
-            boldStyle
-            showTitleTooltip
-            shouldTextInputAppearBelowOptions
-            shouldShowTextInput={false}
-            shouldUseStyleForChildren={false}
-            optionHoveredStyle={canModifyParticipants ? styles.hoveredComponentBG : {}}
+            shouldShowTooltips
+            sectionTitleStyles={styles.sidebarLinkTextBold}
+            showScrollIndicator
             footerContent={footerContent}
-            listStyles={listStyles}
-            shouldAllowScrollingChildren
-        >
-            {isDistanceRequest && (
-                <View style={styles.confirmationListMapItem}>
-                    <ConfirmedRoute transaction={transaction ?? ({} as OnyxTypes.Transaction)} />
-                </View>
-            )}
-            {isTypeInvoice && (
-                <MenuItem
-                    key={translate('workspace.invoices.sendFrom')}
-                    shouldShowRightIcon={!isReadOnly && canUpdateSenderWorkspace}
-                    title={senderWorkspace?.name}
-                    icon={senderWorkspace?.avatar ? senderWorkspace?.avatar : getDefaultWorkspaceAvatar(senderWorkspace?.name)}
-                    iconType={CONST.ICON_TYPE_WORKSPACE}
-                    description={translate('workspace.common.workspace')}
-                    label={translate('workspace.invoices.sendFrom')}
-                    isLabelHoverable={false}
-                    interactive={!isReadOnly && canUpdateSenderWorkspace}
-                    onPress={() => {
-                        Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_SEND_FROM.getRoute(iouType, transaction?.transactionID ?? '', reportID, Navigation.getActiveRouteWithoutParams()));
-                    }}
-                    style={styles.moneyRequestMenuItem}
-                    labelStyle={styles.mt2}
-                    titleStyle={styles.flex1}
-                    disabled={didConfirm || !canUpdateSenderWorkspace}
-                />
-            )}
-            {!isDistanceRequest &&
-                // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-                (receiptImage || receiptThumbnail
-                    ? receiptThumbnailContent
-                    : // The empty receipt component should only show for IOU Requests of a paid policy ("Team" or "Corporate")
-                      PolicyUtils.isPaidGroupPolicy(policy) &&
-                      !isDistanceRequest &&
-                      iouType === CONST.IOU.TYPE.SUBMIT && (
-                          <ReceiptEmptyState
-                              onPress={() =>
-                                  Navigation.navigate(
-                                      ROUTES.MONEY_REQUEST_STEP_SCAN.getRoute(CONST.IOU.ACTION.CREATE, iouType, transactionID, reportID, Navigation.getActiveRouteWithoutParams()),
-                                  )
-                              }
-                          />
-                      ))}
-            {primaryFields}
-            {!shouldShowAllFields && (
-                <ShowMoreButton
-                    containerStyle={[styles.mt1, styles.mb2]}
-                    onPress={toggleShouldExpandFields}
-                />
-            )}
-            {shouldShowAllFields && supplementaryFields}
-            <ConfirmModal
-                title={translate('attachmentPicker.wrongFileType')}
-                onConfirm={navigateBack}
-                onCancel={navigateBack}
-                isVisible={isAttachmentInvalid}
-                prompt={translate('attachmentPicker.protectedPDFNotSupported')}
-                confirmText={translate('common.close')}
-                shouldShowCancelButton={false}
-            />
-        </OptionsSelector>
+            listFooterContent={
+                <>
+                    {isDistanceRequest && (
+                        <View style={styles.confirmationListMapItem}>
+                            <ConfirmedRoute transaction={transaction ?? ({} as OnyxTypes.Transaction)} />
+                        </View>
+                    )}
+                    {isTypeInvoice && (
+                        <MenuItem
+                            key={translate('workspace.invoices.sendFrom')}
+                            shouldShowRightIcon={!isReadOnly && canUpdateSenderWorkspace}
+                            title={senderWorkspace?.name}
+                            icon={senderWorkspace?.avatar ? senderWorkspace?.avatar : getDefaultWorkspaceAvatar(senderWorkspace?.name)}
+                            iconType={CONST.ICON_TYPE_WORKSPACE}
+                            description={translate('workspace.common.workspace')}
+                            label={translate('workspace.invoices.sendFrom')}
+                            isLabelHoverable={false}
+                            interactive={!isReadOnly && canUpdateSenderWorkspace}
+                            onPress={() => {
+                                Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_SEND_FROM.getRoute(iouType, transaction?.transactionID ?? '', reportID, Navigation.getActiveRouteWithoutParams()));
+                            }}
+                            style={styles.moneyRequestMenuItem}
+                            labelStyle={styles.mt2}
+                            titleStyle={styles.flex1}
+                            disabled={didConfirm || !canUpdateSenderWorkspace}
+                        />
+                    )}
+                    {!isDistanceRequest &&
+                        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+                        (receiptImage || receiptThumbnail
+                            ? receiptThumbnailContent
+                            : // The empty receipt component should only show for IOU Requests of a paid policy ("Team" or "Corporate")
+                              PolicyUtils.isPaidGroupPolicy(policy) &&
+                              !isDistanceRequest &&
+                              iouType === CONST.IOU.TYPE.SUBMIT && (
+                                  <ReceiptEmptyState
+                                      onPress={() =>
+                                          Navigation.navigate(
+                                              ROUTES.MONEY_REQUEST_STEP_SCAN.getRoute(CONST.IOU.ACTION.CREATE, iouType, transactionID, reportID, Navigation.getActiveRouteWithoutParams()),
+                                          )
+                                      }
+                                  />
+                              ))}
+                    {primaryFields}
+                    {!shouldShowAllFields && (
+                        <ShowMoreButton
+                            containerStyle={[styles.mt1, styles.mb2]}
+                            onPress={toggleShouldExpandFields}
+                        />
+                    )}
+                    {shouldShowAllFields && supplementaryFields}
+                    <ConfirmModal
+                        title={translate('attachmentPicker.wrongFileType')}
+                        onConfirm={navigateBack}
+                        onCancel={navigateBack}
+                        isVisible={isAttachmentInvalid}
+                        prompt={translate('attachmentPicker.protectedPDFNotSupported')}
+                        confirmText={translate('common.close')}
+                        shouldShowCancelButton={false}
+                    />
+                </>
+            }
+        />
     );
 }
 

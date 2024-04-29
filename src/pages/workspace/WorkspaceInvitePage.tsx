@@ -306,7 +306,7 @@ function WorkspaceInvitePage({route, betas, invitedEmailsToAccountIDsDraft, poli
                     canSelectMultiple
                     sections={sections}
                     ListItem={InviteMemberListItem}
-                    textInputLabel={translate('optionsSelector.nameEmailOrPhoneNumber')}
+                    textInputLabel={translate('selectionList.nameEmailOrPhoneNumber')}
                     textInputValue={searchTerm}
                     onChangeText={(value) => {
                         SearchInputManager.searchInput = value;
