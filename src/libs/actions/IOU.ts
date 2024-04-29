@@ -3618,6 +3618,7 @@ function createSplitsAndOnyxData(
     existingSplitChatReportID = '',
     billable = false,
     iouRequestType: IOURequestType = CONST.IOU.REQUEST_TYPE.MANUAL,
+    taxAmount: number,
 ): SplitsAndOnyxData {
     const currentUserEmailForIOUSplit = PhoneNumber.addSMSDomainIfPhoneNumber(currentUserLogin);
     const participantAccountIDs = participants.map((participant) => Number(participant.accountID));
@@ -3792,7 +3793,8 @@ function createSplitsAndOnyxData(
 
     // Loop through participants creating individual chats, iouReports and reportActionIDs as needed
     const splitAmount = IOUUtils.calculateAmount(participants.length, amount, currency, false);
-    const splits: Split[] = [{email: currentUserEmailForIOUSplit, accountID: currentUserAccountID, amount: IOUUtils.calculateAmount(participants.length, amount, currency, true)}];
+    const splitTaxAmount = IOUUtils.calculateAmount(participants.length, taxAmount, currency, false);
+    const splits: Split[] = [{email: currentUserEmailForIOUSplit, accountID: currentUserAccountID, amount: IOUUtils.calculateAmount(participants.length, amount, currency, true), taxAmount: IOUUtils.calculateAmount(participants.length, taxAmount, currency, true)}];
 
     const hasMultipleParticipants = participants.length > 1;
     participants.forEach((participant) => {
@@ -3946,6 +3948,7 @@ function createSplitsAndOnyxData(
             reportPreviewReportActionID: oneOnOneReportPreviewAction.reportActionID,
             transactionThreadReportID: optimisticTransactionThread.reportID,
             createdReportActionIDForThread: optimisticCreatedActionForTransactionThread.reportActionID,
+            taxAmount: splitTaxAmount,
         };
 
         splits.push(individualSplit);
@@ -3987,6 +3990,8 @@ type SplitBillActionsParams = {
     billable?: boolean;
     iouRequestType?: IOURequestType;
     existingSplitChatReportID?: string;
+    taxCode?: string;
+    taxAmount?: number;
 };
 
 /**
@@ -4007,7 +4012,10 @@ function splitBill({
     billable = false,
     iouRequestType = CONST.IOU.REQUEST_TYPE.MANUAL,
     existingSplitChatReportID = '',
+    taxCode = '',
+    taxAmount = 0,
 }: SplitBillActionsParams) {
+    console.debug(taxCode);
     const currentCreated = DateUtils.enrichMoneyRequestTimestamp(created);
     const {splitData, splits, onyxData} = createSplitsAndOnyxData(
         participants,
@@ -4023,6 +4031,7 @@ function splitBill({
         existingSplitChatReportID,
         billable,
         iouRequestType,
+        taxAmount,
     );
 
     const parameters: SplitBillParams = {
@@ -4041,6 +4050,8 @@ function splitBill({
         createdReportActionID: splitData.createdReportActionID,
         policyID: splitData.policyID,
         chatType: splitData.chatType,
+        taxCode,
+        taxAmount,
     };
 
     API.write(WRITE_COMMANDS.SPLIT_BILL, parameters, onyxData);

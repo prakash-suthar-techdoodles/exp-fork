@@ -335,6 +335,8 @@ function IOURequestStepConfirmation({
                         existingSplitChatReportID: report?.reportID,
                         billable: transaction.billable,
                         iouRequestType: transaction.iouRequestType,
+                        taxCode: transaction.taxCode,
+                        taxAmount: transaction.taxAmount,
                     });
                 }
                 return;
@@ -356,6 +358,8 @@ function IOURequestStepConfirmation({
                         tag: transaction.tag,
                         billable: !!transaction.billable,
                         iouRequestType: transaction.iouRequestType,
+                        taxCode: transaction.taxCode,
+                        taxAmount: transaction.taxAmount,
                     });
                 }
                 return;
