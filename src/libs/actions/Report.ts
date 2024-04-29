@@ -2456,7 +2456,7 @@ function navigateToMostRecentReport(currentReport: OnyxEntry<Report>) {
                 policies: {},
                 excludeEmptyChats: true,
                 doesReportHaveViolations: false,
-                includeSelfDM: true,
+                includeSelfDM: !Session.isAnonymousUser(),
             }),
     );
     const lastAccessedReportID = filteredReportsByLastRead.at(-1)?.reportID;

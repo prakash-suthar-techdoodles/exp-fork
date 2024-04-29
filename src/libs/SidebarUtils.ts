@@ -11,6 +11,7 @@ import type PriorityMode from '@src/types/onyx/PriorityMode';
 import type Report from '@src/types/onyx/Report';
 import type ReportAction from '@src/types/onyx/ReportAction';
 import type DeepValueOf from '@src/types/utils/DeepValueOf';
+import * as Session from './actions/Session';
 import * as CollectionUtils from './CollectionUtils';
 import {hasValidDraftComment} from './DraftCommentUtils';
 import localeCompare from './LocaleCompare';
@@ -107,7 +108,7 @@ function getOrderedReportIDs(
             policies: policies as OnyxCollection<Policy>,
             excludeEmptyChats: true,
             doesReportHaveViolations,
-            includeSelfDM: true,
+            includeSelfDM: !Session.isAnonymousUser(),
         });
     });
 
