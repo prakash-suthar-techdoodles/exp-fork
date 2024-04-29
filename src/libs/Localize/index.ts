@@ -59,6 +59,17 @@ type Phrase<TKey extends TranslationPaths> = TranslationFlatObject[TKey] extends
  * {
  *  "en": {
  *   "name": "Name",
+ *   "pluralExample": ({count}) => {
+ *     const pluralForm = enPluralRules.select(count);
+ *     switch (pluralForm) {
+ *      case 'one': 
+ *          return `You have one item`;
+ *      case 'other':
+ *         return `You have ${count} items`;
+ *      default: 
+ *          throw new Error(`Unsupported plural form ${pluralForm}`);
+ *      }
+ *   }
  * }
  *
  * Note: We are not storing any translated values for phrases with variables,
@@ -125,10 +136,10 @@ function getTranslatedPhrase<TKey extends TranslationPaths>(
     }
 
     // Phrase is not found in full locale, search it in fallback language e.g. es
-    const fallbacktranslatedPhrase = getTranslatedPhrase(fallbackLanguage, phraseKey, null, ...phraseParameters);
+    const fallbackTranslatedPhrase = getTranslatedPhrase(fallbackLanguage, phraseKey, null, ...phraseParameters);
 
-    if (fallbacktranslatedPhrase) {
-        return fallbacktranslatedPhrase;
+    if (fallbackTranslatedPhrase) {
+        return fallbackTranslatedPhrase;
     }
 
     if (fallbackLanguage !== CONST.LOCALES.DEFAULT) {

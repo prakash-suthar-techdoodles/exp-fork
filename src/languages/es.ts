@@ -1,4 +1,3 @@
-import Str from 'expensify-common/lib/str';
 import CONST from '@src/CONST';
 import type {PolicyConnectionSyncStage} from '@src/types/onyx/Policy';
 import type {
@@ -104,6 +103,8 @@ import type {
     ZipCodeExampleFormatParams,
 } from './types';
 
+const esPluralRules = new Intl.PluralRules('es', {type: 'ordinal'});
+
 /* eslint-disable max-len */
 export default {
     common: {
@@ -119,7 +120,7 @@ export default {
         to: 'A',
         optional: 'Opcional',
         new: 'Nuevo',
-        search: 'Buscar',
+        searchText: 'Buscar',
         find: 'Encontrar',
         searchWithThreeDots: 'Buscar...',
         select: 'Seleccionar',
@@ -259,7 +260,17 @@ export default {
         youAfterPreposition: 'ti',
         your: 'tu',
         conciergeHelp: 'Por favor, contacta con Concierge para obtener ayuda.',
-        maxParticipantsReached: ({count}: MaxParticipantsReachedParams) => `Has seleccionado el número máximo (${count}) de participantes.`,
+        maxParticipantsReached: ({count}: MaxParticipantsReachedParams) => {
+            const pluralForm = esPluralRules.select(count);
+            switch (pluralForm) {
+                case 'one':
+                    return `Has seleccionado el número máximo (${count}) de participantes.`;
+                case 'other':
+                    return `Has seleccionado el número máximo (${count}) de participantes.`;
+                default:
+                    return `Has seleccionado el número máximo (${count}) de participantes.`;
+            }
+        },
         youAppearToBeOffline: 'Parece que estás desconectado.',
         thisFeatureRequiresInternet: 'Esta función requiere una conexión a Internet activa para ser utilizada.',
         areYouSure: '¿Estás seguro?',
@@ -287,7 +298,7 @@ export default {
         nonBillable: 'No facturable',
         tag: 'Etiqueta',
         receipt: 'Recibo',
-        replace: 'Sustituir',
+        replaceText: 'Sustituir',
         distance: 'Distancia',
         mile: 'milla',
         miles: 'millas',
@@ -442,16 +453,13 @@ export default {
         sendAttachment: 'Enviar adjunto',
         addAttachment: 'Añadir archivo adjunto',
         writeSomething: 'Escribe algo...',
-        conciergePlaceholderOptions: [
-            '¡Pide ayuda!',
-            '¡Pregúntame lo que sea!',
-            '¡Pídeme que te reserve un viaje!',
-            '¡Pregúntame qué puedo hacer!',
-            '¡Pregúntame cómo pagar a la gente!',
-            '¡Pregúntame cómo enviar una factura!',
-            '¡Pregúntame cómo escanear un recibo!',
-            '¡Pregúntame cómo obtener una tarjeta de crédito corporativa gratis!',
-        ],
+        conciergePlaceholderOptions: ({isSmallScreenWidth}): string => {
+            const options = ['¡Pide ayuda!', '¡Pregúntame lo que sea!', '¡Pídeme que te reserve un viaje!', '¡Pregúntame qué puedo hacer!', '¡Pregúntame cómo pagar a la gente!'];
+            if (!isSmallScreenWidth) {
+                options.push('¡Pregúntame cómo enviar una factura!', '¡Pregúntame cómo escanear un recibo!', '¡Pregúntame cómo obtener una tarjeta de crédito corporativa gratis!');
+            }
+            return options[Math.floor(Math.random() * options.length)];
+        },
         blockedFromConcierge: 'Comunicación no permitida',
         fileUploadFailed: 'Subida fallida. El archivo no es compatible.',
         localTime: ({user, time}: LocalTimeParams) => `Son las ${time} para ${user}`,
@@ -611,7 +619,7 @@ export default {
         cash: 'Efectivo',
         card: 'Tarjeta',
         original: 'Original',
-        split: 'Dividir',
+        splitIOU: 'Dividir',
         splitExpense: 'Dividir gasto',
         expense: 'Gasto',
         categorize: 'Categorizar',
@@ -638,10 +646,22 @@ export default {
         receiptStatusText: 'Solo tú puedes ver este recibo cuando se está escaneando. Vuelve más tarde o introduce los detalles ahora.',
         receiptScanningFailed: 'El escaneo de recibo ha fallado. Introduce los detalles manualmente.',
         transactionPendingText: 'La transacción tarda unos días en contabilizarse desde la fecha en que se utilizó la tarjeta.',
-        expenseCount: ({count, scanningReceipts = 0, pendingReceipts = 0}: RequestCountParams) =>
-            `${count} ${Str.pluralize('gasto', 'gastos', count)}${scanningReceipts > 0 ? `, ${scanningReceipts} escaneando` : ''}${
-                pendingReceipts > 0 ? `, ${pendingReceipts} pendiente` : ''
-            }`,
+        // expenseCount: ({count, scanningReceipts = 0, pendingReceipts = 0}: RequestCountParams) => ({
+        //     one: `${count} gasto${scanningReceipts > 0 ? `, ${scanningReceipts} escaneando` : ''}${pendingReceipts > 0 ? `, ${pendingReceipts} pendiente` : ''}`,
+        //     other: `${count} gastos${scanningReceipts > 0 ? `, ${scanningReceipts} escaneando` : ''}${pendingReceipts > 0 ? `, ${pendingReceipts} pendiente` : ''}`,
+        // }),
+        expenseCount: ({count, scanningReceipts = 0, pendingReceipts = 0}: RequestCountParams) => {
+            const pluralForm = esPluralRules.select(count);
+
+            switch (pluralForm) {
+                case 'one':
+                    return `${count} gasto${scanningReceipts > 0 ? `, ${scanningReceipts} escaneando` : ''}${pendingReceipts > 0 ? `, ${pendingReceipts} pendiente` : ''}`;
+                case 'other':
+                    return `${count} gastos${scanningReceipts > 0 ? `, ${scanningReceipts} escaneando` : ''}${pendingReceipts > 0 ? `, ${pendingReceipts} pendiente` : ''}`;
+                default:
+                    return '';
+            }
+        },
         deleteExpense: 'Eliminar gasto',
         deleteConfirmation: '¿Estás seguro de que quieres eliminar esta solicitud?',
         settledExpensify: 'Pagado',
@@ -1884,7 +1904,17 @@ export default {
             testTransactions: 'Transacciones de prueba',
             issueAndManageCards: 'Emitir y gestionar tarjetas',
             reconcileCards: 'Reconciliar tarjetas',
-            selected: ({selectedNumber}) => `${selectedNumber} seleccionados`,
+            selected: ({selectedNumber}) => {
+                const pluralForm = esPluralRules.select(selectedNumber);
+                switch (pluralForm) {
+                    case 'one':
+                        return `${selectedNumber} seleccionado`;
+                    case 'other':
+                        return `${selectedNumber} seleccionados`;
+                    default:
+                        return `${selectedNumber} seleccionados`;
+                }
+            },
             settlementFrequency: 'Frecuencia de liquidación',
             deleteConfirmation: '¿Estás seguro de que quieres eliminar este espacio de trabajo?',
             unavailable: 'Espacio de trabajo no disponible',
@@ -2313,15 +2343,55 @@ export default {
             centrallyManage: 'Gestiona centralizadamente las tasas, elige si contabilizar en millas o kilómetros, y define una categoría por defecto',
             rate: 'Tasa',
             addRate: 'Agregar tasa',
-            deleteRates: ({count}: DistanceRateOperationsParams) => `Eliminar ${Str.pluralize('tasa', 'tasas', count)}`,
-            enableRates: ({count}: DistanceRateOperationsParams) => `Activar ${Str.pluralize('tasa', 'tasas', count)}`,
-            disableRates: ({count}: DistanceRateOperationsParams) => `Desactivar ${Str.pluralize('tasa', 'tasas', count)}`,
+            deleteRates: ({count}: Record<string, number>) => {
+                const pluralForm = esPluralRules.select(count);
+                switch (pluralForm) {
+                    case 'one':
+                        return `Eliminar ${count} tasa`;
+                    case 'other':
+                        return `Eliminar ${count} tasas`;
+                    default:
+                        return `Eliminar ${count} tasas`;
+                }
+            },
+            enableRates: ({count}) => {
+                const pluralForm = esPluralRules.select(count);
+                switch (pluralForm) {
+                    case 'one':
+                        return `Activar ${count} tasa`;
+                    case 'other':
+                        return `Activar ${count} tasas`;
+                    default:
+                        return `Activar ${count} tasas`;
+                }
+            },
+            disableRates: ({count}) => {
+                const pluralForm = esPluralRules.select(count);
+                switch (pluralForm) {
+                    case 'one':
+                        return `Desactivar ${count} tasa`;
+                    case 'other':
+                        return `Desactivar ${count} tasas`;
+                    default:
+                        return `Desactivar ${count} tasas`;
+                }
+            },
+            areYouSureDelete: ({count}: DistanceRateOperationsParams) => {
+                const pluralForm = esPluralRules.select(count);
+                switch (pluralForm) {
+                    case 'one':
+                        return `¿Estás seguro de que quieres eliminar esta ${count} tasa?`;
+                    case 'other':
+                        return `¿Estás seguro de que quieres eliminar estas ${count} tasas?`;
+                    default:
+                        return `¿Estás seguro de que quieres eliminar estas ${count} tasas?`;
+                }
+            },
             enableRate: 'Activar tasa',
             status: 'Estado',
             unit: 'Unidad',
             defaultCategory: 'Categoría predeterminada',
             deleteDistanceRate: 'Eliminar tasa de distancia',
-            areYouSureDelete: ({count}: DistanceRateOperationsParams) => `¿Estás seguro de que quieres eliminar ${Str.pluralize('esta tasa', 'estas tasas', count)}?`,
         },
         editor: {
             nameInputLabel: 'Nombre',
@@ -2496,7 +2566,7 @@ export default {
         deleteConfirmation: '¿Estás seguro de que quieres eliminar esta tarea?',
     },
     statementPage: {
-        title: (year, monthName) => `Estado de cuenta de ${monthName} ${year}`,
+        title: ({year, monthName}) => `Estado de cuenta de ${monthName} ${year}`,
         generatingPDF: 'Estamos generando tu PDF ahora mismo. ¡Por favor, vuelve más tarde!',
     },
     keyboardShortcutsPage: {

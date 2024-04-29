@@ -1,5 +1,4 @@
 import {CONST as COMMON_CONST} from 'expensify-common/lib/CONST';
-import Str from 'expensify-common/lib/str';
 import CONST from '@src/CONST';
 import type {Country} from '@src/CONST';
 import type {PolicyConnectionSyncStage} from '@src/types/onyx/Policy';
@@ -114,6 +113,8 @@ type States = Record<keyof typeof COMMON_CONST.STATES, StateValue>;
 
 type AllCountries = Record<Country, string>;
 
+const enPluralRules = new Intl.PluralRules('en-US', {type: 'ordinal'});
+
 /* eslint-disable max-len */
 export default {
     common: {
@@ -129,7 +130,7 @@ export default {
         to: 'To',
         optional: 'Optional',
         new: 'New',
-        search: 'Search',
+        searchText: 'Search',
         find: 'Find',
         searchWithThreeDots: 'Search...',
         next: 'Next',
@@ -269,7 +270,15 @@ export default {
         youAfterPreposition: 'you',
         your: 'your',
         conciergeHelp: 'Please reach out to Concierge for help.',
-        maxParticipantsReached: ({count}: MaxParticipantsReachedParams) => `You've selected the maximum number (${count}) of participants.`,
+        maxParticipantsReached: ({count}: MaxParticipantsReachedParams) => {
+            const pluralForm = enPluralRules.select(count);
+            switch (pluralForm) {
+                case 'one':
+                    return `You've selected the maximum number (${count}) of participants.`;
+                default:
+                    return `You've selected the maximum number (${count}) of participants.`;
+            }
+        },
         youAppearToBeOffline: 'You appear to be offline.',
         thisFeatureRequiresInternet: 'This feature requires an active internet connection to be used.',
         areYouSure: 'Are you sure?',
@@ -297,7 +306,7 @@ export default {
         nonBillable: 'Non-billable',
         tag: 'Tag',
         receipt: 'Receipt',
-        replace: 'Replace',
+        replaceText: 'Replace',
         distance: 'Distance',
         mile: 'mile',
         miles: 'miles',
@@ -451,16 +460,14 @@ export default {
         sendAttachment: 'Send attachment',
         addAttachment: 'Add attachment',
         writeSomething: 'Write something...',
-        conciergePlaceholderOptions: [
-            'Ask for help!',
-            'Ask me anything!',
-            'Ask me to book travel!',
-            'Ask me what I can do!',
-            'Ask me how to pay people!',
-            'Ask me how to send an invoice!',
-            'Ask me how to scan a receipt!',
-            'Ask me how to get a free corporate card!',
-        ],
+        conciergePlaceholderOptions: ({isSmallScreenWidth}: Record<string, boolean>): string => {
+            // If we are on a small width device then don't show last 3 items from conciergePlaceholderOptions
+            const options = ['Ask for help!', 'Ask me anything!', 'Ask me to book travel!', 'Ask me what I can do!', 'Ask me how to pay people!'];
+            if (!isSmallScreenWidth) {
+                options.push('Ask me how to send an invoice!', 'Ask me how to scan a receipt!', 'Ask me how to get a free corporate card!');
+            }
+            return options[Math.floor(Math.random() * options.length)];
+        },
         blockedFromConcierge: 'Communication is barred',
         fileUploadFailed: 'Upload failed. File is not supported.',
         localTime: ({user, time}: LocalTimeParams) => `It's ${time} for ${user}`,
@@ -618,7 +625,7 @@ export default {
         cash: 'Cash',
         card: 'Card',
         original: 'Original',
-        split: 'Split',
+        splitIOU: 'Split',
         splitExpense: 'Split expense',
         paySomeone: ({name}: PaySomeoneParams) => `Pay ${name ?? 'someone'}`,
         expense: 'Expense',
@@ -645,10 +652,16 @@ export default {
         receiptStatusText: "Only you can see this receipt when it's scanning. Check back later or enter the details now.",
         receiptScanningFailed: 'Receipt scanning failed. Enter the details manually.',
         transactionPendingText: 'It takes a few days from the date the card was used for the transaction to post.',
-        expenseCount: ({count, scanningReceipts = 0, pendingReceipts = 0}: RequestCountParams) =>
-            `${count} ${Str.pluralize('expense', 'expenses', count)}${scanningReceipts > 0 ? `, ${scanningReceipts} scanning` : ''}${
-                pendingReceipts > 0 ? `, ${pendingReceipts} pending` : ''
-            }`,
+        expenseCount: ({count, scanningReceipts = 0, pendingReceipts = 0}: RequestCountParams) => {
+            const pluralForm = enPluralRules.select(count);
+
+            switch (pluralForm) {
+                case 'one':
+                    return `${count} expense${scanningReceipts > 0 ? `, ${scanningReceipts} scanning` : ''}${pendingReceipts > 0 ? `, ${pendingReceipts} pending` : ''}`;
+                default:
+                    return `${count} expenses${scanningReceipts > 0 ? `, ${scanningReceipts} scanning` : ''}${pendingReceipts > 0 ? `, ${pendingReceipts} pending` : ''}`;
+            }
+        },
         deleteExpense: 'Delete expense',
         deleteConfirmation: 'Are you sure that you want to delete this expense?',
         settledExpensify: 'Paid',
@@ -1860,7 +1873,17 @@ export default {
             testTransactions: 'Test transactions',
             issueAndManageCards: 'Issue and manage cards',
             reconcileCards: 'Reconcile cards',
-            selected: ({selectedNumber}) => `${selectedNumber} selected`,
+            selected: ({selectedNumber}) => {
+                const pluralForm = enPluralRules.select(selectedNumber);
+                switch (pluralForm) {
+                    case 'one':
+                        return `${selectedNumber} selected`;
+                    case 'other':
+                        return `${selectedNumber} selected`;
+                    default:
+                        return `${selectedNumber} selected`;
+                }
+            },
             settlementFrequency: 'Settlement frequency',
             deleteConfirmation: 'Are you sure you want to delete this workspace?',
             unavailable: 'Unavailable workspace',
@@ -2285,15 +2308,55 @@ export default {
             centrallyManage: 'Centrally manage rates, choose to track in miles or kilometers, and set a default category.',
             rate: 'Rate',
             addRate: 'Add rate',
-            deleteRates: ({count}: DistanceRateOperationsParams) => `Delete ${Str.pluralize('rate', 'rates', count)}`,
-            enableRates: ({count}: DistanceRateOperationsParams) => `Enable ${Str.pluralize('rate', 'rates', count)}`,
-            disableRates: ({count}: DistanceRateOperationsParams) => `Disable ${Str.pluralize('rate', 'rates', count)}`,
+            deleteRates: ({count}) => {
+                const pluralForm = enPluralRules.select(count);
+                switch (pluralForm) {
+                    case 'one':
+                        return `Delete ${count} rate`;
+                    case 'other':
+                        return `Delete ${count} rates`;
+                    default:
+                        return `Delete ${count} rates`;
+                }
+            },
+            enableRates: ({count}) => {
+                const pluralForm = enPluralRules.select(count);
+                switch (pluralForm) {
+                    case 'one':
+                        return `Enable ${count} rate`;
+                    case 'other':
+                        return `Enable ${count} rates`;
+                    default:
+                        return `Enable ${count} rates`;
+                }
+            },
+            disableRates: ({count}) => {
+                const pluralForm = enPluralRules.select(count);
+                switch (pluralForm) {
+                    case 'one':
+                        return `Disable ${count} rate`;
+                    case 'other':
+                        return `Disable ${count} rates`;
+                    default:
+                        return `Disable ${count} rates`;
+                }
+            },
+            areYouSureDelete: ({count}: DistanceRateOperationsParams) => {
+                const pluralForm = enPluralRules.select(count);
+                switch (pluralForm) {
+                    case 'one':
+                        return `Are you sure you want to delete this ${count} rate?`;
+                    case 'other':
+                        return `Are you sure you want to delete these ${count} rates?`;
+                    default:
+                        return `Are you sure you want to delete these ${count} rates?`;
+                }
+            },
             enableRate: 'Enable rate',
             status: 'Status',
             unit: 'Unit',
             defaultCategory: 'Default category',
             deleteDistanceRate: 'Delete distance rate',
-            areYouSureDelete: ({count}: DistanceRateOperationsParams) => `Are you sure you want to delete ${Str.pluralize('this rate', 'these rates', count)}?`,
         },
         editor: {
             descriptionInputLabel: 'Description',
@@ -2465,7 +2528,7 @@ export default {
         deleteConfirmation: 'Are you sure that you want to delete this task?',
     },
     statementPage: {
-        title: (year, monthName) => `${monthName} ${year} statement`,
+        title: ({year, monthName}) => `${monthName} ${year} statement`,
         generatingPDF: "We're generating your PDF right now. Please come back later!",
     },
     keyboardShortcutsPage: {
