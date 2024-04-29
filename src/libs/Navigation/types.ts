@@ -76,7 +76,6 @@ type BackToParams = {
 };
 
 type SettingsNavigatorParamList = {
-    [SCREENS.SETTINGS.ROOT]: undefined;
     [SCREENS.SETTINGS.SHARE_CODE]: undefined;
     [SCREENS.SETTINGS.PROFILE.ROOT]: undefined;
     [SCREENS.SETTINGS.PROFILE.PRONOUNS]: undefined;
@@ -755,9 +754,9 @@ type WelcomeVideoModalNavigatorParamList = {
 };
 
 type BottomTabNavigatorParamList = {
-    [SCREENS.HOME]: undefined;
-    [SCREENS.SEARCH.BOTTOM_TAB]: undefined;
-    [SCREENS.SETTINGS.ROOT]: undefined;
+    [SCREENS.HOME]: {policyID?: string};
+    [SCREENS.SEARCH.BOTTOM_TAB]: {policyID?: string};
+    [SCREENS.SETTINGS.ROOT]: {policyID?: string};
 };
 
 type SharedScreensParamList = {
