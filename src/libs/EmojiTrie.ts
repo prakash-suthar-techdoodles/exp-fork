@@ -1,6 +1,7 @@
 import emojis, {localeEmojis} from '@assets/emojis';
 import type {Emoji, HeaderEmoji, PickerEmoji} from '@assets/emojis/types';
 import CONST from '@src/CONST';
+import {Locale} from '@src/types/onyx';
 import Timing from './actions/Timing';
 import Trie from './Trie';
 
@@ -95,9 +96,22 @@ function createTrie(lang: SupportedLanguage = CONST.LOCALES.DEFAULT): Trie<Emoji
     return trie;
 }
 
-const emojiTrie: EmojiTrie = supportedLanguages.reduce((prev, cur) => ({...prev, [cur]: createTrie(cur)}), {});
+// const emojiTrie: EmojiTrie = supportedLanguages.reduce((prev, cur) => ({...prev, [cur]: createTrie(cur)}), {});
+const emojiTrie: EmojiTrie = {
+    en: undefined,
+    es: undefined,
+};
+
+const buildEmojisTrie = (locale: 'en' | 'es') => {
+    if (emojiTrie[locale]) {
+        return;
+    }
+    emojiTrie[locale] = createTrie(locale);
+};
 
 Timing.end(CONST.TIMING.TRIE_INITIALIZATION);
 
 export default emojiTrie;
+export {buildEmojisTrie};
+
 export type {SupportedLanguage};
