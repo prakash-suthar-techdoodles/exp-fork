@@ -1694,6 +1694,7 @@ const CONST = {
             NAME: {
                 // Here we will add other connections names when we add support for them
                 QBO: 'quickbooksOnline',
+                XERO: 'xero',
             },
             SYNC_STAGE_NAME: {
                 STARTING_IMPORT: 'startingImport',
@@ -1708,6 +1709,15 @@ const CONST = {
                 QBO_IMPORT_TAX_CODES: 'quickbooksOnlineSyncTaxCodes',
                 QBO_CHECK_CONNECTION: 'quickbooksOnlineCheckConnection',
                 JOB_DONE: 'jobDone',
+                XERO_SYNC_STEP: 'xeroSyncStep',
+                XERO_SYNC_XERO_REIMBURSED_REPORTS: 'xeroSyncXeroReimbursedReports',
+                XERO_SYNC_EXPENSIFY_REIMBURSED_REPORTS: 'xeroSyncExpensifyReimbursedReports',
+                XERO_SYNC_IMPORT_CHART_OF_ACCOUNTS: 'xeroSyncImportChartOfAccounts',
+                XERO_SYNC_IMPORT_CATEGORIES: 'xeroSyncImportCategories',
+                XERO_SYNC_IMPORT_TRACKING_CATEGORIES: 'xeroSyncImportTrackingCategories',
+                XERO_SYNC_IMPORT_CUSTOMERS: 'xeroSyncImportCustomers',
+                XERO_SYNC_IMPORT_BANK_ACCOUNTS: 'xeroSyncImportBankAccounts',
+                XERO_SYNC_IMPORT_TAX_RATES: 'xeroSyncImportTaxRates',
             },
         },
     },

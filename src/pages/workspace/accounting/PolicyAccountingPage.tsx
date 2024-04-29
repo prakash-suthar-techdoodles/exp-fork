@@ -1,13 +1,17 @@
 import React, {useMemo, useRef, useState} from 'react';
 import {ActivityIndicator, View} from 'react-native';
-import type {OnyxEntry} from 'react-native-onyx';
 import {withOnyx} from 'react-native-onyx';
+import type {OnyxEntry} from 'react-native-onyx';
+import CollapsibleSection from '@components/CollapsibleSection';
 import ConfirmModal from '@components/ConfirmModal';
 import ConnectToQuickbooksOnlineButton from '@components/ConnectToQuickbooksOnlineButton';
+import ConnectToXeroButton from '@components/ConnectToXeroButton';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import * as Expensicons from '@components/Icon/Expensicons';
 import * as Illustrations from '@components/Icon/Illustrations';
+import type {LocaleContextProps} from '@components/LocaleContextProvider';
 import type {MenuItemProps} from '@components/MenuItem';
+import MenuItem from '@components/MenuItem';
 import MenuItemList from '@components/MenuItemList';
 import ScreenWrapper from '@components/ScreenWrapper';
 import ScrollView from '@components/ScrollView';
@@ -32,6 +36,9 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type {Policy, PolicyConnectionSyncProgress} from '@src/types/onyx';
+import type {PolicyConnectionName, Tenant} from '@src/types/onyx/Policy';
+import {isEmptyObject} from '@src/types/utils/EmptyObject';
+import type IconAsset from '@src/types/utils/IconAsset';
 
 type PolicyAccountingPageOnyxProps = {
     connectionSyncProgress: OnyxEntry<PolicyConnectionSyncProgress>;
@@ -43,6 +50,59 @@ type PolicyAccountingPageProps = WithPolicyProps &
         policy: Policy;
     };
 
+const accountingIntegrations = Object.values(CONST.POLICY.CONNECTIONS.NAME);
+
+type AccountingIntegration = {
+    title: string;
+    icon: IconAsset;
+    setupConnectionButton: React.ReactNode;
+    onImportPagePress: () => void;
+    onExportPagePress: () => void;
+    onAdvancedPagePress: () => void;
+};
+function accountingIntegrationData(
+    connectionName: PolicyConnectionName,
+    policyID: string,
+    translate: LocaleContextProps['translate'],
+    isConnectedToIntegration?: boolean,
+    integrationToDisconnect?: PolicyConnectionName,
+): AccountingIntegration | undefined {
+    switch (connectionName) {
+        case CONST.POLICY.CONNECTIONS.NAME.QBO:
+            return {
+                title: translate('workspace.accounting.qbo'),
+                icon: Expensicons.QBOSquare,
+                setupConnectionButton: (
+                    <ConnectToQuickbooksOnlineButton
+                        policyID={policyID}
+                        shouldDisconnectIntegrationBeforeConnecting={isConnectedToIntegration}
+                        integrationToDisconnect={integrationToDisconnect}
+                    />
+                ),
+                onImportPagePress: () => Navigation.navigate(ROUTES.POLICY_ACCOUNTING_QUICKBOOKS_ONLINE_IMPORT.getRoute(policyID)),
+                onExportPagePress: () => Navigation.navigate(ROUTES.POLICY_ACCOUNTING_QUICKBOOKS_ONLINE_EXPORT.getRoute(policyID)),
+                onAdvancedPagePress: () => Navigation.navigate(ROUTES.WORKSPACE_ACCOUNTING_QUICKBOOKS_ONLINE_ADVANCED.getRoute(policyID)),
+            };
+        case CONST.POLICY.CONNECTIONS.NAME.XERO:
+            return {
+                title: translate('workspace.accounting.xero'),
+                icon: Expensicons.XeroSquare,
+                setupConnectionButton: (
+                    <ConnectToXeroButton
+                        policyID={policyID}
+                        shouldDisconnectIntegrationBeforeConnecting={isConnectedToIntegration}
+                        integrationToDisconnect={integrationToDisconnect}
+                    />
+                ),
+                onImportPagePress: () => Navigation.navigate(ROUTES.POLICY_ACCOUNTING_XERO_IMPORT.getRoute(policyID)),
+                onExportPagePress: () => {},
+                onAdvancedPagePress: () => {},
+            };
+        default:
+            return undefined;
+    }
+}
+
 function PolicyAccountingPage({policy, connectionSyncProgress}: PolicyAccountingPageProps) {
     const theme = useTheme();
     const styles = useThemeStyles();
@@ -52,9 +112,15 @@ function PolicyAccountingPage({policy, connectionSyncProgress}: PolicyAccounting
     const [threeDotsMenuPosition, setThreeDotsMenuPosition] = useState<AnchorPosition>({horizontal: 0, vertical: 0});
     const [isDisconnectModalOpen, setIsDisconnectModalOpen] = useState(false);
     const threeDotsMenuContainerRef = useRef<View>(null);
+
     const isSyncInProgress = !!connectionSyncProgress?.stageInProgress && connectionSyncProgress.stageInProgress !== CONST.POLICY.CONNECTIONS.SYNC_STAGE_NAME.JOB_DONE;
-    const policyIsConnectedToAccountingSystem = Object.keys(policy.connections ?? {}).length > 0;
-    const policyID = policy.id ?? '';
+    const connectedIntegration = accountingIntegrations.find((integration) => !!policy?.connections?.[integration]) ?? connectionSyncProgress?.connectionName;
+    const policyID = policy?.id ?? '';
+
+    const policyConnectedToXero = connectedIntegration === CONST.POLICY.CONNECTIONS.NAME.XERO;
+
+    const tenants = useMemo<Tenant[]>(() => policy?.connections?.xero?.data?.tenants ?? [], [policy?.connections?.xero.data.tenants]);
+    const currentXeroOrganization = tenants.find((tenant) => tenant.id === policy?.connections?.xero.config.tenantID);
 
     const overflowMenu: ThreeDotsMenuProps['menuItems'] = useMemo(
         () => [
@@ -73,28 +139,34 @@ function PolicyAccountingPage({policy, connectionSyncProgress}: PolicyAccounting
         [translate, policyID, isOffline],
     );
 
-    const menuItems: MenuItemProps[] = useMemo(() => {
-        if (!policyIsConnectedToAccountingSystem && !isSyncInProgress) {
-            return [
-                {
-                    icon: Expensicons.QBOSquare,
-                    iconType: CONST.ICON_TYPE_AVATAR,
+    const connectionsMenuItems: MenuItemProps[] = useMemo(() => {
+        if (isEmptyObject(policy?.connections) && !isSyncInProgress) {
+            return accountingIntegrations.map((integration) => {
+                const integrationData = accountingIntegrationData(integration, policyID, translate);
+                const iconProps = integrationData?.icon ? {icon: integrationData.icon, iconType: CONST.ICON_TYPE_AVATAR} : {};
+                return {
+                    ...iconProps,
                     interactive: false,
                     wrapperStyle: [styles.sectionMenuItemTopDescription],
                     shouldShowRightComponent: true,
-                    title: translate('workspace.accounting.qbo'),
-                    rightComponent: <ConnectToQuickbooksOnlineButton policyID={policyID} />,
-                },
-            ];
+                    title: integrationData?.title,
+                    rightComponent: integrationData?.setupConnectionButton,
+                };
+            });
         }
+
+        if (!connectedIntegration) {
+            return [];
+        }
+        const integrationData = accountingIntegrationData(connectedIntegration, policyID, translate);
+        const iconProps = integrationData?.icon ? {icon: integrationData.icon, iconType: CONST.ICON_TYPE_AVATAR} : {};
         return [
             {
-                icon: Expensicons.QBOSquare,
-                iconType: 'avatar',
+                ...iconProps,
                 interactive: false,
                 wrapperStyle: [styles.sectionMenuItemTopDescription],
                 shouldShowRightComponent: true,
-                title: translate('workspace.accounting.qbo'),
+                title: integrationData?.title,
                 description: isSyncInProgress
                     ? translate('workspace.accounting.connections.syncStageName', connectionSyncProgress.stageInProgress)
                     : translate('workspace.accounting.lastSync'),
@@ -121,15 +193,34 @@ function PolicyAccountingPage({policy, connectionSyncProgress}: PolicyAccounting
                     </View>
                 ),
             },
-            ...(policyIsConnectedToAccountingSystem
+            ...(policyConnectedToXero
                 ? [
+                      {
+                          description: translate('workspace.xero.organization'),
+                          iconRight: Expensicons.ArrowRight,
+                          title: currentXeroOrganization?.name,
+                          wrapperStyle: [styles.sectionMenuItemTopDescription],
+                          shouldShowRightIcon: tenants.length > 1,
+                          shouldShowDescriptionOnTop: true,
+                          onPress: () => {
+                              if (!(tenants.length > 1)) {
+                                  return;
+                              }
+                              Navigation.navigate(ROUTES.POLICY_ACCOUNTING_XERO_ORGANIZATION.getRoute(policyID, currentXeroOrganization?.id ?? ''));
+                          },
+                      },
+                  ]
+                : []),
+            ...(isEmptyObject(policy?.connections)
+                ? []
+                : [
                       {
                           icon: Expensicons.Pencil,
                           iconRight: Expensicons.ArrowRight,
                           shouldShowRightIcon: true,
                           title: translate('workspace.accounting.import'),
                           wrapperStyle: [styles.sectionMenuItemTopDescription],
-                          onPress: () => Navigation.navigate(ROUTES.POLICY_ACCOUNTING_QUICKBOOKS_ONLINE_IMPORT.getRoute(policyID)),
+                          onPress: integrationData?.onImportPagePress,
                       },
                       {
                           icon: Expensicons.Send,
@@ -137,7 +228,7 @@ function PolicyAccountingPage({policy, connectionSyncProgress}: PolicyAccounting
                           shouldShowRightIcon: true,
                           title: translate('workspace.accounting.export'),
                           wrapperStyle: [styles.sectionMenuItemTopDescription],
-                          onPress: () => Navigation.navigate(ROUTES.POLICY_ACCOUNTING_QUICKBOOKS_ONLINE_EXPORT.getRoute(policyID)),
+                          onPress: integrationData?.onExportPagePress,
                       },
                       {
                           icon: Expensicons.Gear,
@@ -145,23 +236,42 @@ function PolicyAccountingPage({policy, connectionSyncProgress}: PolicyAccounting
                           shouldShowRightIcon: true,
                           title: translate('workspace.accounting.advanced'),
                           wrapperStyle: [styles.sectionMenuItemTopDescription],
-                          onPress: () => Navigation.navigate(ROUTES.WORKSPACE_ACCOUNTING_QUICKBOOKS_ONLINE_ADVANCED.getRoute(policyID)),
+                          onPress: integrationData?.onAdvancedPagePress,
                       },
-                  ]
-                : []),
+                  ]),
         ];
     }, [
+        connectedIntegration,
         connectionSyncProgress?.stageInProgress,
+        currentXeroOrganization,
+        tenants,
         isSyncInProgress,
         overflowMenu,
+        policy?.connections,
+        policyConnectedToXero,
         policyID,
-        policyIsConnectedToAccountingSystem,
-        styles.popoverMenuIcon,
-        styles.sectionMenuItemTopDescription,
+        styles,
         theme.spinner,
         threeDotsMenuPosition,
         translate,
     ]);
+
+    const otherIntegrationsItems = useMemo(() => {
+        if (isEmptyObject(policy?.connections) && !isSyncInProgress) {
+            return;
+        }
+        const otherIntegrations = accountingIntegrations.filter(
+            (integration) => (isSyncInProgress && integration !== connectionSyncProgress?.connectionName) || integration !== connectedIntegration,
+        );
+        return otherIntegrations.map((integration) => {
+            const integrationData = accountingIntegrationData(integration, policyID, translate, true, connectedIntegration);
+            return {
+                icon: integrationData?.icon,
+                title: integrationData?.title,
+                rightComponent: integrationData?.setupConnectionButton,
+            };
+        });
+    }, [connectedIntegration, connectionSyncProgress?.connectionName, isSyncInProgress, policy?.connections, policyID, translate]);
 
     const headerThreeDotsMenuItems: ThreeDotsMenuProps['menuItems'] = [
         {
@@ -209,9 +319,38 @@ function PolicyAccountingPage({policy, connectionSyncProgress}: PolicyAccounting
                                     childrenStyles={styles.pt5}
                                 >
                                     <MenuItemList
-                                        menuItems={menuItems}
+                                        menuItems={connectionsMenuItems}
                                         shouldUseSingleExecution
                                     />
+                                    {otherIntegrationsItems && otherIntegrationsItems?.length > 0 && (
+                                        <CollapsibleSection
+                                            title={translate('workspace.accounting.other')}
+                                            wrapperStyle={styles.pr3}
+                                            titleStyle={[styles.textNormal, styles.colorMuted]}
+                                        >
+                                            {otherIntegrationsItems.map((integration) =>
+                                                integration?.icon ? (
+                                                    <MenuItem
+                                                        icon={integration?.icon}
+                                                        iconType={CONST.ICON_TYPE_AVATAR}
+                                                        interactive={false}
+                                                        shouldShowRightComponent
+                                                        wrapperStyle={styles.sectionMenuItemTopDescription}
+                                                        title={integration.title}
+                                                        rightComponent={integration.rightComponent}
+                                                    />
+                                                ) : (
+                                                    <MenuItem
+                                                        interactive={false}
+                                                        shouldShowRightComponent
+                                                        wrapperStyle={styles.sectionMenuItemTopDescription}
+                                                        title={integration.title}
+                                                        rightComponent={integration.rightComponent}
+                                                    />
+                                                ),
+                                            )}
+                                        </CollapsibleSection>
+                                    )}
                                 </Section>
                             </View>
                         </ScrollView>
@@ -219,7 +358,9 @@ function PolicyAccountingPage({policy, connectionSyncProgress}: PolicyAccounting
                             title={translate('workspace.accounting.disconnectTitle')}
                             isVisible={isDisconnectModalOpen}
                             onConfirm={() => {
-                                removePolicyConnection(policyID, CONST.POLICY.CONNECTIONS.NAME.QBO);
+                                if (connectedIntegration) {
+                                    removePolicyConnection(policyID, connectedIntegration);
+                                }
                                 setIsDisconnectModalOpen(false);
                             }}
                             onCancel={() => setIsDisconnectModalOpen(false)}
