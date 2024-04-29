@@ -1,5 +1,5 @@
 import React from 'react';
-import {Image} from 'react-native';
+import {Image, View} from 'react-native';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeIllustrations from '@hooks/useThemeIllustrations';
 import useWindowDimensions from '@hooks/useWindowDimensions';
@@ -15,11 +15,13 @@ function AnimatedEmptyStateBackground() {
     const maxBackgroundWidth = variables.sideBarWidth + CONST.EMPTY_STATE_BACKGROUND.ASPECT_RATIO * CONST.EMPTY_STATE_BACKGROUND.WIDE_SCREEN.IMAGE_HEIGHT;
 
     return (
-        <Image
-            source={illustrations.EmptyStateBackgroundImage}
-            style={StyleUtils.getReportWelcomeBackgroundImageStyle(isSmallScreenWidth)}
-            resizeMode={windowWidth > maxBackgroundWidth ? 'repeat' : 'cover'}
-        />
+        <View style={StyleUtils.getReportWelcomeBackgroundContainerStyle(isSmallScreenWidth)}>
+            <Image
+                source={illustrations.EmptyStateBackgroundImage}
+                style={StyleUtils.getReportWelcomeBackgroundImageStyle(isSmallScreenWidth)}
+                resizeMode={windowWidth > maxBackgroundWidth ? 'repeat' : 'cover'}
+            />
+        </View>
     );
 }
 

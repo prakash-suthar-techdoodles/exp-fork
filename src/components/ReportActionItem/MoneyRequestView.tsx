@@ -14,12 +14,10 @@ import ViolationMessages from '@components/ViolationMessages';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import usePermissions from '@hooks/usePermissions';
-import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useViolations from '@hooks/useViolations';
 import type {ViolationField} from '@hooks/useViolations';
-import useWindowDimensions from '@hooks/useWindowDimensions';
 import * as CardUtils from '@libs/CardUtils';
 import * as CurrencyUtils from '@libs/CurrencyUtils';
 import type {MileageRate} from '@libs/DistanceRequestUtils';
@@ -99,9 +97,7 @@ function MoneyRequestView({
 }: MoneyRequestViewProps) {
     const theme = useTheme();
     const styles = useThemeStyles();
-    const StyleUtils = useStyleUtils();
     const {isOffline} = useNetwork();
-    const {isSmallScreenWidth} = useWindowDimensions();
     const {translate, toLocaleDigit} = useLocalize();
     const parentReportAction = parentReportActions?.[report.parentReportActionID ?? ''] ?? null;
     const isTrackExpense = ReportUtils.isTrackExpenseReport(report);
@@ -325,9 +321,9 @@ function MoneyRequestView({
     );
 
     return (
-        <View style={[StyleUtils.getReportWelcomeContainerStyle(isSmallScreenWidth, true, shouldShowAnimatedBackground)]}>
+        <View style={[styles.pRelative]}>
             {shouldShowAnimatedBackground && <AnimatedEmptyStateBackground />}
-            <View style={shouldShowAnimatedBackground && [StyleUtils.getReportWelcomeTopMarginStyle(isSmallScreenWidth, true)]}>
+            <>
                 {/* eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing */}
                 {(showMapAsImage || hasReceipt) && (
                     <OfflineWithFeedback
@@ -541,7 +537,7 @@ function MoneyRequestView({
                         />
                     </View>
                 )}
-            </View>
+            </>
             <SpacerView
                 shouldShow={shouldShowHorizontalRule}
                 style={[shouldShowHorizontalRule ? styles.reportHorizontalRule : {}]}
