@@ -3638,7 +3638,7 @@ const styles = (theme: ThemeColors) =>
             height: variables.optionRowHeight,
         },
 
-        archivedReportFooter: {
+        chatFooterBanner: {
             borderRadius: variables.componentBorderRadius,
             ...wordBreak.breakWord,
         },
