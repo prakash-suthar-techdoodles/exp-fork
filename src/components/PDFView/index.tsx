@@ -1,4 +1,4 @@
-import {lazy, Suspense} from 'react';
+import React, {lazy, Suspense} from 'react';
 import type {PDFViewProps} from './types';
 
 const PDFViewImpl = lazy(() => import('./PDFViewImpl'));

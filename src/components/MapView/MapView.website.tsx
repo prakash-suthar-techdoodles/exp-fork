@@ -1,4 +1,4 @@
-import {forwardRef, lazy, Suspense} from 'react';
+import React, {forwardRef, lazy, Suspense} from 'react';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import useThemeStyles from '@hooks/useThemeStyles';

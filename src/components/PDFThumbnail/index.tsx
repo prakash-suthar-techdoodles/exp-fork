@@ -1,4 +1,4 @@
-import {lazy, Suspense} from 'react';
+import React, {lazy, Suspense} from 'react';
 import type PDFThumbnailProps from './types';
 
 const PDFThumbnailImpl = lazy(() => import('./PDFThumbnailImpl'));
