@@ -1,4 +1,5 @@
 import React, {forwardRef, lazy, Suspense} from 'react';
+import ErrorBoundary from '@components/ErrorBoundary';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -14,22 +15,24 @@ const MapView = forwardRef<MapViewHandle, ComponentProps>((props, ref) => {
     const styles = useThemeStyles();
 
     return (
-        <Suspense
-            fallback={
-                <PendingMapView
-                    title={translate('distance.mapPending.title')}
-                    subtitle={isOffline ? translate('distance.mapPending.subtitle') : translate('distance.mapPending.onlineSubtitle')}
-                    style={styles.mapEditView}
+        <ErrorBoundary errorMessage="Failed to load MapView">
+            <Suspense
+                fallback={
+                    <PendingMapView
+                        title={translate('distance.mapPending.title')}
+                        subtitle={isOffline ? translate('distance.mapPending.subtitle') : translate('distance.mapPending.onlineSubtitle')}
+                        style={styles.mapEditView}
+                    />
+                }
+            >
+                <MapViewImpl
+                    // @ts-expect-error React.lazy loses type for ref.
+                    ref={ref}
+                    // eslint-disable-next-line react/jsx-props-no-spreading
+                    {...props}
                 />
-            }
-        >
-            <MapViewImpl
-                // @ts-expect-error React.lazy loses type for ref.
-                ref={ref}
-                // eslint-disable-next-line react/jsx-props-no-spreading
-                {...props}
-            />
-        </Suspense>
+            </Suspense>
+        </ErrorBoundary>
     );
 });
 
