@@ -107,6 +107,11 @@ function StatusPage({draftStatus, currentUserPersonalDetails}: StatusPageProps) 
         formRef.current?.resetForm({[INPUT_IDS.EMOJI_CODE]: ''});
 
         InteractionManager.runAfterInteractions(() => {
+            // We only want to navigate back if the status RHP modal is still open
+            if (!Navigation.isDisplayedInModal()) {
+                return; // Early return if not displayed in modal
+            }
+
             navigateBackToPreviousScreen();
         });
     };
