@@ -1,5 +1,4 @@
 import type * as NativeNavigation from '@react-navigation/native';
-import type {StackScreenProps} from '@react-navigation/stack';
 import {fireEvent, screen} from '@testing-library/react-native';
 import React, {useMemo} from 'react';
 import type {ComponentType} from 'react';
@@ -10,6 +9,7 @@ import {LocaleContextProvider} from '@components/LocaleContextProvider';
 import OptionListContextProvider, {OptionsListContext} from '@components/OptionListContextProvider';
 import {KeyboardStateProvider} from '@components/withKeyboardState';
 import type {WithNavigationFocusProps} from '@components/withNavigationFocus';
+import type {PlatformStackScreenProps} from '@libs/Navigation/PlatformStackNavigation/types';
 import type {RootStackParamList} from '@libs/Navigation/types';
 import {createOptionList} from '@libs/OptionsListUtils';
 import ChatFinderPage from '@pages/ChatFinderPage';
@@ -123,7 +123,7 @@ afterEach(() => {
     Onyx.clear();
 });
 
-type ChatFinderPageProps = StackScreenProps<RootStackParamList, typeof SCREENS.CHAT_FINDER_ROOT> & {
+type ChatFinderPageProps = PlatformStackScreenProps<RootStackParamList, typeof SCREENS.CHAT_FINDER_ROOT> & {
     betas: OnyxEntry<Beta[]>;
     reports: OnyxCollection<Report>;
     isSearchingForReports: OnyxEntry<boolean>;

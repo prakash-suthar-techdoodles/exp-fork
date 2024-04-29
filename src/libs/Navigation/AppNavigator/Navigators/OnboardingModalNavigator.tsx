@@ -1,10 +1,10 @@
-import {createStackNavigator} from '@react-navigation/stack';
 import React from 'react';
 import {View} from 'react-native';
 import NoDropZone from '@components/DragAndDrop/NoDropZone';
 import useOnboardingLayout from '@hooks/useOnboardingLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 import OnboardingModalNavigatorScreenOptions from '@libs/Navigation/AppNavigator/OnboardingModalNavigatorScreenOptions';
+import createPlatformStackNavigator from '@libs/Navigation/PlatformStackNavigation/createPlatformStackNavigator';
 import type {OnboardingModalNavigatorParamList} from '@libs/Navigation/types';
 import OnboardingPersonalDetails from '@pages/OnboardingPersonalDetails';
 import OnboardingPurpose from '@pages/OnboardingPurpose';
@@ -12,7 +12,7 @@ import OnboardingWork from '@pages/OnboardingWork';
 import SCREENS from '@src/SCREENS';
 import Overlay from './Overlay';
 
-const Stack = createStackNavigator<OnboardingModalNavigatorParamList>();
+const Stack = createPlatformStackNavigator<OnboardingModalNavigatorParamList>();
 
 function OnboardingModalNavigator() {
     const styles = useThemeStyles();

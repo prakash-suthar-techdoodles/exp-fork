@@ -1,4 +1,3 @@
-import type {RouteProp} from '@react-navigation/native';
 import {useNavigationState} from '@react-navigation/native';
 import PropTypes from 'prop-types';
 import type {ComponentType, ForwardedRef, RefAttributes} from 'react';
@@ -6,6 +5,7 @@ import React, {forwardRef} from 'react';
 import type {OnyxEntry} from 'react-native-onyx';
 import {withOnyx} from 'react-native-onyx';
 import {translatableTextPropTypes} from '@libs/Localize';
+import type {PlatformStackRouteProp} from '@libs/Navigation/PlatformStackNavigation/types';
 import type {
     BottomTabNavigatorParamList,
     CentralPaneNavigatorParamList,
@@ -27,7 +27,7 @@ type NavigatorsParamList = BottomTabNavigatorParamList &
     FullScreenNavigatorParamList &
     WorkspacesCentralPaneNavigatorParamList;
 
-type PolicyRoute = RouteProp<
+type PolicyRoute = PlatformStackRouteProp<
     NavigatorsParamList,
     | typeof SCREENS.REIMBURSEMENT_ACCOUNT_ROOT
     | typeof SCREENS.WORKSPACE.INITIAL
