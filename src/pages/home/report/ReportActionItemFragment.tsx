@@ -8,6 +8,8 @@ import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import useThemeStyles from '@hooks/useThemeStyles';
 import convertToLTR from '@libs/convertToLTR';
+import type {TextWithEmoji} from '@libs/EmojiUtils';
+import {splitTextWithEmojis} from '@libs/EmojiUtils';
 import * as ReportUtils from '@libs/ReportUtils';
 import CONST from '@src/CONST';
 import type * as OnyxCommon from '@src/types/onyx/OnyxCommon';
@@ -157,18 +159,30 @@ function ReportActionItemFragment({
                 );
             }
 
+            const containEmoji = CONST.REGEX.EMOJIS.test(fragment.text);
+            let processedTextArray: TextWithEmoji[] = [];
+            if (containEmoji) {
+                processedTextArray = splitTextWithEmojis(fragment.text);
+            }
+
             return (
                 <UserDetailsTooltip
                     accountID={accountID}
                     delegateAccountID={delegateAccountID}
                     icon={actorIcon}
                 >
-                    <Text
-                        numberOfLines={isSingleLine ? 1 : undefined}
-                        style={[styles.chatItemMessageHeaderSender, isSingleLine ? styles.pre : styles.preWrap]}
-                    >
-                        {fragment?.text}
-                    </Text>
+                    {containEmoji ? (
+                        <Text style={[styles.chatItemMessageHeaderSender, isSingleLine ? styles.pre : styles.preWrap]}>
+                            {processedTextArray.map(({text, isEmoji}) => (isEmoji ? <Text style={styles.emojisWithinText}>{text}</Text> : text))}
+                        </Text>
+                    ) : (
+                        <Text
+                            numberOfLines={isSingleLine ? 1 : undefined}
+                            style={[styles.chatItemMessageHeaderSender, isSingleLine ? styles.pre : styles.preWrap]}
+                        >
+                            {fragment?.text}
+                        </Text>
+                    )}
                 </UserDetailsTooltip>
             );
         }

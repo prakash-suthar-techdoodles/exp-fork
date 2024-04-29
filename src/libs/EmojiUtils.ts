@@ -74,7 +74,7 @@ const getEmojiUnicode = memoize((input: string) => {
             .charCodeAt(0)
             .toString()
             .split(' ')
-            .map((val) => parseInt(val, 10).toString(16))
+            .map((val: string) => parseInt(val, 10).toString(16))
             .join(' ');
     }
 
@@ -127,7 +127,8 @@ function isFirstLetterEmoji(message: string): boolean {
  */
 function containsOnlyEmojis(message: string): boolean {
     const trimmedMessage = Str.replaceAll(message.replace(/ /g, ''), '\n', '');
-    const match = trimmedMessage.match(CONST.REGEX.EMOJIS);
+    const emojisRegex = new RegExp(CONST.REGEX.EMOJIS, CONST.REGEX.EMOJIS.flags.concat('g'));
+    const match = trimmedMessage.match(emojisRegex);
 
     if (!match) {
         return false;
@@ -569,7 +570,57 @@ function getSpacersIndexes(allEmojis: EmojiPickerList): number[] {
     return spacersIndexes;
 }
 
-export type {HeaderIndice, EmojiPickerList, EmojiSpacer, EmojiPickerListItem};
+type TextWithEmoji = {
+    text: string;
+    isEmoji: boolean;
+};
+
+function splitTextWithEmojis(text = ''): TextWithEmoji[] {
+    if (!text) {
+        return [];
+    }
+
+    // The regex needs to be cloned because `exec()` is a stateful operation and maintains the state inside
+    // the regex variable itself, so we must have a independent instance for each function's call.
+    const emojisRegex = new RegExp(CONST.REGEX.EMOJIS, CONST.REGEX.EMOJIS.flags.concat('g'));
+
+    const splitText: TextWithEmoji[] = [];
+    let regexResult: RegExpExecArray | null;
+    let lastMatchIndexEnd = 0;
+    do {
+        regexResult = emojisRegex.exec(text);
+
+        if (regexResult?.indices) {
+            const matchIndexStart = regexResult.indices[0][0];
+            const matchIndexEnd = regexResult.indices[0][1];
+
+            if (matchIndexStart > lastMatchIndexEnd) {
+                splitText.push({
+                    text: text.slice(lastMatchIndexEnd, matchIndexStart),
+                    isEmoji: false,
+                });
+            }
+
+            splitText.push({
+                text: text.slice(matchIndexStart, matchIndexEnd),
+                isEmoji: true,
+            });
+
+            lastMatchIndexEnd = matchIndexEnd;
+        }
+    } while (regexResult !== null);
+
+    if (lastMatchIndexEnd < text.length) {
+        splitText.push({
+            text: text.slice(lastMatchIndexEnd, text.length),
+            isEmoji: false,
+        });
+    }
+
+    return splitText;
+}
+
+export type {HeaderIndice, EmojiPickerList, EmojiSpacer, EmojiPickerListItem, TextWithEmoji};
 
 export {
     findEmojiByName,
@@ -595,4 +646,5 @@ export {
     hasAccountIDEmojiReacted,
     getRemovedSkinToneEmoji,
     getSpacersIndexes,
+    splitTextWithEmojis,
 };
