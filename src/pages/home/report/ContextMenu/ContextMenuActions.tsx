@@ -1,4 +1,3 @@
-import ExpensiMark from 'expensify-common/lib/ExpensiMark';
 import Str from 'expensify-common/lib/str';
 import type {MutableRefObject} from 'react';
 import React from 'react';
@@ -19,6 +18,7 @@ import getAttachmentDetails from '@libs/fileDownload/getAttachmentDetails';
 import * as Localize from '@libs/Localize';
 import ModifiedExpenseMessage from '@libs/ModifiedExpenseMessage';
 import Navigation from '@libs/Navigation/Navigation';
+import {parseHtmlToMarkdown, parseHtmlToText} from '@libs/OnyxAwareParser';
 import ReportActionComposeFocusManager from '@libs/ReportActionComposeFocusManager';
 import * as ReportActionsUtils from '@libs/ReportActionsUtils';
 import * as ReportUtils from '@libs/ReportUtils';
@@ -41,11 +41,10 @@ function getActionHtml(reportAction: OnyxEntry<ReportAction>): string {
 
 /** Sets the HTML string to Clipboard */
 function setClipboardMessage(content: string) {
-    const parser = new ExpensiMark();
     if (!Clipboard.canSetHtml()) {
-        Clipboard.setString(parser.htmlToMarkdown(content));
+        Clipboard.setString(parseHtmlToMarkdown(content));
     } else {
-        const plainText = parser.htmlToText(content);
+        const plainText = parseHtmlToText(content);
         Clipboard.setHtml(content, plainText);
     }
 }
@@ -237,8 +236,7 @@ const ContextMenuActions: ContextMenuAction[] = [
             }
             const editAction = () => {
                 if (!draftMessage) {
-                    const parser = new ExpensiMark();
-                    Report.saveReportActionDraft(reportID, reportAction, parser.htmlToMarkdown(getActionHtml(reportAction)));
+                    Report.saveReportActionDraft(reportID, reportAction, parseHtmlToMarkdown(getActionHtml(reportAction)));
                 } else {
                     Report.deleteReportActionDraft(reportID, reportAction);
                 }
