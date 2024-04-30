@@ -5913,6 +5913,10 @@ function isDeprecatedGroupDM(report: OnyxEntry<Report>): boolean {
     );
 }
 
+function isRootGroupChat(report: OnyxEntry<Report>): boolean {
+    return !isChatThread(report) && (isGroupChat(report) || isDeprecatedGroupDM(report));
+}
+
 /**
  * Assume any report without a reportID is unusable.
  */
@@ -6313,8 +6317,41 @@ function hasActionsWithErrors(reportID: string): boolean {
     return Object.values(reportActions).some((action) => !isEmptyObject(action.errors));
 }
 
-function canLeavePolicyExpenseChat(report: OnyxEntry<Report>, policy: OnyxEntry<Policy>): boolean {
+function isNonAdminOrOwnerOfPolicyExpenseChat(report: OnyxEntry<Report>, policy: OnyxEntry<Policy>): boolean {
     return isPolicyExpenseChat(report) && !(PolicyUtils.isPolicyAdmin(policy) || PolicyUtils.isPolicyOwner(policy, currentUserAccountID ?? -1) || isReportOwner(report));
+}
+
+/**
+ * Whether the user can join a report
+ */
+function canJoinChat(report: OnyxEntry<Report>, parentReportAction: OnyxEntry<ReportAction>, policy: OnyxEntry<Policy>): boolean {
+    // We disabled thread functions for whisper action
+    // So we should not show join option for existing thread on whisper message that has already been left, or manually leave it
+    if (ReportActionsUtils.isWhisperAction(parentReportAction)) {
+        return false;
+    }
+
+    // If the notification preference of the chat is not hidden that means we have already joined the chat
+    if (report?.notificationPreference !== CONST.REPORT.NOTIFICATION_PREFERENCE.HIDDEN) {
+        return false;
+    }
+
+    if (isRootGroupChat(report) || isSelfDM(report)) {
+        return false;
+    }
+
+    return isChatReport(report) || canLeaveRoom(report, !isEmptyObject(policy)) || isNonAdminOrOwnerOfPolicyExpenseChat(report, policy);
+}
+
+/**
+ * Whether the user can leave a report
+ */
+function canLeaveChat(report: OnyxEntry<Report>, policy: OnyxEntry<Policy>): boolean {
+    if (isSelfDM(report) || isRootGroupChat(report)) {
+        return false;
+    }
+
+    return (isChatThread(report) && !!report?.notificationPreference?.length) || canLeaveRoom(report, !isEmptyObject(policy)) || isNonAdminOrOwnerOfPolicyExpenseChat(report, policy);
 }
 
 function getReportActionActorAccountID(reportAction: OnyxEntry<ReportAction>, iouReport: OnyxEntry<Report> | undefined): number | undefined {
@@ -6467,8 +6504,10 @@ export {
     canEditRoomVisibility,
     canEditWriteCapability,
     canFlagReportAction,
-    canLeavePolicyExpenseChat,
+    isNonAdminOrOwnerOfPolicyExpenseChat,
     canLeaveRoom,
+    canJoinChat,
+    canLeaveChat,
     canReportBeMentionedWithinPolicy,
     canRequestMoney,
     canSeeDefaultRoom,
@@ -6596,6 +6635,7 @@ export {
     isDM,
     isDefaultRoom,
     isDeprecatedGroupDM,
+    isRootGroupChat,
     isExpenseReport,
     isExpenseRequest,
     isExpensifyOnlyParticipantInReport,
