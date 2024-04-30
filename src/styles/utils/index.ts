@@ -420,6 +420,13 @@ function getBackgroundAndBorderStyle(backgroundColor: ColorValue | undefined): V
 }
 
 /**
+ * Returns a style with the specified borderRadius
+ */
+function getBorderRadiusStyle(borderRadius: number): ViewStyle {
+    return {borderRadius};
+}
+
+/**
  * Returns a style with the specified backgroundColor
  */
 function getBackgroundColorStyle(backgroundColor: ColorValue): ViewStyle {
@@ -1102,6 +1109,7 @@ const staticStyleUtils = {
     getAvatarSize,
     getAvatarWidthStyle,
     getBackgroundAndBorderStyle,
+    getBorderRadiusStyle,
     getBackgroundColorStyle,
     getBackgroundColorWithOpacityStyle,
     getPaddingLeft,

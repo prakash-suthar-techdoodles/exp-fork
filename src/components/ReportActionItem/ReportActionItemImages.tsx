@@ -69,6 +69,7 @@ function ReportActionItemImages({images, size, total, isHovered = false}: Report
                     // Show a border to separate multiple images. Shown to the right for each except the last.
                     const shouldShowBorder = shownImages.length > 1 && index < shownImages.length - 1;
                     const borderStyle = shouldShowBorder ? styles.reportActionItemImageBorder : {};
+
                     return (
                         <View
                             key={`${index}-${image}`}
@@ -83,6 +84,7 @@ function ReportActionItemImages({images, size, total, isHovered = false}: Report
                                 transaction={transaction}
                                 isThumbnail={isThumbnail}
                                 isSingleImage={numberOfShownImages === 1}
+                                shouldMapHaveNoBorderRadius
                             />
                         </View>
                     );
