@@ -4344,6 +4344,15 @@ const styles = (theme: ThemeColors) =>
             borderColor: theme.highlightBG,
             borderWidth: 2,
         },
+
+        magicCodeAnimation: {
+            width: variables.modalTopIconWidth,
+        },
+
+        justSignedInModalAnimation: (is2FARequired: boolean) => ({
+            height: is2FARequired ? variables.modalTopIconHeight : variables.modalTopBigIconHeight,
+        }),
+
         moneyRequestViewImage: {
             ...spacing.mh5,
             ...spacing.mv3,
