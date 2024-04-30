@@ -1,3 +1,5 @@
+import type {RouteProp} from '@react-navigation/native';
+import {useRoute} from '@react-navigation/native';
 import {format} from 'date-fns';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {View} from 'react-native';
@@ -21,9 +23,11 @@ import type {Log} from '@libs/Console';
 import localFileCreate from '@libs/localFileCreate';
 import localFileDownload from '@libs/localFileDownload';
 import Navigation from '@libs/Navigation/Navigation';
+import type {SettingsNavigatorParamList} from '@navigation/types';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
+import type SCREENS from '@src/SCREENS';
 import type {CapturedLogs} from '@src/types/onyx';
 
 type ConsolePageOnyxProps = {
@@ -43,6 +47,9 @@ function ConsolePage({capturedLogs, shouldStoreLogs}: ConsolePageProps) {
     const [isLimitModalVisible, setIsLimitModalVisible] = useState(false);
     const {translate} = useLocalize();
     const styles = useThemeStyles();
+
+    const route = useRoute<RouteProp<SettingsNavigatorParamList, typeof SCREENS.SETTINGS.CONSOLE>>();
+    const isViaTestToolsModal = route.params?.isViaTestToolsModal ?? false;
 
     const logsList = useMemo(
         () =>
@@ -91,7 +98,7 @@ function ConsolePage({capturedLogs, shouldStoreLogs}: ConsolePageProps) {
                 return;
             }
 
-            Navigation.navigate(ROUTES.SETTINGS_SHARE_LOG.getRoute(path));
+            Navigation.navigate(ROUTES.SETTINGS_SHARE_LOG.getRoute(path, isViaTestToolsModal));
         });
     };
 
@@ -114,7 +121,9 @@ function ConsolePage({capturedLogs, shouldStoreLogs}: ConsolePageProps) {
         <ScreenWrapper testID={ConsolePage.displayName}>
             <HeaderWithBackButton
                 title={translate('initialSettingsPage.troubleshoot.debugConsole')}
-                onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS_TROUBLESHOOT)}
+                onBackButtonPress={() => {
+                    Navigation.goBack(isViaTestToolsModal ? undefined : ROUTES.SETTINGS_TROUBLESHOOT);
+                }}
             />
             <View style={[styles.border, styles.highlightBG, styles.borderNone, styles.mh5, styles.flex1]}>
                 <InvertedFlatList

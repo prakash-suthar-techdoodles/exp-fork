@@ -10,7 +10,9 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as Console from '@libs/actions/Console';
 import {parseStringifiedMessages} from '@libs/Console';
+import Navigation from '@navigation/Navigation';
 import ONYXKEYS from '@src/ONYXKEYS';
+import ROUTES from '@src/ROUTES';
 import type {CapturedLogs, Log} from '@src/types/onyx';
 
 type BaseClientSideLoggingToolMenuOnyxProps = {
@@ -30,9 +32,22 @@ type BaseClientSideLoggingToolProps = {
     onDisableLogging: (logs: Log[]) => void;
     /** Action to run when enabling logging */
     onEnableLogging?: () => void;
+    /** Boolean to know if this was opened via test tools modal */
+    isViaTestToolsModal: boolean;
+    /** Action to close the test tools modal */
+    closeTestToolsModal?: () => void;
 } & BaseClientSideLoggingToolMenuOnyxProps;
 
-function BaseClientSideLoggingToolMenu({shouldStoreLogs, capturedLogs, file, onShareLogs, onDisableLogging, onEnableLogging}: BaseClientSideLoggingToolProps) {
+function BaseClientSideLoggingToolMenu({
+    shouldStoreLogs,
+    capturedLogs,
+    file,
+    onShareLogs,
+    onDisableLogging,
+    onEnableLogging,
+    isViaTestToolsModal,
+    closeTestToolsModal,
+}: BaseClientSideLoggingToolProps) {
     const {translate} = useLocalize();
 
     const onToggle = () => {
@@ -59,6 +74,7 @@ function BaseClientSideLoggingToolMenu({shouldStoreLogs, capturedLogs, file, onS
         Console.disableLoggingAndFlushLogs();
     };
     const styles = useThemeStyles();
+
     return (
         <>
             <TestToolRow title={translate('initialSettingsPage.troubleshoot.clientSideLogging')}>
@@ -68,6 +84,20 @@ function BaseClientSideLoggingToolMenu({shouldStoreLogs, capturedLogs, file, onS
                     onToggle={onToggle}
                 />
             </TestToolRow>
+            {!!shouldStoreLogs && isViaTestToolsModal && (
+                <TestToolRow title={translate('initialSettingsPage.troubleshoot.debugConsole')}>
+                    <Button
+                        small
+                        text={translate('initialSettingsPage.debugConsole.viewConsole')}
+                        onPress={() => {
+                            if (closeTestToolsModal) {
+                                closeTestToolsModal();
+                            }
+                            Navigation.navigate(ROUTES.SETTINGS_CONSOLE.getRoute(isViaTestToolsModal));
+                        }}
+                    />
+                </TestToolRow>
+            )}
             {!!file && (
                 <>
                     <Text style={[styles.textLabelSupporting, styles.mb4]}>{`path: ${file.path}`}</Text>

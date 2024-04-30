@@ -55,7 +55,7 @@ function TroubleshootPage({shouldStoreLogs}: TroubleshootPageProps) {
         const debugConsoleItem: BaseMenuItem = {
             translationKey: 'initialSettingsPage.troubleshoot.viewConsole',
             icon: Expensicons.Gear,
-            action: waitForNavigate(() => Navigation.navigate(ROUTES.SETTINGS_CONSOLE)),
+            action: waitForNavigate(() => Navigation.navigate(ROUTES.SETTINGS_CONSOLE.getRoute(false))),
         };
 
         const baseMenuItems: BaseMenuItem[] = [
@@ -119,7 +119,7 @@ function TroubleshootPage({shouldStoreLogs}: TroubleshootPageProps) {
                     >
                         <View style={[styles.flex1, styles.mt5]}>
                             <View>
-                                <ClientSideLoggingToolMenu />
+                                <ClientSideLoggingToolMenu isViaTestToolsModal={false} />
                             </View>
                             <MenuItemList
                                 menuItems={menuItems}
