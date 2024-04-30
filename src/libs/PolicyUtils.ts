@@ -390,6 +390,13 @@ function canSendInvoice(policies: OnyxCollection<Policy>): boolean {
     return getActiveAdminWorkspaces(policies).length > 0;
 }
 
+function hasDependentTags(policy: OnyxEntry<Policy>, policyTagList: OnyxEntry<PolicyTagList>) {
+    if (!policy?.hasMultipleTagLists) {
+        return false;
+    }
+    return Object.values(policyTagList ?? {}).some((tagList) => Object.values(tagList.tags).some((tag) => !!tag.rules?.parentTagsFilter || !!tag.parentTagsFilter));
+}
+
 export {
     getActivePolicies,
     hasAccountingConnections,
@@ -435,6 +442,7 @@ export {
     getPolicy,
     getActiveAdminWorkspaces,
     canSendInvoice,
+    hasDependentTags,
 };
 
 export type {MemberEmailsToAccountIDs};

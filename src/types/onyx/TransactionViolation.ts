@@ -10,6 +10,7 @@ type TransactionViolation = {
     type: string;
     name: ViolationName;
     data?: {
+        policyHasDependentTags?: boolean;
         rejectedBy?: string;
         rejectReason?: string;
         formattedLimit?: string;
