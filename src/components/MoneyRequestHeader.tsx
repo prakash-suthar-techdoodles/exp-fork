@@ -16,6 +16,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type {Policy, Report, ReportAction, ReportActions, Session, Transaction} from '@src/types/onyx';
 import type {OriginalMessageIOU} from '@src/types/onyx/OriginalMessage';
+import Button from './Button';
 import ConfirmModal from './ConfirmModal';
 import HeaderWithBackButton from './HeaderWithBackButton';
 import HoldBanner from './HoldBanner';
@@ -73,7 +74,8 @@ function MoneyRequestHeader({
     const isSettled = ReportUtils.isSettled(moneyRequestReport?.reportID);
     const isApproved = ReportUtils.isReportApproved(moneyRequestReport);
     const isOnHold = TransactionUtils.isOnHold(transaction);
-    const {windowWidth} = useWindowDimensions();
+    const isDuplicate = TransactionUtils.isDuplicate(transaction?.transactionID ?? '');
+    const {windowWidth, isSmallScreenWidth} = useWindowDimensions();
 
     // Only the requestor can take delete the expense, admins can only edit it.
     const isActionOwner = typeof parentReportAction?.actorAccountID === 'number' && typeof session?.accountID === 'number' && parentReportAction.actorAccountID === session?.accountID;
@@ -190,7 +192,15 @@ function MoneyRequestHeader({
                     policy={policy}
                     shouldShowBackButton={shouldUseNarrowLayout}
                     onBackButtonPress={() => Navigation.goBack(undefined, false, true)}
-                />
+                >
+                    {isDuplicate && !isSmallScreenWidth && (
+                        <Button
+                            success
+                            medium
+                            text={translate('iou.reviewDuplicates')}
+                        />
+                    )}
+                </HeaderWithBackButton>
                 {isPending && (
                     <MoneyRequestHeaderStatusBar
                         title={translate('iou.pending')}
@@ -205,7 +215,22 @@ function MoneyRequestHeader({
                         shouldShowBorderBottom
                     />
                 )}
-                {isOnHold && <HoldBanner />}
+                {isOnHold && (
+                    <HoldBanner
+                        isRequestDuplicate={isDuplicate}
+                        shouldShowBorderBottom={!isDuplicate || !isSmallScreenWidth}
+                    />
+                )}
+                {isDuplicate && isSmallScreenWidth && (
+                    <View style={[styles.ph5, styles.pb2, styles.borderBottom]}>
+                        <Button
+                            success
+                            medium
+                            text={translate('iou.reviewDuplicates')}
+                            style={[styles.w100, styles.pr0]}
+                        />
+                    </View>
+                )}
             </View>
             <ConfirmModal
                 title={translate('iou.deleteExpense')}
