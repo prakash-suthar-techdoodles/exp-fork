@@ -259,7 +259,6 @@ type MenuItemBaseProps = {
 };
 
 type MenuItemProps = (IconProps | AvatarProps | NoIcon) & MenuItemBaseProps;
-
 function MenuItem(
     {
         interactive = true,
@@ -425,6 +424,61 @@ function MenuItem(
         }
     };
 
+    const truncateMarkdown = (htmlText: string, limit: number, addEllipsis = true) => {
+        const parser = new ExpensiMark();
+        const markdownText = parser.htmlToMarkdown(htmlText);
+        if (markdownText.length <= limit) {
+            return markdownText;
+        }
+
+
+        const markdownChars = markdownText.split('');
+        let characterCount = 0;
+        let overallIndex = 0;
+
+        for (const char of markdownChars) {
+            if (/[a-zA-Z\s\n]/.test(char)) {
+                characterCount++;
+            }
+            overallIndex++;
+            if (characterCount >= limit) {
+                break;
+            }
+        }
+
+        let truncatedText = markdownText.substring(0, overallIndex);
+
+        // Avoid cutting the text in the middle of a Markdown element (like [link](url))
+        const lastSpace = truncatedText.lastIndexOf(' ');
+        const lastOpenBracket = truncatedText.lastIndexOf('[');
+        const lastCloseBracket = truncatedText.lastIndexOf(']');
+        const lastOpenParen = truncatedText.lastIndexOf('(');
+        const lastCloseParen = truncatedText.lastIndexOf(')');
+
+        // Extend the cut-off point to avoid breaking Markdown links and parenthesis syntax
+        if (lastCloseBracket > lastOpenBracket && lastCloseBracket > lastSpace) {
+            const nextCloseParen = markdownText.indexOf(')', lastCloseBracket);
+            if (nextCloseParen !== -1 && nextCloseParen <= overallIndex) {
+                truncatedText = markdownText.substring(0, nextCloseParen + 1);
+            } else {
+                truncatedText = markdownText.substring(0, lastCloseBracket + 1);
+            }
+        } else if (lastCloseParen > lastOpenParen && lastCloseParen > lastSpace) {
+            truncatedText = markdownText.substring(0, lastCloseParen + 1);
+        } else {
+            truncatedText = markdownText.substring(0, lastSpace);
+        }
+
+        // Add ellipsis if specified
+        if (addEllipsis) {
+            truncatedText += '...';
+        }
+
+        return parser.replace(truncatedText);
+    };
+
+    const maxDescLength = 300;
+
     return (
         <View>
             {!!label && !isLabelHoverable && (
@@ -548,7 +602,7 @@ function MenuItem(
                                             <View style={[styles.flexRow, styles.alignItemsCenter]}>
                                                 {!!title && (shouldRenderAsHTML || (shouldParseTitle && !!html.length)) && (
                                                     <View style={styles.renderHTMLTitle}>
-                                                        <RenderHTML html={processedTitle} />
+                                                        <RenderHTML html={truncateMarkdown(processedTitle, maxDescLength)} />
                                                     </View>
                                                 )}
                                                 {!shouldRenderAsHTML && !shouldParseTitle && !!title && (
