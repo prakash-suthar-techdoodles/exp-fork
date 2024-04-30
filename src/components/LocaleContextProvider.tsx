@@ -38,7 +38,10 @@ type LocaleContextProps = {
     datetimeToRelative: (datetime: string) => string;
 
     /** Formats a datetime to local date and time string */
-    datetimeToCalendarTime: (datetime: string, includeTimezone: boolean, isLowercase?: boolean) => string;
+    timestampToCalendarTime: (timestamp: number, isLowercase?: boolean) => string;
+
+    /** Formats a datetime to local time string */
+    datetimeToLocalString: (datetime: string, includeTimezone: boolean) => string;
 
     /** Updates date-fns internal locale */
     updateLocale: () => void;
@@ -64,7 +67,8 @@ const LocaleContext = createContext<LocaleContextProps>({
     translate: () => '',
     numberFormat: () => '',
     datetimeToRelative: () => '',
-    datetimeToCalendarTime: () => '',
+    timestampToCalendarTime: () => '',
+    datetimeToLocalString: () => '',
     updateLocale: () => '',
     formatPhoneNumber: () => '',
     toLocaleDigit: () => '',
@@ -89,10 +93,15 @@ function LocaleContextProvider({preferredLocale, currentUserPersonalDetails = {}
 
     const datetimeToRelative = useMemo<LocaleContextProps['datetimeToRelative']>(() => (datetime) => DateUtils.datetimeToRelative(locale, datetime), [locale]);
 
-    const datetimeToCalendarTime = useMemo<LocaleContextProps['datetimeToCalendarTime']>(
+    const timestampToCalendarTime = useMemo<LocaleContextProps['timestampToCalendarTime']>(
         () =>
-            (datetime, includeTimezone, isLowercase = false) =>
-                DateUtils.datetimeToCalendarTime(locale, datetime, includeTimezone, selectedTimezone, isLowercase),
+            (timestamp, isLowercase = false) =>
+                DateUtils.timestampToCalendarTime(locale, timestamp, selectedTimezone, isLowercase),
+        [locale, selectedTimezone],
+    );
+
+    const datetimeToLocalString = useMemo<LocaleContextProps['datetimeToLocalString']>(
+        () => (datetime, includedTimezone) => DateUtils.datetimeToLocalString(locale, datetime, selectedTimezone, includedTimezone),
         [locale, selectedTimezone],
     );
 
@@ -111,7 +120,8 @@ function LocaleContextProvider({preferredLocale, currentUserPersonalDetails = {}
             translate,
             numberFormat,
             datetimeToRelative,
-            datetimeToCalendarTime,
+            timestampToCalendarTime,
+            datetimeToLocalString,
             updateLocale,
             formatPhoneNumber,
             toLocaleDigit,
@@ -119,7 +129,19 @@ function LocaleContextProvider({preferredLocale, currentUserPersonalDetails = {}
             fromLocaleDigit,
             preferredLocale: locale,
         }),
-        [translate, numberFormat, datetimeToRelative, datetimeToCalendarTime, updateLocale, formatPhoneNumber, toLocaleDigit, toLocaleOrdinal, fromLocaleDigit, locale],
+        [
+            translate,
+            numberFormat,
+            datetimeToRelative,
+            timestampToCalendarTime,
+            datetimeToLocalString,
+            updateLocale,
+            formatPhoneNumber,
+            toLocaleDigit,
+            toLocaleOrdinal,
+            fromLocaleDigit,
+            locale,
+        ],
     );
 
     return <LocaleContext.Provider value={contextValue}>{children}</LocaleContext.Provider>;

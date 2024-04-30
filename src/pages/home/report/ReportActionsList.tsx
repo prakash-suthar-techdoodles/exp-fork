@@ -216,6 +216,27 @@ function ReportActionsList({
         opacity: opacity.value,
     }));
 
+    /**
+     * Determines whether we should display the date indicator label in chat messages
+     * @return {Boolean}
+     */
+    const shouldShowStaticDateIndicator = useCallback(
+        (index: number) => {
+            if (index === sortedReportActions.length - 1 || index === sortedReportActions.length - 2) {
+                return true;
+            }
+
+            const currentItem = sortedReportActions[index];
+            const nextItem = sortedReportActions[index + 1];
+
+            if (nextItem.reportActionTimestamp && currentItem.reportActionTimestamp) {
+                return DateUtils.formatDate(currentItem.reportActionTimestamp) !== DateUtils.formatDate(nextItem.reportActionTimestamp);
+            }
+            return false;
+        },
+        [sortedReportActions],
+    );
+
     useEffect(() => {
         opacity.value = withTiming(1, {duration: 100});
     }, [opacity]);
@@ -538,19 +559,21 @@ function ReportActionsList({
                 shouldHideThreadDividerLine={shouldHideThreadDividerLine}
                 shouldDisplayNewMarker={shouldDisplayNewMarker(reportAction, index)}
                 shouldDisplayReplyDivider={sortedReportActions.length > 1}
+                showDateIndicator={shouldShowStaticDateIndicator(index)}
             />
         ),
         [
+            reportActions,
+            parentReportAction,
             report,
+            transactionThreadReport,
             linkedReportActionID,
             sortedVisibleReportActions,
-            sortedReportActions.length,
             mostRecentIOUReportActionID,
             shouldHideThreadDividerLine,
             shouldDisplayNewMarker,
-            parentReportAction,
-            reportActions,
-            transactionThreadReport,
+            sortedReportActions.length,
+            shouldShowStaticDateIndicator,
             parentReportActionForTransactionThread,
         ],
     );

@@ -124,6 +124,7 @@ function ReportActionItemParentAction({
                         isMostRecentIOUReportAction={false}
                         shouldDisplayNewMarker={ancestor.shouldDisplayNewMarker}
                         index={index}
+                        showDateIndicator={false}
                     />
                 </OfflineWithFeedback>
             ))}

@@ -80,6 +80,7 @@ import ReportActionItemMessageEdit from './ReportActionItemMessageEdit';
 import ReportActionItemSingle from './ReportActionItemSingle';
 import ReportActionItemThread from './ReportActionItemThread';
 import ReportAttachmentsContext from './ReportAttachmentsContext';
+import ReportDateIndicator from './ReportDateIndicator';
 
 const getDraftMessage = (drafts: OnyxCollection<OnyxTypes.ReportActionsDrafts>, reportID: string, action: OnyxTypes.ReportAction): string | undefined => {
     const originalReportID = ReportUtils.getOriginalReportID(reportID, action);
@@ -141,6 +142,9 @@ type ReportActionItemProps = {
     /** Determines if the avatar is displayed as a subscript (positioned lower than normal) */
     shouldShowSubscriptAvatar?: boolean;
 
+    /** Should we show the date indicator? */
+    showDateIndicator: boolean;
+
     /** Position index of the report action in the overall report FlatList view */
     index: number;
 
@@ -172,6 +176,7 @@ function ReportActionItem({
     userWallet,
     shouldHideThreadDividerLine = false,
     shouldShowSubscriptAvatar = false,
+    showDateIndicator,
     policy,
     transaction,
     onPress = undefined,
@@ -887,7 +892,7 @@ function ReportActionItem({
         ? (Object.values(personalDetails ?? {}).filter((details) => whisperedToAccountIDs.includes(details?.accountID ?? -1)) as OnyxTypes.PersonalDetails[])
         : [];
     const displayNamesWithTooltips = isWhisper ? ReportUtils.getDisplayNamesWithTooltips(whisperedToPersonalDetails, isMultipleParticipant) : [];
-
+    const indicatorTimestamp = action.reportActionTimestamp ?? 0;
     return (
         <PressableWithSecondaryInteraction
             ref={popoverAnchorRef}
@@ -901,6 +906,7 @@ function ReportActionItem({
             accessibilityLabel={translate('accessibilityHints.chatMessage')}
             accessible
         >
+            {showDateIndicator && <ReportDateIndicator created={indicatorTimestamp} />}
             <Hoverable
                 shouldHandleScroll
                 isDisabled={draftMessage !== undefined}

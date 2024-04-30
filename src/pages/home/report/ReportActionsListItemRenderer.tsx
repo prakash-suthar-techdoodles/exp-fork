@@ -41,7 +41,9 @@ type ReportActionsListItemRendererProps = {
     /** Should we display the new marker on top of the comment? */
     shouldDisplayNewMarker: boolean;
 
-    /** Linked report action ID */
+    /** should we display date indicator? */
+    showDateIndicator: boolean;
+
     linkedReportActionID?: string;
 
     /** Whether we should display "Replies" divider */
@@ -62,6 +64,7 @@ function ReportActionsListItemRenderer({
     linkedReportActionID = '',
     shouldDisplayReplyDivider,
     parentReportActionForTransactionThread,
+    showDateIndicator,
 }: ReportActionsListItemRendererProps) {
     const shouldDisplayParentAction =
         reportAction.actionName === CONST.REPORT.ACTIONS.TYPE.CREATED && ReportUtils.isChatThread(report) && !ReportActionsUtils.isTransactionThread(parentReportAction);
@@ -101,6 +104,7 @@ function ReportActionsListItemRenderer({
                 childReportName: reportAction.childReportName,
                 childManagerAccountID: reportAction.childManagerAccountID,
                 childMoneyRequestCount: reportAction.childMoneyRequestCount,
+                reportActionTimestamp: reportAction.reportActionTimestamp,
             } as ReportAction),
         [
             reportAction.reportActionID,
@@ -131,6 +135,7 @@ function ReportActionsListItemRenderer({
             reportAction.childReportName,
             reportAction.childManagerAccountID,
             reportAction.childMoneyRequestCount,
+            reportAction.reportActionTimestamp,
         ],
     );
 
@@ -165,6 +170,7 @@ function ReportActionsListItemRenderer({
             }
             isMostRecentIOUReportAction={reportAction.reportActionID === mostRecentIOUReportActionID}
             index={index}
+            showDateIndicator={showDateIndicator}
         />
     );
 }
