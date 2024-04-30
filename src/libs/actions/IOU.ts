@@ -35,7 +35,6 @@ import * as LocalePhoneNumber from '@libs/LocalePhoneNumber';
 import * as Localize from '@libs/Localize';
 import Navigation from '@libs/Navigation/Navigation';
 import * as NextStepUtils from '@libs/NextStepUtils';
-import type {TaxRatesOption} from '@libs/OptionsListUtils';
 import Permissions from '@libs/Permissions';
 import * as PhoneNumber from '@libs/PhoneNumber';
 import * as PolicyUtils from '@libs/PolicyUtils';
@@ -2800,17 +2799,21 @@ function updateMoneyRequestTaxAmount(
     API.write('UpdateMoneyRequestTaxAmount', params, onyxData);
 }
 
+type UpdateMoneyRequestTaxRateParams = {
+    transactionID: string;
+    optimisticReportActionID: string;
+    taxCode: string;
+    taxAmount?: number;
+    policy: OnyxEntry<OnyxTypes.Policy>;
+    policyTagList: OnyxEntry<OnyxTypes.PolicyTagList>;
+    policyCategories: OnyxEntry<OnyxTypes.PolicyCategories>;
+};
+
 /** Updates the created tax rate of an expense */
-function updateMoneyRequestTaxRate(
-    transactionID: string,
-    optimisticReportActionID: string,
-    taxCode: string,
-    policy: OnyxEntry<OnyxTypes.Policy>,
-    policyTagList: OnyxEntry<OnyxTypes.PolicyTagList>,
-    policyCategories: OnyxEntry<OnyxTypes.PolicyCategories>,
-) {
+function updateMoneyRequestTaxRate({transactionID, optimisticReportActionID, taxCode, taxAmount, policy, policyTagList, policyCategories}: UpdateMoneyRequestTaxRateParams) {
     const transactionChanges = {
         taxCode,
+        ...(taxAmount && {taxAmount}),
     };
     const {params, onyxData} = getUpdateMoneyRequestParams(transactionID, optimisticReportActionID, transactionChanges, policy, policyTagList, policyCategories, true);
     API.write('UpdateMoneyRequestTaxRate', params, onyxData);
@@ -4929,6 +4932,7 @@ type UpdateMoneyRequestAmountAndCurrencyParams = {
     transactionThreadReportID: string;
     currency: string;
     amount: number;
+    taxAmount?: number;
     policy?: OnyxEntry<OnyxTypes.Policy>;
     policyTagList?: OnyxEntry<OnyxTypes.PolicyTagList>;
     policyCategories?: OnyxEntry<OnyxTypes.PolicyCategories>;
@@ -4940,6 +4944,7 @@ function updateMoneyRequestAmountAndCurrency({
     transactionThreadReportID,
     currency,
     amount,
+    taxAmount,
     policy,
     policyTagList,
     policyCategories,
@@ -4947,6 +4952,7 @@ function updateMoneyRequestAmountAndCurrency({
     const transactionChanges = {
         amount,
         currency,
+        ...(taxAmount && {taxAmount}),
     };
     const transactionThreadReport = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${transactionThreadReportID}`] ?? null;
     const parentReport = allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${transactionThreadReport?.parentReportID}`] ?? null;
@@ -6313,8 +6319,8 @@ function setMoneyRequestParticipantsFromReport(transactionID: string, report: On
     return participants;
 }
 
-function setMoneyRequestTaxRate(transactionID: string, taxRate: TaxRatesOption) {
-    Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${transactionID}`, {taxRate});
+function setMoneyRequestTaxRate(transactionID: string, taxCode: string) {
+    Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${transactionID}`, {taxCode});
 }
 
 function setMoneyRequestTaxAmount(transactionID: string, taxAmount: number, isDraft: boolean) {

@@ -106,7 +106,7 @@ type TaxRatesOption = {
     tooltipText?: string;
     isDisabled?: boolean;
     keyForList?: string;
-    data: Partial<TaxRate>;
+    isSelected?: boolean;
 };
 
 type TaxSection = {
@@ -159,6 +159,8 @@ type GetOptionsConfig = {
     includeSelectedOptions?: boolean;
     includeTaxRates?: boolean;
     taxRates?: TaxRatesWithDefault;
+    policy?: OnyxEntry<Policy>;
+    transaction?: OnyxEntry<Transaction>;
     includePolicyReportFieldOptions?: boolean;
     policyReportFieldOptions?: string[];
     recentlyUsedPolicyReportFieldOptions?: string[];
@@ -1309,20 +1311,6 @@ function getReportFieldOptionsSection(options: string[], recentlyUsedOptions: st
 }
 
 /**
- * Transforms tax rates to a new object format - to add codes and new name with concatenated name and value.
- *
- * @param  taxRates - The original tax rates object.
- * @returns The transformed tax rates object.g
- */
-function transformedTaxRates(taxRates: TaxRatesWithDefault | undefined): Record<string, TaxRate> {
-    const defaultTaxKey = taxRates?.defaultExternalID;
-    const getModifiedName = (data: TaxRate, code: string) =>
-        `${data.name} (${data.value})${defaultTaxKey === code ? ` ${CONST.DOT_SEPARATOR} ${Localize.translateLocal('common.default')}` : ''}`;
-    const taxes = Object.fromEntries(Object.entries(taxRates?.taxes ?? {}).map(([code, data]) => [code, {...data, code, modifiedName: getModifiedName(data, code), name: data.name}]));
-    return taxes;
-}
-
-/**
  * Sorts tax rates alphabetically by name.
  */
 function sortTaxRates(taxRates: TaxRates): TaxRate[] {
@@ -1333,24 +1321,25 @@ function sortTaxRates(taxRates: TaxRates): TaxRate[] {
 /**
  * Builds the options for taxRates
  */
-function getTaxRatesOptions(taxRates: Array<Partial<TaxRate>>): TaxRatesOption[] {
-    return taxRates.map((taxRate) => ({
-        text: taxRate.modifiedName,
-        keyForList: taxRate.modifiedName,
-        searchText: taxRate.modifiedName,
-        tooltipText: taxRate.modifiedName,
-        isDisabled: taxRate.isDisabled,
-        data: taxRate,
+function getTaxRatesOptions(taxRates: Array<Partial<TaxRate>>, transactionTaxCode?: string): TaxRatesOption[] {
+    return taxRates.map(({code, modifiedName, isDisabled}) => ({
+        code,
+        text: modifiedName,
+        keyForList: modifiedName,
+        searchText: modifiedName,
+        tooltipText: modifiedName,
+        isDisabled,
+        isSelected: code === transactionTaxCode,
     }));
 }
 
 /**
  * Builds the section list for tax rates
  */
-function getTaxRatesSection(taxRates: TaxRatesWithDefault | undefined, selectedOptions: Category[], searchInputValue: string): TaxSection[] {
+function getTaxRatesSection(policy: OnyxEntry<Policy> | undefined, selectedOptions: Category[], searchInputValue: string, transaction?: OnyxEntry<Transaction>): TaxSection[] {
     const policyRatesSections = [];
 
-    const taxes = transformedTaxRates(taxRates);
+    const taxes = TransactionUtils.transformedTaxRates(policy, transaction);
 
     const sortedTaxRates = sortTaxRates(taxes);
     const enabledTaxRates = sortedTaxRates.filter((taxRate) => !taxRate.isDisabled);
@@ -1367,7 +1356,7 @@ function getTaxRatesSection(taxRates: TaxRatesWithDefault | undefined, selectedO
             // "Selected" sectiong
             title: '',
             shouldShow: false,
-            data: getTaxRatesOptions(selectedTaxRateOptions),
+            data: getTaxRatesOptions(selectedTaxRateOptions, transaction?.taxCode),
         });
 
         return policyRatesSections;
@@ -1380,7 +1369,7 @@ function getTaxRatesSection(taxRates: TaxRatesWithDefault | undefined, selectedO
             // "Search" section
             title: '',
             shouldShow: true,
-            data: getTaxRatesOptions(searchTaxRates),
+            data: getTaxRatesOptions(searchTaxRates, transaction?.taxCode),
         });
 
         return policyRatesSections;
@@ -1391,7 +1380,7 @@ function getTaxRatesSection(taxRates: TaxRatesWithDefault | undefined, selectedO
             // "All" section when items amount less than the threshold
             title: '',
             shouldShow: false,
-            data: getTaxRatesOptions(enabledTaxRates),
+            data: getTaxRatesOptions(enabledTaxRates, transaction?.taxCode),
         });
 
         return policyRatesSections;
@@ -1422,7 +1411,7 @@ function getTaxRatesSection(taxRates: TaxRatesWithDefault | undefined, selectedO
         // "All" section when number of items are more than the threshold
         title: '',
         shouldShow: true,
-        data: getTaxRatesOptions(filteredTaxRates),
+        data: getTaxRatesOptions(filteredTaxRates, transaction?.taxCode),
     });
 
     return policyRatesSections;
@@ -1562,7 +1551,8 @@ function getOptions(
         includeSelectedOptions = false,
         transactionViolations = {},
         includeTaxRates,
-        taxRates,
+        policy,
+        transaction,
         includeSelfDM = false,
         includePolicyReportFieldOptions = false,
         policyReportFieldOptions = [],
@@ -1598,7 +1588,7 @@ function getOptions(
     }
 
     if (includeTaxRates) {
-        const taxRatesOptions = getTaxRatesSection(taxRates, selectedOptions as Category[], searchInputValue);
+        const taxRatesOptions = getTaxRatesSection(policy, selectedOptions as Category[], searchInputValue, transaction);
 
         return {
             recentReports: [],
@@ -2345,7 +2335,6 @@ export {
     hasEnabledTags,
     formatMemberForList,
     formatSectionsFromSearchTerm,
-    transformedTaxRates,
     getShareLogOptions,
     filterOptions,
     createOptionList,

@@ -178,9 +178,11 @@ type MoneyRequestConfirmationListProps = MoneyRequestConfirmationListOnyxProps &
     action?: IOUAction;
 };
 
-const getTaxAmount = (transaction: OnyxEntry<OnyxTypes.Transaction>, defaultTaxValue: string) => {
-    const percentage = (transaction?.taxRate ? transaction?.taxRate?.data?.value : defaultTaxValue) ?? '';
-    return TransactionUtils.calculateTaxAmount(percentage, transaction?.amount ?? 0);
+const getTaxAmount = (transaction: OnyxEntry<OnyxTypes.Transaction>, policy: OnyxEntry<OnyxTypes.Policy>) => {
+    const defaultTaxCode = TransactionUtils.getDefaultTaxCode(policy, transaction) ?? '';
+
+    const taxPercentage = TransactionUtils.getTaxValue(policy, transaction, transaction?.taxCode ?? defaultTaxCode) ?? '';
+    return TransactionUtils.calculateTaxAmount(taxPercentage, transaction?.amount ?? 0);
 };
 
 function MoneyRequestConfirmationList({
@@ -307,7 +309,7 @@ function MoneyRequestConfirmationList({
               isDistanceRequest ? currency : iouCurrencyCode,
           );
     const formattedTaxAmount = CurrencyUtils.convertToDisplayString(transaction?.taxAmount, iouCurrencyCode);
-    const taxRateTitle = taxRates && transaction ? TransactionUtils.getDefaultTaxName(taxRates, transaction) : '';
+    const taxRateTitle = TransactionUtils.getTaxRateTitle(policy, transaction);
 
     const previousTransactionAmount = usePrevious(transaction?.amount);
 
@@ -362,7 +364,7 @@ function MoneyRequestConfirmationList({
 
     // Calculate and set tax amount in transaction draft
     useEffect(() => {
-        const taxAmount = getTaxAmount(transaction, taxRates?.defaultValue ?? '').toString();
+        const taxAmount = getTaxAmount(transaction, policy).toString();
         const amountInSmallestCurrencyUnits = CurrencyUtils.convertToBackendAmount(Number.parseFloat(taxAmount));
 
         if (transaction?.taxAmount && previousTransactionAmount === transaction?.amount) {
@@ -370,7 +372,7 @@ function MoneyRequestConfirmationList({
         }
 
         IOU.setMoneyRequestTaxAmount(transactionID, amountInSmallestCurrencyUnits, true);
-    }, [taxRates?.defaultValue, transaction, transactionID, previousTransactionAmount]);
+    }, [policy, transaction, transactionID, previousTransactionAmount]);
 
     /**
      * Returns the participants with amount

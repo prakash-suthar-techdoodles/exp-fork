@@ -111,7 +111,6 @@ function MoneyRequestView({
         created: transactionDate,
         amount: transactionAmount,
         taxAmount: transactionTaxAmount,
-        taxCode: transactionTaxCode,
         currency: transactionCurrency,
         comment: transactionDescription,
         merchant: transactionMerchant,
@@ -135,11 +134,7 @@ function MoneyRequestView({
     const formattedTaxAmount = CurrencyUtils.convertToDisplayString(transactionTaxAmount, transactionCurrency);
 
     const taxRatesDescription = taxRates?.name;
-    const taxRateTitle =
-        taxRates &&
-        (transactionTaxCode === taxRates?.defaultExternalID
-            ? transaction && TransactionUtils.getDefaultTaxName(taxRates, transaction)
-            : transactionTaxCode && TransactionUtils.getTaxName(taxRates?.taxes, transactionTaxCode));
+    const taxRateTitle = TransactionUtils.getTaxRateTitle(policy, transaction);
 
     // Flags for allowing or disallowing editing an expense
     const isSettled = ReportUtils.isSettled(moneyRequestReport?.reportID);
