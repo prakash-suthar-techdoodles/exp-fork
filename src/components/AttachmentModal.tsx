@@ -468,7 +468,7 @@ function AttachmentModal({
     }
     const context = useMemo(
         () => ({
-            pagerItems: [],
+            pagerItems: [{source: sourceForAttachmentView, index: 0, isActive: true}],
             activePage: 0,
             pagerRef: undefined,
             isPagerScrolling: nope,
@@ -477,7 +477,7 @@ function AttachmentModal({
             onScaleChanged: () => {},
             onSwipeDown: closeModal,
         }),
-        [closeModal, nope],
+        [closeModal, nope, sourceForAttachmentView],
     );
 
     return (

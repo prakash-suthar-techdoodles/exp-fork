@@ -85,6 +85,7 @@ function VideoPlayerPreview({videoUrl, thumbnailUrl, reportID, fileName, videoDi
                         videoDuration={videoDuration}
                         shouldUseSmallVideoControls
                         style={[styles.w100, styles.h100]}
+                        isPreview
                     />
                     <View style={[styles.pAbsolute, styles.w100]}>
                         <IconButton
