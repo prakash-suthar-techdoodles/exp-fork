@@ -101,12 +101,12 @@ function ChatFinderPage({betas, isSearchingForReports, navigation}: ChatFinderPa
             };
         }
 
-        const newOptions = OptionsListUtils.filterOptions(searchOptions, debouncedSearchValue);
-        const header = OptionsListUtils.getHeaderMessage(newOptions.recentReports.length > 0, false, debouncedSearchValue);
+        const newOptions = OptionsListUtils.filterOptions(searchOptions, debouncedSearchValue, {sortByReportTypeInSearch: true});
+        const header = OptionsListUtils.getHeaderMessage(newOptions.recentReports.length > 0, !!newOptions.userToInvite, debouncedSearchValue);
         return {
             recentReports: newOptions.recentReports,
             personalDetails: newOptions.personalDetails,
-            userToInvite: null,
+            userToInvite: newOptions.userToInvite,
             headerMessage: header,
         };
     }, [debouncedSearchValue, searchOptions]);
