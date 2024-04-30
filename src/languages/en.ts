@@ -2905,6 +2905,11 @@ export default {
         taxRateChanged: 'Tax rate was modified',
         taxRequired: 'Missing tax rate',
     },
+    violationDismissal: {
+        rter: {
+            manual: "marked this receipt as cash, confirming it doesn't match a credit card transaction",
+        },
+    },
     videoPlayer: {
         play: 'Play',
         pause: 'Pause',
