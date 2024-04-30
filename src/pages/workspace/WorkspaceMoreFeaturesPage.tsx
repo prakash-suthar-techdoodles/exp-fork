@@ -21,7 +21,7 @@ import type {PendingAction} from '@src/types/onyx/OnyxCommon';
 import type IconAsset from '@src/types/utils/IconAsset';
 import AccessOrNotFoundWrapper from './AccessOrNotFoundWrapper';
 import type {WithPolicyAndFullscreenLoadingProps} from './withPolicyAndFullscreenLoading';
-import withPolicyAndFullscreenLoading from './withPolicyAndFullscreenLoading';
+import withPolicyConnections from './withPolicyConnections';
 import ToggleSettingOptionRow from './workflows/ToggleSettingsOptionRow';
 
 type WorkspaceMoreFeaturesPageProps = WithPolicyAndFullscreenLoadingProps & StackScreenProps<WorkspacesCentralPaneNavigatorParamList, typeof SCREENS.WORKSPACE.MORE_FEATURES>;
@@ -47,7 +47,7 @@ function WorkspaceMoreFeaturesPage({policy, route}: WorkspaceMoreFeaturesPagePro
     const {isSmallScreenWidth} = useWindowDimensions();
     const {translate} = useLocalize();
     const {canUseAccountingIntegrations} = usePermissions();
-    const hasAccountingConnection = !!policy?.areConnectionsEnabled && !!policy?.connections;
+    const hasAccountingConnection = !!policy?.areConnectionsEnabled && Object.keys(policy?.connections ?? {}).length > 0;
     const isSyncTaxEnabled = !!policy?.connections?.quickbooksOnline?.config?.syncTax;
 
     const spendItems: Item[] = [
@@ -119,6 +119,7 @@ function WorkspaceMoreFeaturesPage({policy, route}: WorkspaceMoreFeaturesPagePro
             action: (isEnabled: boolean) => {
                 Policy.enablePolicyConnections(policy?.id ?? '', isEnabled);
             },
+            disabled: hasAccountingConnection,
         },
     ];
 
@@ -220,4 +221,4 @@ function WorkspaceMoreFeaturesPage({policy, route}: WorkspaceMoreFeaturesPagePro
 
 WorkspaceMoreFeaturesPage.displayName = 'WorkspaceMoreFeaturesPage';
 
-export default withPolicyAndFullscreenLoading(WorkspaceMoreFeaturesPage);
+export default withPolicyConnections(WorkspaceMoreFeaturesPage);
