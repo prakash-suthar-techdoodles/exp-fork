@@ -2793,7 +2793,8 @@ export default {
             onlineSubtitle: 'One moment while we set up the map',
         },
         errors: {
-            selectSuggestedAddress: 'Please select a suggested address or use current location',
+            selectSuggestedAddressOrCurrentLocation: 'Please select a suggested address or use current location',
+            selectSuggestedAddress: 'Please select a suggested address',
         },
     },
     reportCardLostOrDamaged: {
