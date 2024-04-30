@@ -43,6 +43,7 @@ import Collapse from '@assets/images/collapse.svg';
 import Concierge from '@assets/images/concierge.svg';
 import Connect from '@assets/images/connect.svg';
 import Copy from '@assets/images/copy.svg';
+import CreditCardHourglass from '@assets/images/credit-card-hourglass.svg';
 import CreditCard from '@assets/images/creditcard.svg';
 import DocumentPlus from '@assets/images/document-plus.svg';
 import DocumentSlash from '@assets/images/document-slash.svg';
@@ -203,6 +204,7 @@ export {
     Connect,
     Copy,
     CreditCard,
+    CreditCardHourglass,
     DeletedRoomAvatar,
     Document,
     DocumentSlash,
