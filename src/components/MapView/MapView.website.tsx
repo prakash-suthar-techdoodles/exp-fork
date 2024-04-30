@@ -7,12 +7,18 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import React, {forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState} from 'react';
 import type {MapRef} from 'react-map-gl';
-import Map, {Marker} from 'react-map-gl';
+import Map, {Layer, Marker, Source} from 'react-map-gl';
 import {View} from 'react-native';
 import {withOnyx} from 'react-native-onyx';
+import Animated, {useAnimatedStyle, useSharedValue, withTiming} from 'react-native-reanimated';
+import Icon from '@components/Icon';
+import * as Expensicons from '@components/Icon/Expensicons';
+import {PressableWithoutFeedback} from '@components/Pressable';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
+import colors from '@styles/theme/colors';
+import variables from '@styles/variables';
 import setUserLocation from '@userActions/UserLocation';
 import CONST from '@src/CONST';
 import useLocalize from '@src/hooks/useLocalize';
@@ -43,6 +49,11 @@ const MapView = forwardRef<MapViewHandle, ComponentProps>(
     ) => {
         const {isOffline} = useNetwork();
         const {translate} = useLocalize();
+        const centerButtonOpacity = useSharedValue(1);
+        const [isMapCentered, setIsMapCentered] = useState(true);
+        const centerButtonAnimatedStyle = useAnimatedStyle(() => ({
+            opacity: centerButtonOpacity.value,
+        }));
 
         const theme = useTheme();
         const styles = useThemeStyles();
@@ -177,6 +188,38 @@ const MapView = forwardRef<MapViewHandle, ComponentProps>(
             [mapRef],
         );
 
+        const centerMap = useCallback(() => {
+            if (!mapRef) {
+                return;
+            }
+            if (directionCoordinates && directionCoordinates.length > 1) {
+                const {northEast, southWest} = utils.getBounds(waypoints?.map((waypoint) => waypoint.coordinate) ?? [], directionCoordinates);
+                const map = mapRef?.getMap();
+                map?.fitBounds([southWest, northEast], {padding: mapPadding, animate: true, duration: CONST.MAPBOX.ANIMATION_DURATION_ON_CENTER_ME});
+                centerButtonOpacity.value = withTiming(0, {duration: 1000}, () => {
+                    setIsMapCentered(true);
+                });
+                return;
+            }
+            mapRef?.easeTo({
+                center: {lat: currentPosition?.latitude ?? 0, lon: currentPosition?.longitude ?? 0},
+                bearing: 0,
+                animate: true,
+                duration: CONST.MAPBOX.ANIMATION_DURATION_ON_CENTER_ME,
+            });
+            centerButtonOpacity.value = withTiming(0, {duration: 1000}, () => {
+                setIsMapCentered(true);
+            });
+        }, [directionCoordinates, currentPosition, mapRef, waypoints, centerButtonOpacity, mapPadding]);
+
+        const onMove = useCallback(() => {
+            if (!isMapCentered || !userInteractedWithMap) {
+                return;
+            }
+            setIsMapCentered(false);
+            centerButtonOpacity.value = 1;
+        }, [isMapCentered, centerButtonOpacity, userInteractedWithMap]);
+
         return !isOffline && Boolean(accessToken) && Boolean(currentPosition) ? (
             <View
                 style={style}
@@ -185,6 +228,7 @@ const MapView = forwardRef<MapViewHandle, ComponentProps>(
             >
                 <Map
                     onDrag={() => setUserInteractedWithMap(true)}
+                    onMove={onMove}
                     ref={setRef}
                     mapLib={mapboxgl}
                     mapboxAccessToken={accessToken}
@@ -196,6 +240,25 @@ const MapView = forwardRef<MapViewHandle, ComponentProps>(
                     style={StyleUtils.getTextColorStyle(theme.mapAttributionText)}
                     mapStyle={styleURL}
                 >
+                    <Source
+                        id="my-data"
+                        type="geojson"
+                        data={{
+                            type: 'FeatureCollection',
+                            features: [{type: 'Feature', geometry: {type: 'Point', coordinates: [currentPosition?.longitude, currentPosition?.latitude]}}],
+                        }}
+                    >
+                        <Layer
+                            id="point"
+                            type="circle"
+                            paint={{
+                                /* eslint-disable @typescript-eslint/naming-convention */
+                                'circle-radius': 8,
+                                /* eslint-disable @typescript-eslint/naming-convention */
+                                'circle-color': colors.blueDot,
+                            }}
+                        />
+                    </Source>
                     {waypoints?.map(({coordinate, markerComponent, id}) => {
                         const MarkerComponent = markerComponent;
                         return (
@@ -210,6 +273,25 @@ const MapView = forwardRef<MapViewHandle, ComponentProps>(
                     })}
                     {directionCoordinates && <Direction coordinates={directionCoordinates} />}
                 </Map>
+                {!isMapCentered && (
+                    <Animated.View style={[styles.pAbsolute, styles.p5, styles.t0, styles.r0, {zIndex: 1}, {opacity: 1}, centerButtonAnimatedStyle]}>
+                        <PressableWithoutFeedback
+                            style={[]}
+                            accessibilityRole={CONST.ROLE.BUTTON}
+                            onPress={centerMap}
+                            accessibilityLabel="Center"
+                        >
+                            <View style={styles.primaryMediumIcon}>
+                                <Icon
+                                    width={variables.iconSizeNormal}
+                                    height={variables.iconSizeNormal}
+                                    src={Expensicons.Crosshair}
+                                    fill={theme.icon}
+                                />
+                            </View>
+                        </PressableWithoutFeedback>
+                    </Animated.View>
+                )}
             </View>
         ) : (
             <PendingMapView

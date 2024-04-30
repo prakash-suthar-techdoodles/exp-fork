@@ -44,6 +44,7 @@ import Concierge from '@assets/images/concierge.svg';
 import Connect from '@assets/images/connect.svg';
 import Copy from '@assets/images/copy.svg';
 import CreditCard from '@assets/images/creditcard.svg';
+import Crosshair from '@assets/images/crosshair.svg';
 import DocumentPlus from '@assets/images/document-plus.svg';
 import DocumentSlash from '@assets/images/document-slash.svg';
 import Document from '@assets/images/document.svg';
@@ -201,6 +202,7 @@ export {
     Concierge,
     ConciergeAvatar,
     Connect,
+    Crosshair,
     Copy,
     CreditCard,
     DeletedRoomAvatar,
