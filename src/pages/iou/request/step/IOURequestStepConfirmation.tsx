@@ -2,8 +2,10 @@ import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {View} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
 import {withOnyx} from 'react-native-onyx';
+import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import * as Expensicons from '@components/Icon/Expensicons';
+import LocationPermissionModal from '@components/LocationPermissionModal';
 import MoneyRequestConfirmationList from '@components/MoneyRequestConfirmationList';
 import {usePersonalDetails} from '@components/OnyxProvider';
 import ScreenWrapper from '@components/ScreenWrapper';
@@ -20,6 +22,7 @@ import Log from '@libs/Log';
 import Navigation from '@libs/Navigation/Navigation';
 import * as OptionsListUtils from '@libs/OptionsListUtils';
 import * as ReportUtils from '@libs/ReportUtils';
+import playSound, {SOUNDS} from '@libs/Sound';
 import * as TransactionUtils from '@libs/TransactionUtils';
 import * as IOU from '@userActions/IOU';
 import CONST from '@src/CONST';
@@ -67,6 +70,9 @@ function IOURequestStepConfirmation({
     const {translate} = useLocalize();
     const {windowWidth} = useWindowDimensions();
     const {isOffline} = useNetwork();
+    const [startLocationPermissionFlow, setStartLocationPermissionFlow] = useState(false);
+    const [selectedParticipants, setSelectedParticipants] = useState<Participant[]>([]);
+
     const [receiptFile, setReceiptFile] = useState<Receipt>();
 
     const receiptFilename = transaction?.filename;
@@ -95,6 +101,8 @@ function IOURequestStepConfirmation({
     }, [personalDetails, transaction?.participants, transaction?.splitPayerAccountIDs]);
 
     const requestType = TransactionUtils.getRequestType(transaction);
+
+    const gpsRequired = transaction?.amount === 0 && iouType !== CONST.IOU.TYPE.SPLIT && receiptFile;
 
     const headerTitle = useMemo(() => {
         if (isCategorizingTrackExpense) {
@@ -207,7 +215,7 @@ function IOURequestStepConfirmation({
     }, [receiptType, receiptPath, receiptFilename, requestType, iouType, transactionID, reportID, action, transaction?.receipt]);
 
     const requestMoney = useCallback(
-        (selectedParticipants: Participant[], trimmedComment: string, receiptObj?: Receipt, gpsPoints?: IOU.GpsPoint) => {
+        (trimmedComment: string, receiptObj?: Receipt, gpsPoints?: IOU.GpsPoint) => {
             if (!transaction) {
                 return;
             }
@@ -238,11 +246,23 @@ function IOURequestStepConfirmation({
                 transaction.linkedTrackedExpenseReportID,
             );
         },
-        [report, transaction, transactionTaxCode, transactionTaxAmount, currentUserPersonalDetails.login, currentUserPersonalDetails.accountID, policy, policyTags, policyCategories, action],
+        [
+            report,
+            transaction,
+            transactionTaxCode,
+            transactionTaxAmount,
+            currentUserPersonalDetails.login,
+            currentUserPersonalDetails.accountID,
+            policy,
+            policyTags,
+            policyCategories,
+            action,
+            selectedParticipants,
+        ],
     );
 
     const trackExpense = useCallback(
-        (selectedParticipants: Participant[], trimmedComment: string, receiptObj?: Receipt, gpsPoints?: IOU.GpsPoint) => {
+        (trimmedComment: string, receiptObj?: Receipt, gpsPoints?: IOU.GpsPoint) => {
             if (!report || !transaction) {
                 return;
             }
@@ -273,11 +293,23 @@ function IOURequestStepConfirmation({
                 transaction.linkedTrackedExpenseReportID,
             );
         },
-        [report, transaction, currentUserPersonalDetails.login, currentUserPersonalDetails.accountID, transactionTaxCode, transactionTaxAmount, policy, policyTags, policyCategories, action],
+        [
+            report,
+            transaction,
+            currentUserPersonalDetails.login,
+            currentUserPersonalDetails.accountID,
+            transactionTaxCode,
+            transactionTaxAmount,
+            policy,
+            policyTags,
+            policyCategories,
+            action,
+            selectedParticipants,
+        ],
     );
 
     const createDistanceRequest = useCallback(
-        (selectedParticipants: Participant[], trimmedComment: string, customUnitRateID: string) => {
+        (trimmedComment: string, customUnitRateID: string) => {
             if (!transaction) {
                 return;
             }
@@ -299,11 +331,11 @@ function IOURequestStepConfirmation({
                 customUnitRateID,
             );
         },
-        [policy, policyCategories, policyTags, report, transaction],
+        [policy, policyCategories, policyTags, report, selectedParticipants, transaction],
     );
 
     const createTransaction = useCallback(
-        (selectedParticipants: Participant[]) => {
+        (locationPermissionGranted = false) => {
             const trimmedComment = (transaction?.comment.comment ?? '').trim();
 
             // Don't let the form be submitted multiple times while the navigator is waiting to take the user to a different page
@@ -312,6 +344,8 @@ function IOURequestStepConfirmation({
             }
 
             formHasBeenSubmitted.current = true;
+
+            playSound(SOUNDS.DONE);
 
             // If we have a receipt let's start the split expense by creating only the action, the transaction, and the group DM if needed
             if (iouType === CONST.IOU.TYPE.SPLIT && receiptFile) {
@@ -386,10 +420,10 @@ function IOURequestStepConfirmation({
             if (iouType === CONST.IOU.TYPE.TRACK || isCategorizingTrackExpense || isSharingTrackExpense) {
                 if (receiptFile && transaction) {
                     // If the transaction amount is zero, then the money is being requested through the "Scan" flow and the GPS coordinates need to be included.
-                    if (transaction.amount === 0 && !isSharingTrackExpense && !isCategorizingTrackExpense) {
+                    if (transaction.amount === 0 && !isSharingTrackExpense && !isCategorizingTrackExpense && locationPermissionGranted) {
                         getCurrentPosition(
                             (successData) => {
-                                trackExpense(selectedParticipants, trimmedComment, receiptFile, {
+                                trackExpense(trimmedComment, receiptFile, {
                                     lat: successData.coords.latitude,
                                     long: successData.coords.longitude,
                                 });
@@ -397,7 +431,7 @@ function IOURequestStepConfirmation({
                             (errorData) => {
                                 Log.info('[IOURequestStepConfirmation] getCurrentPosition failed', false, errorData);
                                 // When there is an error, the money can still be requested, it just won't include the GPS coordinates
-                                trackExpense(selectedParticipants, trimmedComment, receiptFile);
+                                trackExpense(trimmedComment, receiptFile);
                             },
                             {
                                 // It's OK to get a cached location that is up to an hour old because the only accuracy needed is the country the user is in
@@ -411,19 +445,19 @@ function IOURequestStepConfirmation({
                     }
 
                     // Otherwise, the money is being requested through the "Manual" flow with an attached image and the GPS coordinates are not needed.
-                    trackExpense(selectedParticipants, trimmedComment, receiptFile);
+                    trackExpense(trimmedComment, receiptFile);
                     return;
                 }
-                trackExpense(selectedParticipants, trimmedComment, receiptFile);
+                trackExpense(trimmedComment, receiptFile);
                 return;
             }
 
             if (receiptFile && !!transaction) {
                 // If the transaction amount is zero, then the money is being requested through the "Scan" flow and the GPS coordinates need to be included.
-                if (transaction.amount === 0 && !isSharingTrackExpense && !isCategorizingTrackExpense) {
+                if (transaction.amount === 0 && !isSharingTrackExpense && !isCategorizingTrackExpense && locationPermissionGranted) {
                     getCurrentPosition(
                         (successData) => {
-                            requestMoney(selectedParticipants, trimmedComment, receiptFile, {
+                            requestMoney(trimmedComment, receiptFile, {
                                 lat: successData.coords.latitude,
                                 long: successData.coords.longitude,
                             });
@@ -431,7 +465,7 @@ function IOURequestStepConfirmation({
                         (errorData) => {
                             Log.info('[IOURequestStepConfirmation] getCurrentPosition failed', false, errorData);
                             // When there is an error, the money can still be requested, it just won't include the GPS coordinates
-                            requestMoney(selectedParticipants, trimmedComment, receiptFile);
+                            requestMoney(trimmedComment, receiptFile);
                         },
                         {
                             // It's OK to get a cached location that is up to an hour old because the only accuracy needed is the country the user is in
@@ -445,17 +479,17 @@ function IOURequestStepConfirmation({
                 }
 
                 // Otherwise, the money is being requested through the "Manual" flow with an attached image and the GPS coordinates are not needed.
-                requestMoney(selectedParticipants, trimmedComment, receiptFile);
+                requestMoney(trimmedComment, receiptFile);
                 return;
             }
 
             if (requestType === CONST.IOU.REQUEST_TYPE.DISTANCE && !IOUUtils.isMovingTransactionFromTrackExpense(action)) {
                 const customUnitRateID = TransactionUtils.getRateID(transaction) ?? '';
-                createDistanceRequest(selectedParticipants, trimmedComment, customUnitRateID);
+                createDistanceRequest(trimmedComment, customUnitRateID);
                 return;
             }
 
-            requestMoney(selectedParticipants, trimmedComment);
+            requestMoney(trimmedComment);
         },
         [
             transaction,
@@ -468,6 +502,7 @@ function IOURequestStepConfirmation({
             currentUserPersonalDetails.accountID,
             trackExpense,
             createDistanceRequest,
+            selectedParticipants,
             isSharingTrackExpense,
             isCategorizingTrackExpense,
             action,
@@ -518,6 +553,21 @@ function IOURequestStepConfirmation({
         IOU.setMoneyRequestBillable(transactionID, billable);
     };
 
+    // This loading indicator is shown because the transaction originalCurrency is being updated later than the component mounts.
+    // To prevent the component from rendering with the wrong currency, we show a loading indicator until the correct currency is set.
+    const isLoading = !!transaction?.originalCurrency;
+
+    const onConfirm = (listOfParticipants: Participant[]) => {
+        setSelectedParticipants(listOfParticipants);
+
+        if (gpsRequired) {
+            setStartLocationPermissionFlow(true);
+            return;
+        }
+
+        createTransaction();
+    };
+
     return (
         <ScreenWrapper
             includeSafeAreaPaddingBottom={false}
@@ -539,6 +589,14 @@ function IOURequestStepConfirmation({
                             },
                         ]}
                     />
+                    {isLoading && <FullScreenLoadingIndicator />}
+                    {gpsRequired && (
+                        <LocationPermissionModal
+                            startPermissionFlow={startLocationPermissionFlow}
+                            onGrant={() => createTransaction(true)}
+                            onDeny={() => createTransaction(false)}
+                        />
+                    )}
                     <MoneyRequestConfirmationList
                         transaction={transaction}
                         hasMultipleParticipants={iouType === CONST.IOU.TYPE.SPLIT}
@@ -549,7 +607,7 @@ function IOURequestStepConfirmation({
                         iouIsBillable={transaction?.billable}
                         onToggleBillable={setBillable}
                         iouCategory={transaction?.category}
-                        onConfirm={createTransaction}
+                        onConfirm={onConfirm}
                         onSendMoney={sendMoney}
                         onSelectParticipant={addNewParticipant}
                         receiptPath={receiptPath}
