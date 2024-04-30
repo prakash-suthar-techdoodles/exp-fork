@@ -7,7 +7,7 @@ import lodashSome from 'lodash/some';
 import lodashValues from 'lodash/values';
 import PropTypes from 'prop-types';
 import React, {memo, useCallback, useEffect, useMemo} from 'react';
-import {useOnyx} from 'react-native-onyx';
+import {useOnyx, withOnyx} from 'react-native-onyx';
 import Button from '@components/Button';
 import FormHelpMessage from '@components/FormHelpMessage';
 import {usePersonalDetails} from '@components/OnyxProvider';
@@ -55,14 +55,18 @@ const propTypes = {
 
     /** The action of the IOU, i.e. create, split, move */
     action: PropTypes.oneOf(lodashValues(CONST.IOU.ACTION)),
+
+    /** Whether or not we are searching for reports on the server */
+    isSearchingForReports: PropTypes.bool,
 };
 
 const defaultProps = {
     participants: [],
     action: CONST.IOU.ACTION.CREATE,
+    isSearchingForReports: false,
 };
 
-function MoneyTemporaryForRefactorRequestParticipantsSelector({participants, onFinish, onParticipantsAdded, iouType, iouRequestType, action}) {
+function MoneyTemporaryForRefactorRequestParticipantsSelector({participants, onFinish, onParticipantsAdded, iouType, iouRequestType, action, isSearchingForReports}) {
     const {translate} = useLocalize();
     const styles = useThemeStyles();
     const [searchTerm, debouncedSearchTerm, setSearchTerm] = useDebouncedState('');
@@ -358,6 +362,7 @@ function MoneyTemporaryForRefactorRequestParticipantsSelector({participants, onF
             headerMessage={headerMessage}
             showLoadingPlaceholder={!areOptionsInitialized || !didScreenTransitionEnd}
             canSelectMultiple={isIOUSplit && isAllowedToSplit}
+            isLoadingNewOptions={!!isSearchingForReports}
         />
     );
 }
@@ -366,11 +371,19 @@ MoneyTemporaryForRefactorRequestParticipantsSelector.propTypes = propTypes;
 MoneyTemporaryForRefactorRequestParticipantsSelector.defaultProps = defaultProps;
 MoneyTemporaryForRefactorRequestParticipantsSelector.displayName = 'MoneyTemporaryForRefactorRequestParticipantsSelector';
 
-export default memo(
-    MoneyTemporaryForRefactorRequestParticipantsSelector,
-    (prevProps, nextProps) =>
-        lodashIsEqual(prevProps.participants, nextProps.participants) &&
-        prevProps.iouRequestType === nextProps.iouRequestType &&
-        prevProps.iouType === nextProps.iouType &&
-        lodashIsEqual(prevProps.betas, nextProps.betas),
+export default withOnyx({
+    isSearchingForReports: {
+        key: ONYXKEYS.IS_SEARCHING_FOR_REPORTS,
+        initWithStoredValues: false,
+    },
+})(
+    memo(
+        MoneyTemporaryForRefactorRequestParticipantsSelector,
+        (prevProps, nextProps) =>
+            lodashIsEqual(prevProps.participants, nextProps.participants) &&
+            prevProps.iouRequestType === nextProps.iouRequestType &&
+            prevProps.iouType === nextProps.iouType &&
+            lodashIsEqual(prevProps.betas, nextProps.betas) &&
+            prevProps.isSearchingForReports === nextProps.isSearchingForReports,
+    ),
 );
