@@ -328,6 +328,7 @@ export default {
             subtitleText3: 'button below.',
         },
         businessName: 'Business name',
+        clear: 'Clear',
     },
     location: {
         useCurrent: 'Use current location',

@@ -318,6 +318,7 @@ export default {
             subtitleText3: '.',
         },
         businessName: 'Nombre de la empresa',
+        clear: 'Clara',
     },
     location: {
         useCurrent: 'Usar ubicación actual',
