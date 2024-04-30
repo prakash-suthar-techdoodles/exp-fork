@@ -13,6 +13,7 @@ import AccessOrNotFoundWrapper from '@pages/workspace/AccessOrNotFoundWrapper';
 import type {WithPolicyConnectionsProps} from '@pages/workspace/withPolicyConnections';
 import withPolicyConnections from '@pages/workspace/withPolicyConnections';
 import ToggleSettingOptionRow from '@pages/workspace/workflows/ToggleSettingsOptionRow';
+import * as Policy from '@userActions/Policy';
 import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
 
@@ -22,6 +23,10 @@ function QuickbooksCompanyCardExpenseAccountPage({policy}: WithPolicyConnections
     const policyID = policy?.id ?? '';
     const {exportCompanyCardAccount, exportAccountPayable, autoCreateVendor, errorFields, pendingFields, exportCompanyCard} = policy?.connections?.quickbooksOnline?.config ?? {};
     const isVendorSelected = exportCompanyCard === CONST.QUICKBOOKS_EXPORT_COMPANY_CARD.VENDOR_BILL;
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+    const showAccountSelection = Boolean(autoCreateVendor || (!isVendorSelected && exportCompanyCard));
+    const {vendors} = policy?.connections?.quickbooksOnline?.data ?? {};
+
     return (
         <AccessOrNotFoundWrapper
             policyID={policyID}
@@ -66,21 +71,36 @@ function QuickbooksCompanyCardExpenseAccountPage({policy}: WithPolicyConnections
                                 title={translate('workspace.qbo.defaultVendor')}
                                 wrapperStyle={[styles.ph5, styles.mb3, styles.mt1]}
                                 isActive={Boolean(autoCreateVendor)}
-                                onToggle={(isOn) => Connections.updatePolicyConnectionConfig(policyID, CONST.POLICY.CONNECTIONS.NAME.QBO, CONST.QUICK_BOOKS_CONFIG.AUTO_CREATE_VENDOR, isOn)}
+                                onCloseError={() => Policy.clearQBOErrorField(policyID, CONST.QUICK_BOOKS_CONFIG.AUTO_CREATE_VENDOR)}
+                                onToggle={(isOn) => {
+                                    if (!isOn) {
+                                        Connections.updatePolicyConnectionConfig(policyID, CONST.POLICY.CONNECTIONS.NAME.QBO, CONST.QUICK_BOOKS_CONFIG.EXPORT_COMPANY_CARD_ACCOUNT);
+                                    } else {
+                                        Connections.updatePolicyConnectionConfig(
+                                            policyID,
+                                            CONST.POLICY.CONNECTIONS.NAME.QBO,
+                                            CONST.QUICK_BOOKS_CONFIG.EXPORT_COMPANY_CARD_ACCOUNT,
+                                            vendors?.[0]?.name,
+                                        );
+                                    }
+                                    Connections.updatePolicyConnectionConfig(policyID, CONST.POLICY.CONNECTIONS.NAME.QBO, CONST.QUICK_BOOKS_CONFIG.AUTO_CREATE_VENDOR, isOn);
+                                }}
                                 pendingAction={pendingFields?.autoCreateVendor}
                             />
                         </>
                     )}
-                    <OfflineWithFeedback pendingAction={pendingFields?.exportCompanyCardAccount}>
-                        <MenuItemWithTopDescription
-                            title={exportCompanyCardAccount}
-                            description={isVendorSelected ? translate('workspace.qbo.vendor') : translate('workspace.qbo.account')}
-                            onPress={() => Navigation.navigate(ROUTES.POLICY_ACCOUNTING_QUICKBOOKS_ONLINE_COMPANY_CARD_EXPENSE_ACCOUNT_SELECT.getRoute(policyID))}
-                            brickRoadIndicator={errorFields?.exportCompanyCardAccount ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined}
-                            shouldShowRightIcon
-                            error={errorFields?.exportCompanyCardAccount ? translate('common.genericErrorMessage') : undefined}
-                        />
-                    </OfflineWithFeedback>
+                    {showAccountSelection && (
+                        <OfflineWithFeedback pendingAction={pendingFields?.exportCompanyCardAccount}>
+                            <MenuItemWithTopDescription
+                                title={exportCompanyCardAccount}
+                                description={isVendorSelected ? translate('workspace.qbo.vendor') : translate('workspace.qbo.account')}
+                                onPress={() => Navigation.navigate(ROUTES.POLICY_ACCOUNTING_QUICKBOOKS_ONLINE_COMPANY_CARD_EXPENSE_ACCOUNT_SELECT.getRoute(policyID))}
+                                brickRoadIndicator={errorFields?.exportCompanyCardAccount ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined}
+                                shouldShowRightIcon
+                                error={errorFields?.exportCompanyCardAccount ? translate('common.genericErrorMessage') : undefined}
+                            />
+                        </OfflineWithFeedback>
+                    )}
                 </ScrollView>
             </ScreenWrapper>
         </AccessOrNotFoundWrapper>
