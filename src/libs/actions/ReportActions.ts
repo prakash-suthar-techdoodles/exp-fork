@@ -11,7 +11,7 @@ import * as Report from './Report';
 type IgnoreDirection = 'parent' | 'child';
 
 function clearReportActionErrors(reportID: string, reportAction: ReportAction, keys?: string[]) {
-    const originalReportID = ReportUtils.getOriginalReportID(reportID, reportAction);
+    const originalReportID = ReportUtils.getOriginalReportID(reportID, reportAction, true);
 
     if (!reportAction?.reportActionID) {
         return;

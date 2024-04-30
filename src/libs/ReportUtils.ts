@@ -5617,12 +5617,14 @@ function canUserPerformWriteAction(report: OnyxEntry<Report>) {
 /**
  * Returns ID of the original report from which the given reportAction is first created.
  */
-function getOriginalReportID(reportID: string, reportAction: OnyxEntry<ReportAction>): string | undefined {
+function getOriginalReportID(reportID: string, reportAction: OnyxEntry<ReportAction>, shouldReturnTransactionThread = false): string | undefined {
     const reportActions = allReportActions?.[`${ONYXKEYS.COLLECTION.REPORT_ACTIONS}${reportID}`];
     const currentReportAction = reportActions?.[reportAction?.reportActionID ?? ''] ?? null;
-    const transactionThreadReportID = ReportActionsUtils.getOneTransactionThreadReportID(reportID, reportActions ?? ([] as ReportAction[]));
-    if (transactionThreadReportID !== null) {
-        return Object.keys(currentReportAction ?? {}).length === 0 ? transactionThreadReportID : reportID;
+    if (shouldReturnTransactionThread) {
+        const transactionThreadReportID = ReportActionsUtils.getOneTransactionThreadReportID(reportID, reportActions ?? ([] as ReportAction[]));
+        if (transactionThreadReportID !== null) {
+            return Object.keys(currentReportAction ?? {}).length === 0 ? transactionThreadReportID : reportID;
+        }
     }
     return isThreadFirstChat(reportAction, reportID) && Object.keys(currentReportAction ?? {}).length === 0
         ? allReports?.[`${ONYXKEYS.COLLECTION.REPORT}${reportID}`]?.parentReportID
