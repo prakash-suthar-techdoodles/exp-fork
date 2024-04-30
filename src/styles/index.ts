@@ -4186,6 +4186,7 @@ const styles = (theme: ThemeColors) =>
             height: 200,
             borderRadius: 16,
             margin: 20,
+            overflow: 'hidden',
         },
 
         reportPreviewBox: {
