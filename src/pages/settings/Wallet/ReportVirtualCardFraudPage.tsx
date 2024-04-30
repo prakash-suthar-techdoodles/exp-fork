@@ -9,6 +9,7 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import usePrevious from '@hooks/usePrevious';
+import useStyledSafeAreaInsets from '@hooks/useStyledSafeAreaInsets';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import Navigation from '@libs/Navigation/Navigation';
@@ -45,6 +46,8 @@ function ReportVirtualCardFraudPage({
     const virtualCard = cardList?.[cardID];
     const virtualCardError = ErrorUtils.getLatestErrorMessage(virtualCard?.errors ?? {});
 
+    const {paddingBottom} = useStyledSafeAreaInsets();
+
     const prevIsLoading = usePrevious(formData?.isLoading);
 
     useEffect(() => {
@@ -68,7 +71,7 @@ function ReportVirtualCardFraudPage({
                 title={translate('reportFraudPage.title')}
                 onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS_WALLET_DOMAINCARD.getRoute(cardID))}
             />
-            <View style={[styles.flex1, styles.justifyContentBetween]}>
+            <View style={[styles.flex1, styles.justifyContentBetween, !paddingBottom ? styles.pb5 : null]}>
                 <Text style={[styles.webViewStyles.baseFontStyle, styles.mh5]}>{translate('reportFraudPage.description')}</Text>
                 <FormAlertWithSubmitButton
                     isAlertVisible={Boolean(virtualCardError)}
