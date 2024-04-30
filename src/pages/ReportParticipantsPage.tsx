@@ -87,6 +87,21 @@ function ReportParticipantsPage({report, personalDetails, session}: ReportPartic
                 roleBadge = <Badge text={translate('common.admin')} />;
             }
 
+            const participantsPendingFields = report.participants?.[accountID]?.pendingFields;
+            let pendingAction;
+
+            if (pendingChatMember?.pendingAction) {
+                pendingAction = pendingChatMember.pendingAction;
+            } else if (participantsPendingFields) {
+                // We can have multiple Pending Fields in participant
+                for (const key in participantsPendingFields) {
+                    if (key in participantsPendingFields) {
+                        pendingAction = participantsPendingFields[key];
+                        break;
+                    }
+                }
+            }
+
             result.push({
                 keyForList: `${accountID}`,
                 accountID,
@@ -96,7 +111,7 @@ function ReportParticipantsPage({report, personalDetails, session}: ReportPartic
                 text: formatPhoneNumber(PersonalDetailsUtils.getDisplayNameOrDefault(details)),
                 alternateText: formatPhoneNumber(details?.login ?? ''),
                 rightElement: roleBadge,
-                pendingAction: pendingChatMember?.pendingAction,
+                pendingAction,
                 icons: [
                     {
                         source: UserUtils.getAvatar(details?.avatar, accountID),
