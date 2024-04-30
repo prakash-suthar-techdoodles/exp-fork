@@ -55,7 +55,7 @@ import type {ErrorFields, Errors} from '@src/types/onyx/OnyxCommon';
 import type {IOUMessage, PaymentMethodType} from '@src/types/onyx/OriginalMessage';
 import type ReportAction from '@src/types/onyx/ReportAction';
 import type {OnyxData} from '@src/types/onyx/Request';
-import type {Comment, Receipt, ReceiptSource, TransactionChanges, WaypointCollection} from '@src/types/onyx/Transaction';
+import type {Comment, Receipt, ReceiptSource, SplitShares, TransactionChanges, WaypointCollection} from '@src/types/onyx/Transaction';
 import type {EmptyObject} from '@src/types/utils/EmptyObject';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import * as CachedPDFPaths from './CachedPDFPaths';
@@ -3615,6 +3615,7 @@ function createSplitsAndOnyxData(
     created: string,
     category: string,
     tag: string,
+    splitShares: SplitShares = {},
     existingSplitChatReportID = '',
     billable = false,
     iouRequestType: IOURequestType = CONST.IOU.REQUEST_TYPE.MANUAL,
@@ -3791,13 +3792,21 @@ function createSplitsAndOnyxData(
     }
 
     // Loop through participants creating individual chats, iouReports and reportActionIDs as needed
-    const splitAmount = IOUUtils.calculateAmount(participants.length, amount, currency, false);
-    const splits: Split[] = [{email: currentUserEmailForIOUSplit, accountID: currentUserAccountID, amount: IOUUtils.calculateAmount(participants.length, amount, currency, true)}];
+    const currentUserAmount = splitShares?.[currentUserAccountID]?.amount ?? IOUUtils.calculateAmount(participants.length, amount, currency, true);
+
+    const splits: Split[] = [{email: currentUserEmailForIOUSplit, accountID: currentUserAccountID, amount: currentUserAmount}];
 
     const hasMultipleParticipants = participants.length > 1;
     participants.forEach((participant) => {
         // In a case when a participant is a workspace, even when a current user is not an owner of the workspace
         const isPolicyExpenseChat = ReportUtils.isPolicyExpenseChat(participant);
+        const splitAmount = splitShares?.[participant.accountID ?? -1]?.amount ?? IOUUtils.calculateAmount(participants.length, amount, currency, false);
+
+        // To exclude someone from a split, the amount can be 0. The scenario for this is when creating a split from a group chat, we have remove the option to deselect users to exclude them.
+        // We can input '0' next to someone we want to exclude.
+        if (splitAmount === 0) {
+            return;
+        }
 
         // In case the participant is a workspace, email & accountID should remain undefined and won't be used in the rest of this code
         // participant.login is undefined when the request is initiated from a group DM with an unknown user, so we need to add a default
@@ -3954,6 +3963,16 @@ function createSplitsAndOnyxData(
         failureData.push(...oneOnOneFailureData);
     });
 
+    optimisticData.push({
+        onyxMethod: Onyx.METHOD.MERGE,
+        key: `${ONYXKEYS.COLLECTION.TRANSACTION}${splitTransaction.transactionID}`,
+        value: {
+            comment: {
+                splits: splits.map((split) => ({accountID: split.accountID, amount: split.amount})),
+            },
+        },
+    });
+
     const splitData: SplitData = {
         chatReportID: splitChatReport.reportID,
         transactionID: splitTransaction.transactionID,
@@ -3987,6 +4006,7 @@ type SplitBillActionsParams = {
     billable?: boolean;
     iouRequestType?: IOURequestType;
     existingSplitChatReportID?: string;
+    splitShares?: SplitShares;
 };
 
 /**
@@ -4007,6 +4027,7 @@ function splitBill({
     billable = false,
     iouRequestType = CONST.IOU.REQUEST_TYPE.MANUAL,
     existingSplitChatReportID = '',
+    splitShares = {},
 }: SplitBillActionsParams) {
     const currentCreated = DateUtils.enrichMoneyRequestTimestamp(created);
     const {splitData, splits, onyxData} = createSplitsAndOnyxData(
@@ -4020,6 +4041,7 @@ function splitBill({
         currentCreated,
         category,
         tag,
+        splitShares,
         existingSplitChatReportID,
         billable,
         iouRequestType,
@@ -4065,6 +4087,7 @@ function splitBillAndOpenReport({
     tag = '',
     billable = false,
     iouRequestType = CONST.IOU.REQUEST_TYPE.MANUAL,
+    splitShares = {},
 }: SplitBillActionsParams) {
     const currentCreated = DateUtils.enrichMoneyRequestTimestamp(created);
     const {splitData, splits, onyxData} = createSplitsAndOnyxData(
@@ -4078,6 +4101,7 @@ function splitBillAndOpenReport({
         currentCreated,
         category,
         tag,
+        splitShares,
         '',
         billable,
         iouRequestType,
@@ -6326,6 +6350,107 @@ function setShownHoldUseExplanation() {
 }
 
 /**
+ * Sets the `splitShares` map that holds individual shares of a split bill
+ */
+function setSplitShares(transaction: OnyxEntry<OnyxTypes.Transaction>, amount: number, currency: string, newAccountIDs: number[]) {
+    if (!transaction) {
+        return;
+    }
+    const oldAccountIDs = Object.keys(transaction.splitShares ?? {}).map((key) => Number(key));
+
+    // Create an array containing unique IDs of the current transaction participants and the new ones
+    // The current userAccountID might not be included in newAccountIDs if this is called from the participants step using Global Create
+    // If this is called from an existing group chat, it'll be included. So we manually add them to account for both cases.
+    const accountIDs = [...new Set<number>([userAccountID, ...newAccountIDs, ...oldAccountIDs])];
+
+    const splitShares: SplitShares = accountIDs.reduce((result: SplitShares, accountID): SplitShares => {
+        // We want to replace the contents of splitShares to contain only `newAccountIDs` entries
+        // In the case of going back to the participants page and removing a participant
+        // a simple merge will have the previous participant still present in the splitshares object
+        // So we manually set their entry to null
+        if (!newAccountIDs.includes(accountID) && accountID !== userAccountID) {
+            return {
+                ...result,
+                [accountID]: null,
+            };
+        }
+
+        const isPayer = accountID === userAccountID;
+
+        // This function expects the length of participants without current user
+        const splitAmount = IOUUtils.calculateAmount(accountIDs.length - 1, amount, currency, isPayer);
+        return {
+            ...result,
+            [accountID]: {
+                amount: splitAmount,
+                isModified: false,
+            },
+        };
+    }, {});
+
+    Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${transaction.transactionID}`, {splitShares});
+}
+
+function resetSplitShares(transaction: OnyxEntry<OnyxTypes.Transaction>, newAmount?: number, currency?: string) {
+    if (!transaction) {
+        return;
+    }
+    const accountIDs = Object.keys(transaction.splitShares ?? {}).map((key) => Number(key));
+    if (!accountIDs) {
+        return;
+    }
+    setSplitShares(transaction, newAmount ?? transaction.amount, currency ?? transaction.currency, accountIDs);
+}
+
+/**
+ * Sets an individual split share of the participant accountID supplied
+ */
+function setIndividualShare(transactionID: string, participantAccountID: number, participantShare: number) {
+    Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${transactionID}`, {
+        splitShares: {
+            [participantAccountID]: {amount: participantShare, isModified: true},
+        },
+    });
+}
+
+/**
+ * Adjusts remaining unmodified shares when another share is modified
+ * E.g. if total bill is $100 and split between 3 participants, when the user changes the first share to $50, the remaining unmodified shares will become $25 each.
+ */
+function adjustRemainingSplitShares(transaction: NonNullable<OnyxTypes.Transaction>) {
+    const modifiedShares = Object.keys(transaction.splitShares ?? {}).filter((key: string) => transaction?.splitShares?.[Number(key)]?.isModified);
+
+    if (!modifiedShares.length) {
+        return;
+    }
+
+    const sumOfManualShares = modifiedShares
+        .map((key: string): number => transaction?.splitShares?.[Number(key)]?.amount ?? 0)
+        .reduce((prev: number, current: number): number => prev + current, 0);
+
+    const unmodifiedSharesAccountIDs = Object.keys(transaction.splitShares ?? {})
+        .filter((key: string) => !transaction?.splitShares?.[Number(key)]?.isModified)
+        .map((key: string) => Number(key));
+
+    const remainingTotal = transaction.amount - sumOfManualShares;
+    if (remainingTotal < 0) {
+        return;
+    }
+
+    const splitShares: SplitShares = unmodifiedSharesAccountIDs.reduce((result: SplitShares, accountID: number, index: number): SplitShares => {
+        const splitAmount = IOUUtils.calculateAmount(unmodifiedSharesAccountIDs.length - 1, remainingTotal, transaction.currency, index === 0);
+        return {
+            ...result,
+            [accountID]: {
+                amount: splitAmount,
+            },
+        };
+    }, {});
+
+    Onyx.merge(`${ONYXKEYS.COLLECTION.TRANSACTION_DRAFT}${transaction.transactionID}`, {splitShares});
+}
+
+/**
  * Put expense on HOLD
  */
 function putOnHold(transactionID: string, comment: string, reportID: string) {
@@ -6524,6 +6649,10 @@ export {
     setMoneyRequestTaxAmount,
     setMoneyRequestTaxRate,
     setShownHoldUseExplanation,
+    setSplitShares,
+    resetSplitShares,
+    setIndividualShare,
+    adjustRemainingSplitShares,
     splitBill,
     splitBillAndOpenReport,
     startMoneyRequest,

@@ -54,6 +54,9 @@ type MoneyRequestAmountInputProps = {
     /** Whether to hide the currency symbol */
     hideCurrencySymbol?: boolean;
 
+    /** Whether to disable native keyboard on mobile */
+    disableKeyboard?: boolean;
+
     /** Style for the prefix */
     prefixStyle?: StyleProp<TextStyle>;
 
@@ -62,6 +65,12 @@ type MoneyRequestAmountInputProps = {
 
     /** Style for the touchable input wrapper */
     touchableInputWrapperStyle?: StyleProp<ViewStyle>;
+
+    /** Whether we want to format the display amount on blur */
+    formatAmountOnBlur?: boolean;
+
+    /** Whether to format display amount when the `amount` prop changes from the outside */
+    formatAmountOnChange?: boolean;
 };
 
 type Selection = {
@@ -88,6 +97,9 @@ function MoneyRequestAmountInput(
         hideCurrencySymbol = false,
         shouldUpdateSelection = true,
         moneyRequestAmountInputRef,
+        disableKeyboard = true,
+        formatAmountOnBlur,
+        formatAmountOnChange,
         ...props
     }: MoneyRequestAmountInputProps,
     forwardedRef: ForwardedRef<BaseTextInputRef>,
@@ -114,6 +126,11 @@ function MoneyRequestAmountInput(
      */
     const setNewAmount = useCallback(
         (newAmount: string) => {
+            if (!newAmount) {
+                setCurrentAmount('');
+                return;
+            }
+
             // Remove spaces from the newAmount value because Safari on iOS adds spaces when pasting a copied value
             // More info: https://github.com/Expensify/App/issues/16974
             const newAmountWithoutSpaces = MoneyRequestUtils.stripSpacesFromAmount(newAmount);
@@ -163,12 +180,18 @@ function MoneyRequestAmountInput(
         if (!currency || typeof amount !== 'number') {
             return;
         }
-        const frontendAmount = amount ? CurrencyUtils.convertToFrontendAmount(amount).toString() : '';
+        const frontendAmount = formatAmountOnChange ? CurrencyUtils.convertToDisplayStringWithoutCurrency(amount, currency) : CurrencyUtils.convertToFrontendAmount(amount).toString();
         setCurrentAmount(frontendAmount);
-        setSelection({
-            start: frontendAmount.length,
-            end: frontendAmount.length,
-        });
+
+        // Only update selection if the amount prop was changed from the outside and is not the same as the current amount we just computed
+        // In the line below the currentAmount is not immediately updated, it should still hold the previous value.
+        if (frontendAmount !== currentAmount) {
+            setSelection({
+                start: frontendAmount.length,
+                end: frontendAmount.length,
+            });
+        }
+
         // we want to re-initialize the state only when the amount changes
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [amount]);
@@ -204,13 +227,22 @@ function MoneyRequestAmountInput(
         forwardDeletePressedRef.current = key === 'delete' || ((operatingSystem === CONST.OS.MAC_OS || operatingSystem === CONST.OS.IOS) && nativeEvent?.ctrlKey && key === 'd');
     };
 
+    const formatAmount = useCallback(() => {
+        if (!formatAmountOnBlur) {
+            return;
+        }
+        setCurrentAmount(CurrencyUtils.convertToDisplayStringWithoutCurrency(amount, currency));
+    }, [amount, currency, formatAmountOnBlur]);
+
     const formattedAmount = MoneyRequestUtils.replaceAllDigits(currentAmount, toLocaleDigit);
 
     return (
         <TextInputWithCurrencySymbol
+            disableKeyboard={disableKeyboard}
             formattedAmount={formattedAmount}
             onChangeAmount={setNewAmount}
             onCurrencyButtonPress={onCurrencyButtonPress}
+            onBlur={formatAmount}
             placeholder={numberFormat(0)}
             ref={(ref) => {
                 if (typeof forwardedRef === 'function') {
@@ -248,4 +280,4 @@ function MoneyRequestAmountInput(
 MoneyRequestAmountInput.displayName = 'MoneyRequestAmountInput';
 
 export default React.forwardRef(MoneyRequestAmountInput);
-export type {CurrentMoney, MoneyRequestAmountInputRef};
+export type {CurrentMoney, MoneyRequestAmountInputProps, MoneyRequestAmountInputRef};
