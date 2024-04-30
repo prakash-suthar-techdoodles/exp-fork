@@ -112,7 +112,6 @@ beforeAll(() =>
 
 // Initialize the network key for OfflineWithFeedback
 beforeEach(() => {
-    // @ts-expect-error TODO: Remove this once TestHelper (https://github.com/Expensify/App/issues/25318) is migrated to TypeScript.
     global.fetch = TestHelper.getGlobalFetchMock();
     wrapOnyxWithWaitForBatchedUpdates(Onyx);
     Onyx.merge(ONYXKEYS.NETWORK, {isOffline: false});
@@ -176,7 +175,7 @@ test('[ChatFinderPage] should render list with cached options', async () => {
                     [ONYXKEYS.IS_SEARCHING_FOR_REPORTS]: true,
                 }),
             )
-            // @ts-expect-error TODO: Remove this once TestHelper (https://github.com/Expensify/App/issues/25318) is migrated to TypeScript.
+            // @ts-expect-error Navigation prop is only used within this test
             .then(() => measurePerformance(<ChatFinderPageWithCachedOptions navigation={navigation} />, {scenario}))
     );
 });
@@ -205,7 +204,7 @@ test('[ChatFinderPage] should interact when text input changes', async () => {
                     [ONYXKEYS.IS_SEARCHING_FOR_REPORTS]: true,
                 }),
             )
-            // @ts-expect-error TODO: Remove this once TestHelper (https://github.com/Expensify/App/issues/25318) is migrated to TypeScript.
+            // @ts-expect-error Navigation prop is only used within this test
             .then(() => measurePerformance(<ChatFinderPageWrapper navigation={navigation} />, {scenario}))
     );
 });

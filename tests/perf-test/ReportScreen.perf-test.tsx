@@ -114,7 +114,6 @@ beforeAll(() =>
 
 // Initialize the network key for OfflineWithFeedback
 beforeEach(() => {
-    // @ts-expect-error TODO: Remove this once TestHelper (https://github.com/Expensify/App/issues/25318) is migrated to TypeScript.
     global.fetch = TestHelper.getGlobalFetchMock();
     wrapOnyxWithWaitForBatchedUpdates(Onyx);
     Onyx.merge(ONYXKEYS.NETWORK, {isOffline: false});
@@ -210,9 +209,9 @@ test('[ReportScreen] should render ReportScreen', () => {
         .then(() =>
             measurePerformance(
                 <ReportScreenWrapper
-                    // @ts-expect-error TODO: Remove this once TestHelper (https://github.com/Expensify/App/issues/25318) is migrated to TypeScript.
+                    // @ts-expect-error Navigation prop is only used within this test
                     navigation={navigation}
-                    // @ts-expect-error TODO: Remove this once TestHelper (https://github.com/Expensify/App/issues/25318) is migrated to TypeScript.
+                    // @ts-expect-error Route prop is only used within this test
                     route={mockRoute}
                 />,
                 {scenario},
