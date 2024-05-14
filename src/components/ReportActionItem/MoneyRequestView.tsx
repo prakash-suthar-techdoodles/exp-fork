@@ -9,6 +9,7 @@ import OfflineWithFeedback from '@components/OfflineWithFeedback';
 import {useSession} from '@components/OnyxProvider';
 import {ReceiptAuditHeader, ReceiptAuditMessages} from '@components/ReceiptAudit';
 import ReceiptEmptyState from '@components/ReceiptEmptyState';
+import SpacerView from '@components/SpacerView';
 import Switch from '@components/Switch';
 import Text from '@components/Text';
 import ViolationMessages from '@components/ViolationMessages';
@@ -76,6 +77,9 @@ type MoneyRequestViewPropsWithoutTransaction = MoneyRequestViewOnyxPropsWithoutT
     /** The report currently being looked at */
     report: OnyxTypes.Report;
 
+    /** Whether we should display the horizontal rule below the component */
+    shouldShowHorizontalRule: boolean;
+
     /** Whether we should display the animated banner above the component */
     shouldShowAnimatedBackground: boolean;
 };
@@ -87,6 +91,7 @@ function MoneyRequestView({
     parentReport,
     parentReportActions,
     policyCategories,
+    shouldShowHorizontalRule,
     transaction,
     policyTagList,
     policy,
@@ -109,6 +114,7 @@ function MoneyRequestView({
         created: transactionDate,
         amount: transactionAmount,
         taxAmount: transactionTaxAmount,
+        taxCode: transactionTaxCode,
         currency: transactionCurrency,
         comment: transactionDescription,
         merchant: transactionMerchant,
@@ -128,12 +134,15 @@ function MoneyRequestView({
     const isCardTransaction = TransactionUtils.isCardTransaction(transaction);
     const cardProgramName = isCardTransaction && transactionCardID !== undefined ? CardUtils.getCardDescription(transactionCardID) : '';
     const isApproved = ReportUtils.isReportApproved(moneyRequestReport);
-    const isInvoice = ReportUtils.isInvoiceReport(moneyRequestReport);
     const taxRates = policy?.taxRates;
     const formattedTaxAmount = CurrencyUtils.convertToDisplayString(transactionTaxAmount, transactionCurrency);
 
     const taxRatesDescription = taxRates?.name;
-    const taxRateTitle = TransactionUtils.getTaxName(policy, transaction);
+    const taxRateTitle =
+        taxRates &&
+        (transactionTaxCode === taxRates?.defaultExternalID
+            ? transaction && TransactionUtils.getDefaultTaxName(taxRates, transaction)
+            : transactionTaxCode && TransactionUtils.getTaxName(taxRates?.taxes, transactionTaxCode));
 
     // Flags for allowing or disallowing editing an expense
     const isSettled = ReportUtils.isSettled(moneyRequestReport?.reportID);
@@ -155,7 +164,7 @@ function MoneyRequestView({
     const isApprover = ReportUtils.isMoneyRequestReport(moneyRequestReport) && moneyRequestReport?.managerID !== null && session?.accountID === moneyRequestReport?.managerID;
     // A flag for verifying that the current report is a sub-report of a workspace chat
     // if the policy of the report is either Collect or Control, then this report must be tied to workspace chat
-    const isPolicyExpenseChat = ReportUtils.isReportInGroupPolicy(report);
+    const isPolicyExpenseChat = ReportUtils.isGroupPolicy(report);
 
     const policyTagLists = useMemo(() => PolicyUtils.getTagLists(policyTagList), [policyTagList]);
 
@@ -186,11 +195,11 @@ function MoneyRequestView({
 
     const currency = policy ? policy.outputCurrency : PolicyUtils.getPersonalPolicy()?.outputCurrency ?? CONST.CURRENCY.USD;
 
-    const mileageRate = TransactionUtils.isCustomUnitRateIDForP2P(transaction) ? DistanceRequestUtils.getRateForP2P(currency) : distanceRates[rateID] ?? {};
+    const mileageRate = TransactionUtils.isCustomUnitRateIDForP2P(transaction) ? DistanceRequestUtils.getRateForP2P(currency) : distanceRates[rateID as string] ?? {};
     const {unit} = mileageRate;
-    const rate = transaction?.comment?.customUnit?.defaultP2PRate ?? mileageRate.rate;
+    const rate = (transaction?.comment?.customUnit?.defaultP2PRate as number) ?? mileageRate.rate;
 
-    const distance = DistanceRequestUtils.convertToDistanceInMeters(TransactionUtils.getDistance(transaction), unit);
+    const distance = DistanceRequestUtils.convertToDistanceInMeters((transaction?.comment?.customUnit?.quantity as number) ?? 0, unit);
     const rateToDisplay = DistanceRequestUtils.getRateForDisplay(unit, rate, currency, translate, toLocaleDigit, isOffline);
     const distanceToDisplay = DistanceRequestUtils.getDistanceForDisplay(hasRoute, distance, unit, rate, translate);
     let merchantTitle = isEmptyMerchant ? '' : transactionMerchant;
@@ -216,6 +225,9 @@ function MoneyRequestView({
         if (formattedOriginalAmount) {
             amountDescription += ` ${CONST.DOT_SEPARATOR} ${translate('iou.original')} ${formattedOriginalAmount}`;
         }
+        if (TransactionUtils.isPending(transaction)) {
+            amountDescription += ` ${CONST.DOT_SEPARATOR} ${translate('iou.pending')}`;
+        }
         if (isCancelled) {
             amountDescription += ` ${CONST.DOT_SEPARATOR} ${translate('iou.canceled')}`;
         }
@@ -228,7 +240,9 @@ function MoneyRequestView({
         } else if (isCancelled) {
             amountDescription += ` ${CONST.DOT_SEPARATOR} ${translate('iou.canceled')}`;
         } else if (isSettled) {
-            amountDescription += ` • ${translate('iou.settledExpensify')}`;
+            amountDescription += ` ${CONST.DOT_SEPARATOR} ${translate('iou.settledExpensify')}`;
+        } else if (report.isWaitingOnBankAccount) {
+            amountDescription += ` ${CONST.DOT_SEPARATOR} ${translate('iou.pending')}`;
         }
     }
 
@@ -318,7 +332,7 @@ function MoneyRequestView({
     );
 
     const shouldShowMapOrReceipt = showMapAsImage || hasReceipt;
-    const shouldShowReceiptEmptyState = !hasReceipt && !isInvoice && (canEditReceipt || isAdmin || isApprover);
+    const shouldShowReceiptEmptyState = !hasReceipt && (canEditReceipt || isAdmin || isApprover);
     const noticeTypeViolations = transactionViolations?.filter((violation) => violation.type === 'notice').map((v) => ViolationsUtils.getViolationTranslation(v, translate)) ?? [];
     const shouldShowNotesViolations = !isReceiptBeingScanned && canUseViolations && ReportUtils.isPaidGroupPolicy(report);
 
@@ -331,17 +345,15 @@ function MoneyRequestView({
         <View style={[StyleUtils.getReportWelcomeContainerStyle(isSmallScreenWidth, true, shouldShowAnimatedBackground)]}>
             {shouldShowAnimatedBackground && <AnimatedEmptyStateBackground />}
             <View style={shouldShowAnimatedBackground && [StyleUtils.getReportWelcomeTopMarginStyle(isSmallScreenWidth, true)]}>
-                {!isInvoice && (
-                    <ReceiptAuditHeader
-                        notes={noticeTypeViolations}
-                        shouldShowAuditMessage={Boolean(shouldShowNotesViolations && didRceiptScanSucceed)}
-                    />
-                )}
+                <ReceiptAuditHeader
+                    notes={noticeTypeViolations}
+                    shouldShowAuditMessage={Boolean(shouldShowNotesViolations && didRceiptScanSucceed)}
+                />
                 {(shouldShowMapOrReceipt || errors) && (
                     <OfflineWithFeedback
                         pendingAction={pendingAction}
                         errors={errors}
-                        errorRowStyles={[styles.mh4]}
+                        errorRowStyles={[styles.ml4]}
                         onClose={() => {
                             if (!transaction?.transactionID) {
                                 return;
@@ -350,25 +362,22 @@ function MoneyRequestView({
                         }}
                     >
                         {shouldShowMapOrReceipt && (
-                        <View style={styles.moneyRequestViewImage}>
-                            {showMapAsImage ? (
-                                <ConfirmedRoute
-                                    transaction={transaction}
-                                    interactive={false}
-                                />
-                            ) : (
-                                <ReportActionItemImage
-                                    thumbnail={receiptURIs?.thumbnail}
-                                    fileExtension={receiptURIs?.fileExtension}
-                                    isThumbnail={receiptURIs?.isThumbnail}
-                                    image={receiptURIs?.image}
-                                    isLocalFile={receiptURIs?.isLocalFile}
-                                    filename={receiptURIs?.filename}
-                                    transaction={transaction}
-                                    enablePreviewModal
-                                />
-                            )}
-                        </View>
+                            <View style={styles.moneyRequestViewImage}>
+                                {showMapAsImage ? (
+                                    <ConfirmedRoute transaction={transaction} />
+                                ) : (
+                                    <ReportActionItemImage
+                                        thumbnail={receiptURIs?.thumbnail}
+                                        fileExtension={receiptURIs?.fileExtension}
+                                        isThumbnail={receiptURIs?.isThumbnail}
+                                        image={receiptURIs?.image}
+                                        isLocalFile={receiptURIs?.isLocalFile}
+                                        filename={receiptURIs?.filename}
+                                        transaction={transaction}
+                                        enablePreviewModal
+                                    />
+                                )}
+                            </View>
                         )}
                     </OfflineWithFeedback>
                 )}
@@ -403,7 +412,7 @@ function MoneyRequestView({
                         shouldShowRightIcon={canEditAmount}
                         onPress={() => Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_AMOUNT.getRoute(CONST.IOU.ACTION.EDIT, iouType, transaction?.transactionID ?? '', report.reportID))}
                         brickRoadIndicator={getErrorForField('amount') ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined}
-                        errorText={getErrorForField('amount')}
+                        error={getErrorForField('amount')}
                     />
                 </OfflineWithFeedback>
                 <OfflineWithFeedback pendingAction={getPendingFieldAction('comment')}>
@@ -417,7 +426,7 @@ function MoneyRequestView({
                         onPress={() => Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_DESCRIPTION.getRoute(CONST.IOU.ACTION.EDIT, iouType, transaction?.transactionID ?? '', report.reportID))}
                         wrapperStyle={[styles.pv2, styles.taskDescriptionMenuItem]}
                         brickRoadIndicator={getErrorForField('comment') ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined}
-                        errorText={getErrorForField('comment')}
+                        error={getErrorForField('comment')}
                         numberOfLinesTitle={0}
                     />
                 </OfflineWithFeedback>
@@ -435,7 +444,7 @@ function MoneyRequestView({
                                 Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_MERCHANT.getRoute(CONST.IOU.ACTION.EDIT, iouType, transaction?.transactionID ?? '', report.reportID))
                             }
                             brickRoadIndicator={getErrorForField('merchant') ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined}
-                            errorText={getErrorForField('merchant')}
+                            error={getErrorForField('merchant')}
                         />
                     </OfflineWithFeedback>
                 )}
@@ -448,7 +457,7 @@ function MoneyRequestView({
                         titleStyle={styles.flex1}
                         onPress={() => Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_DATE.getRoute(CONST.IOU.ACTION.EDIT, iouType, transaction?.transactionID ?? '', report.reportID))}
                         brickRoadIndicator={getErrorForField('date') ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined}
-                        errorText={getErrorForField('date')}
+                        error={getErrorForField('date')}
                     />
                 </OfflineWithFeedback>
                 {shouldShowCategory && (
@@ -463,7 +472,7 @@ function MoneyRequestView({
                                 Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_CATEGORY.getRoute(CONST.IOU.ACTION.EDIT, iouType, transaction?.transactionID ?? '', report.reportID))
                             }
                             brickRoadIndicator={getErrorForField('category') ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined}
-                            errorText={getErrorForField('category')}
+                            error={getErrorForField('category')}
                         />
                     </OfflineWithFeedback>
                 )}
@@ -492,7 +501,7 @@ function MoneyRequestView({
                                         ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR
                                         : undefined
                                 }
-                                errorText={getErrorForField('tag', {tagListIndex: index, tagListName: name})}
+                                error={getErrorForField('tag', {tagListIndex: index, tagListName: name})}
                             />
                         </OfflineWithFeedback>
                     ))}
@@ -502,7 +511,6 @@ function MoneyRequestView({
                             description={translate('iou.card')}
                             title={cardProgramName}
                             titleStyle={styles.flex1}
-                            interactive={false}
                         />
                     </OfflineWithFeedback>
                 )}
@@ -518,7 +526,7 @@ function MoneyRequestView({
                                 Navigation.navigate(ROUTES.MONEY_REQUEST_STEP_TAX_RATE.getRoute(CONST.IOU.ACTION.EDIT, iouType, transaction?.transactionID ?? '', report.reportID))
                             }
                             brickRoadIndicator={getErrorForField('tax') ? CONST.BRICK_ROAD_INDICATOR_STATUS.ERROR : undefined}
-                            errorText={getErrorForField('tax')}
+                            error={getErrorForField('tax')}
                         />
                     </OfflineWithFeedback>
                 )}
@@ -559,6 +567,10 @@ function MoneyRequestView({
                     </View>
                 )}
             </View>
+            <SpacerView
+                shouldShow={shouldShowHorizontalRule}
+                style={[shouldShowHorizontalRule ? styles.reportHorizontalRule : {}]}
+            />
         </View>
     );
 }
