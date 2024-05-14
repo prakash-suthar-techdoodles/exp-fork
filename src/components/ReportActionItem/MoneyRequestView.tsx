@@ -336,7 +336,7 @@ function MoneyRequestView({
     const noticeTypeViolations = transactionViolations?.filter((violation) => violation.type === 'notice').map((v) => ViolationsUtils.getViolationTranslation(v, translate)) ?? [];
     const shouldShowNotesViolations = !isReceiptBeingScanned && canUseViolations && ReportUtils.isPaidGroupPolicy(report);
 
-    let errors = {
+    const combinedErrors = {
         ...(transaction?.errors ?? {}),
         ...(parentReportAction?.errors ?? {}),
     }
@@ -349,10 +349,10 @@ function MoneyRequestView({
                     notes={noticeTypeViolations}
                     shouldShowAuditMessage={Boolean(shouldShowNotesViolations && didRceiptScanSucceed)}
                 />
-                {(shouldShowMapOrReceipt || errors) && (
+                {(shouldShowMapOrReceipt || combinedErrors) && (
                     <OfflineWithFeedback
                         pendingAction={pendingAction}
-                        errors={errors}
+                        errors={combinedErrors}
                         errorRowStyles={[styles.ml4]}
                         onClose={() => {
                             if (!transaction?.transactionID) {
