@@ -45,11 +45,12 @@ import type * as OnyxTypes from '@src/types/onyx';
 import type {TransactionPendingFieldsKey} from '@src/types/onyx/Transaction';
 import ReportActionItemImage from './ReportActionItemImage';
 
+type MaybePhraseKey = [string, { isTranslated: boolean }] | null;
+
 interface ErrorObject {
-    [key: string]: [string, { isTranslated: boolean }];
+    [key: string]: MaybePhraseKey;
     // Define the structure of your error object here
-    // The key is a string (dynamic) and the value is an array containing a string and an object
-    // representing additional information
+    // The key is a string (dynamic) and the value is MaybePhraseKey
 }
 
 type MoneyRequestViewTransactionOnyxProps = {
