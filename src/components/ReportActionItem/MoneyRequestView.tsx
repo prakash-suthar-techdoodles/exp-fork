@@ -45,6 +45,12 @@ import type * as OnyxTypes from '@src/types/onyx';
 import type {TransactionPendingFieldsKey} from '@src/types/onyx/Transaction';
 import ReportActionItemImage from './ReportActionItemImage';
 
+type MaybePhraseKey = string; // Adjust this type based on your actual type
+
+type Errors = {
+  [key: string]: MaybePhraseKey;
+};
+
 type MoneyRequestViewTransactionOnyxProps = {
     /** The transaction associated with the transactionThread */
     transaction: OnyxEntry<OnyxTypes.Transaction>;
@@ -336,7 +342,7 @@ function MoneyRequestView({
     const noticeTypeViolations = transactionViolations?.filter((violation) => violation.type === 'notice').map((v) => ViolationsUtils.getViolationTranslation(v, translate)) ?? [];
     const shouldShowNotesViolations = !isReceiptBeingScanned && canUseViolations && ReportUtils.isPaidGroupPolicy(report);
 
-    const combinedErrors = {
+    const errors: Errors = {
         ...(transaction?.errors ?? {}),
         ...(parentReportAction?.errors ?? {}),
     }
@@ -349,10 +355,10 @@ function MoneyRequestView({
                     notes={noticeTypeViolations}
                     shouldShowAuditMessage={Boolean(shouldShowNotesViolations && didRceiptScanSucceed)}
                 />
-                {(shouldShowMapOrReceipt || combinedErrors) && (
+                {(shouldShowMapOrReceipt || errors) && (
                     <OfflineWithFeedback
                         pendingAction={pendingAction}
-                        errors={combinedErrors}
+                        errors={errors}
                         errorRowStyles={[styles.ml4]}
                         onClose={() => {
                             if (!transaction?.transactionID) {
