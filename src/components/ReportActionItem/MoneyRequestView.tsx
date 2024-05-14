@@ -44,15 +44,7 @@ import ROUTES from '@src/ROUTES';
 import type * as OnyxTypes from '@src/types/onyx';
 import type {TransactionPendingFieldsKey} from '@src/types/onyx/Transaction';
 import ReportActionItemImage from './ReportActionItemImage';
-
-type MaybePhraseKey = [string, { isTranslated: boolean }] | null;
-
-interface ErrorObject {
-    [key: string]: MaybePhraseKey;
-    // Define the structure of your error object here
-    // The key is a string (dynamic) and the value is MaybePhraseKey
-}
-
+ 
 type MoneyRequestViewTransactionOnyxProps = {
     /** The transaction associated with the transactionThread */
     transaction: OnyxEntry<OnyxTypes.Transaction>;
