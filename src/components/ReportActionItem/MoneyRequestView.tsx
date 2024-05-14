@@ -344,9 +344,9 @@ function MoneyRequestView({
     const noticeTypeViolations = transactionViolations?.filter((violation) => violation.type === 'notice').map((v) => ViolationsUtils.getViolationTranslation(v, translate)) ?? [];
     const shouldShowNotesViolations = !isReceiptBeingScanned && canUseViolations && ReportUtils.isPaidGroupPolicy(report);
 
-    let errors: ErrorObject = {
-        ...(transaction?.errors ?? {}),
-        ...(parentReportAction?.errors ?? {}),
+    const errors = {
+        ...transaction?.errors,
+        ...parentReportAction?.errors
     }
 
     return (
