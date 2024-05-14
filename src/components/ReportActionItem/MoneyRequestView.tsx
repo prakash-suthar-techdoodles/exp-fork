@@ -45,11 +45,12 @@ import type * as OnyxTypes from '@src/types/onyx';
 import type {TransactionPendingFieldsKey} from '@src/types/onyx/Transaction';
 import ReportActionItemImage from './ReportActionItemImage';
 
-type MaybePhraseKey = string; // Adjust this type based on your actual type
+type MaybePhraseKey = string | { [key: string]: any };
 
 type Errors = {
-  [key: string]: MaybePhraseKey;
+  [key: string]: [MaybePhraseKey, ...any[]];
 };
+
 
 type MoneyRequestViewTransactionOnyxProps = {
     /** The transaction associated with the transactionThread */
